@@ -1,0 +1,20 @@
+{
+    "name": "circlecube/jww-theme",
+    "description": "Theme for jessewellesworld.com",
+    "type": "wordpress-theme",
+    "require": {
+        "wp-forge/wp-update-handler": "^1.0.2"
+    },
+    "license": "GPL-2.0-or-later",
+    "autoload": {
+        "psr-4": {
+            "Circlecube\\JWWTheme\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Evan Mullins",
+            "homepage": "https://evanmullins.com"
+        }
+    ]
+}
