@@ -1,0 +1,28 @@
+/*
+Theme Name: Twenty Twenty-Five Child
+Theme URI: https://github.com/circlecube.com/jww-theme
+Description: Child theme for the Twenty Twenty-Five block theme.
+Author: Evan Mullins
+Author URI: https://evanmullins.com
+Template: twentytwentyfive
+Version: 1.0.0
+License: GNU General Public License v2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: jww-theme
+GitHub Theme URI: https://github.com/circlecube.com/jww-theme
+Primary Branch: main
+*/
+/* YouTube Video Embed responsive */
+.wp-block-mfb-meta-field-block.is-acf-field .value {
+  height: 0;
+  padding-top: 56.25%;
+  position: relative;
+  width: 100%;
+}
+.wp-block-mfb-meta-field-block.is-acf-field .value iframe {
+  height: 100%;
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 100%;
+} 
