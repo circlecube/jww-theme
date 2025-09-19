@@ -1,17 +1,22 @@
 /*
-Theme Name: Twenty Twenty-Five Child
+Theme Name: Jesse Welles World Theme
 Theme URI: https://github.com/circlecube.com/jww-theme
-Description: Child theme for the Twenty Twenty-Five block theme.
 Author: Evan Mullins
 Author URI: https://evanmullins.com
-Template: twentytwentyfive
+Description: Child theme for the Twenty Twenty-Five block theme.
+Requires at least: 6.8
+Tested up to: 6.8
+Requires PHP: 8.0
 Version: 1.0.0
 License: GNU General Public License v2 or later
-License URI: https://www.gnu.org/licenses/gpl-2.0.html
+License URI: http://www.gnu.org/licenses/gpl-2.0.html
+Template: twentytwentyfive
 Text Domain: jww-theme
 GitHub Theme URI: https://github.com/circlecube.com/jww-theme
 Primary Branch: main
+Tags: 
 */
+
 /* YouTube Video Embed responsive */
 .wp-block-mfb-meta-field-block.is-acf-field .value {
   height: 0;
