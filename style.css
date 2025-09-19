@@ -18,16 +18,211 @@ Tags:
 */
 
 /* YouTube Video Embed responsive */
-.wp-block-mfb-meta-field-block.is-acf-field .value {
+.video-section .video-container {
   height: 0;
   padding-top: 56.25%;
   position: relative;
   width: 100%;
 }
-.wp-block-mfb-meta-field-block.is-acf-field .value iframe {
+.video-section .video-container iframe {
   height: 100%;
   left: 0;
   position: absolute;
   top: 0;
   width: 100%;
+}
+
+/* ==========================================================================
+   Album Covers Template Part
+   ========================================================================== */
+
+/* Album Covers Section */
+.album-covers-section {
+  margin-bottom: var(--wp--preset--spacing--60);
+}
+
+.album-covers-section p {
+  margin-bottom: var(--wp--preset--spacing--30);
+  font-weight: 600;
+}
+
+/* Album Covers Grid */
+.album-covers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--wp--preset--spacing--40);
+  margin-top: var(--wp--preset--spacing--30);
+}
+
+/* Individual Album Item */
+.album {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--wp--preset--color--base);
+  border: 1px solid var(--wp--preset--color--accent-6);
+}
+
+.album:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Album Cover Image */
+.album img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
+}
+
+/* Album Title */
+.album-title {
+  margin: var(--wp--preset--spacing--20) var(--wp--preset--spacing--20) var(--wp--preset--spacing--10);
+  font-size: var(--wp--preset--font-size--large);
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--wp--preset--color--contrast);
+}
+
+/* Album Date */
+.album-date {
+  display: block;
+  margin: 0 var(--wp--preset--spacing--20) var(--wp--preset--spacing--20);
+  font-size: var(--wp--preset--font-size--small);
+  color: var(--wp--preset--color--accent-4);
+  font-weight: 400;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .album-covers {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--wp--preset--spacing--30);
+  }
+  
+  .album-title {
+    font-size: var(--wp--preset--font-size--medium);
+  }
+}
+
+@media (max-width: 480px) {
+  .album-covers {
+    grid-template-columns: 1fr;
+    gap: var(--wp--preset--spacing--20);
+  }
+}
+
+/* ==========================================================================
+   Album Template Specific Styles
+   ========================================================================== */
+
+/* Album Header Section */
+.album-header {
+  margin-bottom: var(--wp--preset--spacing--60);
+}
+
+.album-release-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2em;
+  margin-bottom: var(--wp--preset--spacing--60);
+  color: var(--wp--preset--color--accent-4);
+  font-size: var(--wp--preset--font-size--small);
+}
+
+/* Album Cover and Tracks Layout */
+.album-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wp--preset--spacing--40);
+  align-items: flex-start;
+}
+
+.album-cover {
+  flex: 0 0 auto;
+  max-width: 300px;
+}
+
+.album-cover img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.album-tracks {
+  flex: 1;
+  min-width: 250px;
+}
+
+.album-tracks ol {
+  margin: var(--wp--preset--spacing--20) 0 0;
+  padding-left: var(--wp--preset--spacing--30);
+}
+
+.album-tracks li {
+  margin-bottom: var(--wp--preset--spacing--10);
+}
+
+.album-tracks a {
+  color: var(--wp--preset--color--contrast);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.album-tracks a:hover {
+  color: var(--wp--preset--color--accent-4);
+  text-decoration: underline;
+}
+
+/* Albums Section Heading */
+.albums-section-heading {
+  font-size: var(--wp--preset--font-size--small);
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  margin-bottom: var(--wp--preset--spacing--40);
+  color: var(--wp--preset--color--contrast);
+}
+
+/* Responsive Album Content */
+@media (max-width: 768px) {
+  .album-content {
+    flex-direction: column;
+  }
+  
+  .album-cover {
+    max-width: 100%;
+    align-self: center;
+  }
 } 
+
+
+.is-content-justification-space-between {
+  justify-content: space-between;
+}
+.is-content-justification-center {
+  justify-content: center;
+}
+
+.is-layout-flex.is-vertical {
+  flex-direction: column;
+}
+.has-gap-large {
+  gap: var(--wp--preset--spacing--80);
+}
+
+/* ==========================================================================
+   Header Template Specific Styles
+   ========================================================================== */
+.wp-block-site-title a[rel="home"] {
+  color: var(--wp--preset--color--base);
+}

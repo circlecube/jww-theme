@@ -1,0 +1,8 @@
+<?php
+// Load the PHP footer template part
+get_template_part('template-parts/footer');
+?>
+
+<?php wp_footer(); ?>
+</body>
+</html>
