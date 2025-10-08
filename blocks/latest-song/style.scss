@@ -1,0 +1,36 @@
+/* Latest Song Block Styles */
+.wp-block-jww-latest-song {
+    margin: 1rem 0;
+}
+
+.latest-song-title {
+    margin-bottom: 1rem;
+}
+
+.latest-song-video {
+    position: relative;
+    width: 100%;
+    height: 0;
+    padding-bottom: 56.25%; /* 16:9 aspect ratio */
+    overflow: hidden;
+}
+
+.latest-song-video iframe,
+.latest-song-video embed,
+.latest-song-video object {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+.latest-song-no-video {
+    color: #666;
+    font-style: italic;
+    text-align: center;
+    padding: 2rem;
+    background: #f9f9f9;
+    border-radius: 4px;
+}

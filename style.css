@@ -49,28 +49,34 @@ Tags:
 /* Album Covers Grid */
 .album-covers {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: var(--wp--preset--spacing--40);
   margin-top: var(--wp--preset--spacing--30);
 }
 
 /* Individual Album Item */
 .album {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: start;
   text-decoration: none;
-  color: inherit;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  border-radius: 8px;
+  color: var(--wp--preset--color--base);
+  transition: transform 0.2s ease;
+  border-radius: 3px;
   overflow: hidden;
-  background: var(--wp--preset--color--base);
   border: 1px solid var(--wp--preset--color--accent-6);
+  background-color: var(--wp--preset--color--contrast);
+  text-align:center;
 }
 
 .album:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   text-decoration: none;
   color: inherit;
+}
+
+.album > *  {
+  width: 100%;
 }
 
 /* Album Cover Image */
@@ -84,19 +90,19 @@ Tags:
 
 /* Album Title */
 .album-title {
-  margin: var(--wp--preset--spacing--20) var(--wp--preset--spacing--20) var(--wp--preset--spacing--10);
-  font-size: var(--wp--preset--font-size--large);
-  font-weight: 600;
+  margin: .5rem 0;
+  font-weight: 400;
   line-height: 1.3;
-  color: var(--wp--preset--color--contrast);
+  color: var(--wp--preset--color--base);
+  font-size: var(--wp--preset--font-size--medium);
 }
 
 /* Album Date */
 .album-date {
   display: block;
-  margin: 0 var(--wp--preset--spacing--20) var(--wp--preset--spacing--20);
+  margin: 0 0 .5rem;
   font-size: var(--wp--preset--font-size--small);
-  color: var(--wp--preset--color--accent-4);
+  color: var(--wp--preset--color--base);
   font-weight: 400;
 }
 
@@ -106,16 +112,117 @@ Tags:
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: var(--wp--preset--spacing--30);
   }
-  
-  .album-title {
-    font-size: var(--wp--preset--font-size--medium);
-  }
 }
 
 @media (max-width: 480px) {
   .album-covers {
     grid-template-columns: 1fr;
     gap: var(--wp--preset--spacing--20);
+  }
+}
+
+/* ==========================================================================
+   Song List Template Styles
+   ========================================================================== */
+
+/* Song List Container */
+.song-list {
+  margin-top: var(--wp--preset--spacing--40);
+}
+
+/* Individual Song Item */
+.song-item {
+  transition: background-color 0.2s ease;
+}
+
+.song-item:hover {
+  background-color: var(--wp--preset--color--accent-6);
+}
+
+/* Song Title */
+.song-title {
+  margin: 0 0 var(--wp--preset--spacing--20) 0;
+  font-size: var(--wp--preset--font-size--large);
+  font-weight: 600;
+}
+
+.song-title a {
+  color: var(--wp--preset--color--contrast);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.song-title a:hover {
+  color: var(--wp--preset--color--accent-4);
+  text-decoration: underline;
+}
+
+/* Video Link */
+.song-video {
+  margin-bottom: var(--wp--preset--spacing--20);
+}
+
+.video-link {
+  display: inline-block;
+  padding: var(--wp--preset--spacing--10) var(--wp--preset--spacing--20);
+  background-color: var(--wp--preset--color--accent-3);
+  color: var(--wp--preset--color--base);
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: var(--wp--preset--font-size--small);
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.video-link:hover {
+  background-color: var(--wp--preset--color--accent-2);
+  color: var(--wp--preset--color--base);
+  text-decoration: none;
+}
+
+/* Lyrics Preview */
+.song-lyrics-preview {
+  margin-bottom: var(--wp--preset--spacing--20);
+  color: var(--wp--preset--color--accent-4);
+  font-style: italic;
+  line-height: 1.6;
+}
+
+/* Song Meta */
+.song-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--wp--preset--font-size--small);
+  color: var(--wp--preset--color--accent-4);
+}
+
+.song-date {
+  font-weight: 400;
+}
+
+.read-more {
+  color: var(--wp--preset--color--accent-4);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.read-more:hover {
+  color: var(--wp--preset--color--contrast);
+  text-decoration: underline;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .song-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--wp--preset--spacing--10);
+  }
+  
+  .song-title {
+    font-size: var(--wp--preset--font-size--medium);
   }
 }
 
@@ -225,4 +332,187 @@ Tags:
    ========================================================================== */
 .wp-block-site-title a[rel="home"] {
   color: var(--wp--preset--color--base);
+}
+
+
+.nav-link-container {
+  background-color: var(--wp--preset--color--contrast);
+  padding: var(--wp--preset--spacing--40);
+  border-top: 1px solid var(--wp--preset--color--accent-6);
+  margin-top: var(--wp--preset--spacing--40);
+  margin-bottom: 0;
+}
+
+.nav-link-container .nav-links {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-links a {
+  color: var(--wp--preset--color--base);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.nav-links a:hover {
+  color: var(--wp--preset--color--accent-4);
+  text-decoration: underline;
+}
+
+.nav-previous:before {
+  content: "← ";
+}
+
+.nav-next:after {
+  content: " →";
+}
+
+
+.wp-block-comments {
+  margin: var(--wp--preset--spacing--70) 0;
+}
+
+.song-list {
+  list-style: none;
+}
+.song-list h3 {
+  margin: 0 0 1rem 0;
+}
+.song-list a {
+  text-decoration: none;
+  color: var(--wp--preset--color--contrast);
+  transition: color 0.2s ease;
+}
+.song-list a:hover {
+  color: var(--wp--preset--color--accent-4);
+  text-decoration: underline;
+}
+.song-meta {
+  font-size: var(--wp--preset--font-size--small);
+  font-weight: 400;
+  font-style: italic;
+  display: inline-block;
+}
+
+/* Alphabetical song list styles */
+.alphabetical-song-list {
+  margin-top: 2rem;
+}
+
+.alphabet-section {
+  margin-bottom: 3rem;
+}
+
+.alphabet-letter {
+  font-size: 4rem;
+  font-weight: 700;
+  color: var(--wp--preset--color--accent-2);
+  margin: 2rem 0 1rem 0;
+  padding: 1rem 0;
+  border-bottom: 3px solid var(--wp--preset--color--accent-2);
+  text-align: center;
+  line-height: 1;
+  scroll-margin-top: 2rem; /* For smooth scrolling to anchors */
+}
+
+.alphabet-letter:first-child {
+  margin-top: 0;
+}
+
+/* Responsive alphabet letters */
+@media (max-width: 768px) {
+  .alphabet-letter {
+    font-size: 3rem;
+    margin: 1.5rem 0 0.75rem 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .alphabet-letter {
+    font-size: 2.5rem;
+    margin: 1rem 0 0.5rem 0;
+  }
+}
+
+/* Chronological song list styles */
+.chronological-song-list {
+  margin-top: 2rem;
+}
+
+.month-section {
+  margin-bottom: 2.5rem;
+}
+
+.month-heading {
+  font-size: 2.5rem;
+  font-weight: 600;
+  color: var(--wp--preset--color--accent-2);
+  margin: 1.5rem 0 0.75rem 0;
+  padding: 0.75rem 0;
+  border-bottom: 2px solid var(--wp--preset--color--accent-2);
+  text-align: center;
+  line-height: 1.2;
+  scroll-margin-top: 2rem; /* For smooth scrolling to anchors */
+}
+
+.month-heading:first-child {
+  margin-top: 0;
+}
+
+/* Responsive month headings */
+@media (max-width: 768px) {
+  .month-heading {
+    font-size: 2rem;
+    margin: 1.25rem 0 0.5rem 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .month-heading {
+    font-size: 1.75rem;
+    margin: 1rem 0 0.5rem 0;
+  }
+}
+
+/* Cover songs list styles */
+.cover-songs-list {
+  margin-top: 2rem;
+}
+
+.artist-section {
+  margin-bottom: 2rem;
+}
+
+.artist-heading {
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--wp--preset--color--accent-2);
+  margin: 1.25rem 0 0.5rem 0;
+  padding: 0.5rem 0;
+  border-bottom: 2px solid var(--wp--preset--color--accent-2);
+  text-align: center;
+  line-height: 1.2;
+  scroll-margin-top: 2rem; /* For smooth scrolling to anchors */
+}
+
+.artist-heading:first-child {
+  margin-top: 0;
+}
+
+/* Responsive artist headings */
+@media (max-width: 768px) {
+  .artist-heading {
+    font-size: 1.75rem;
+    margin: 1rem 0 0.5rem 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .artist-heading {
+    font-size: 1.5rem;
+    margin: 0.75rem 0 0.5rem 0;
+  }
 }

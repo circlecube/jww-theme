@@ -1,0 +1,53 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "jww/latest-song",
+	"version": "1.0.0",
+	"title": "Latest Song",
+	"category": "media",
+	"icon": "format-audio",
+	"description": "Display the most recent song with its video embed.",
+	"keywords": [
+		"song",
+		"video",
+		"latest",
+		"youtube"
+	],
+	"textdomain": "jww-theme",
+	"editorScript": "file:../../build/index.js",
+	"editorStyle": "file:../../build/index.css",
+	"style": "file:../../build/style-index.css",
+	"render": "file:./render.php",
+	"supports": {
+		"align": [
+			"wide",
+			"full"
+		],
+		"spacing": {
+			"padding": true,
+			"margin": true
+		},
+		"typography": {
+			"fontSize": true,
+			"lineHeight": true
+		}
+	},
+	"attributes": {
+		"showTitle": {
+			"type": "boolean",
+			"default": true
+		},
+		"showVideo": {
+			"type": "boolean",
+			"default": true
+		},
+		"titleLevel": {
+			"type": "number",
+			"default": 2
+		},
+		"categories": {
+			"type": "array",
+			"default": []
+		}
+	}
+}

@@ -60,7 +60,7 @@
             },
             "width": "",
             "height": "",
-            "allow_in_bindings": 1
+            "allow_in_bindings": 0
         },
         {
             "key": "field_68cace34ebd2f",
@@ -99,5 +99,5 @@
     "active": true,
     "description": "",
     "show_in_rest": 0,
-    "modified": 1758247404
+    "modified": 1758826716
 }

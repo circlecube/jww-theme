@@ -1,0 +1,26 @@
+/* Editor-specific styles for Latest Song block */
+.wp-block-jww-latest-song {
+    border: 1px dashed #ccc;
+    padding: 1rem;
+    background: #f9f9f9;
+}
+
+.latest-song-preview h3 {
+    margin-top: 0;
+    color: #666;
+    font-size: 0.9em;
+}
+
+.preview-title {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.preview-video {
+    background: #e0e0e0;
+    padding: 1rem;
+    text-align: center;
+    border-radius: 4px;
+    color: #666;
+    font-style: italic;
+}

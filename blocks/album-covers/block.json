@@ -1,0 +1,65 @@
+{
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "jww/album-covers",
+    "version": "1.0.0",
+    "title": "Album Covers",
+    "category": "media",
+    "icon": "album",
+    "description": "Display album covers with filtering by release taxonomy.",
+    "keywords": [
+        "album",
+        "covers",
+        "music",
+        "release"
+    ],
+    "textdomain": "jww-theme",
+    "editorScript": "file:../../build/index.js",
+    "editorStyle": "file:../../build/index.css",
+    "style": "file:../../build/style-index.css",
+    "render": "file:./render.php",
+    "supports": {
+        "align": [
+            "wide",
+            "full"
+        ],
+        "spacing": {
+            "padding": true,
+            "margin": true
+        },
+        "typography": {
+            "fontSize": true,
+            "lineHeight": true
+        }
+    },
+    "attributes": {
+        "releases": {
+            "type": "array",
+            "default": []
+        },
+        "postsPerPage": {
+            "type": "number",
+            "default": -1
+        },
+        "orderBy": {
+            "type": "string",
+            "default": "date"
+        },
+        "order": {
+            "type": "string",
+            "default": "DESC"
+        },
+        "showTitle": {
+            "type": "boolean",
+            "default": true
+        },
+        "title": {
+            "type": "string",
+            "default": ""
+        },
+        "titleLevel": {
+            "type": "number",
+            "default": 2
+        }
+    }
+}

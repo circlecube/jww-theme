@@ -5,17 +5,29 @@
  * @package jww-theme
  */
 
-// Get albums from query var (set by parent template)
+// Get albums and title info from query vars (set by parent template or block)
 $albums = get_query_var('albums');
+$show_title = get_query_var('show_title', true);
+$title = get_query_var('title', '');
+$title_level = get_query_var('title_level', 3);
 
 if (!$albums) {
     echo '<p>Not yet released on an album.</p>';
     return;
 }
+
+// Determine the title text
+$title_text = !empty($title) ? $title : 'Appears on:';
 ?>
 
 <div class="album-covers-section">
-    <p><strong>Appears on:</strong></p>
+    <?php if ($show_title): ?>
+        <?php printf('<h%d class="album-covers-title"><strong>%s</strong></h%d>', 
+            $title_level, 
+            esc_html($title_text), 
+            $title_level
+        ); ?>
+    <?php endif; ?>
     
     <div class="album-covers">
         <?php 

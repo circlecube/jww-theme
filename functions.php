@@ -1,8 +1,12 @@
 <?php
-
+// Composer autoload
 require __DIR__ . '/vendor/autoload.php';
 
+// Theme updates
 require_once( get_stylesheet_directory() . '/includes/updates.php' );
+
+// YouTube Importer
+require_once( get_stylesheet_directory() . '/includes/class-youtube-importer.php' );
 
 /**
  * Enqueue styles - get parent theme styles first.
@@ -25,7 +29,7 @@ function jww_enqueue() {
 		'jww-style',
 		get_stylesheet_directory_uri() . '/style.css',
 		array( $parent_style ),
-		wp_get_theme()->get('Version')
+		wp_get_theme()->get('Version'),
 	);
 	
 	// wp_enqueue_script( 
@@ -53,49 +57,28 @@ function jww_theme_support() {
 	
 	// Add support for navigation menus
 	add_theme_support( 'menus' );
-	
-	// Register navigation menus
-	register_nav_menus( array(
-		'primary' => __( 'Primary Menu', 'jww-theme' ),
-		'footer'  => __( 'Footer Menu', 'jww-theme' ),
-	) );
+
+	// Add support for block template parts
+	add_theme_support( 'block-template-parts' );
 }
 add_action( 'after_setup_theme', 'jww_theme_support' );
 
 /**
- * Filter YouTube oembed URLs to add rel=0 and modestbranding=1 parameters
+ * Add ACF Options Page for YouTube Import Settings
  */
-function jww_filter_youtube_oembed( $html, $url, $attr ) {
-	// Check if it's a YouTube URL
-	if ( strpos( $url, 'youtube.com' ) !== false || strpos( $url, 'youtu.be' ) !== false ) {
-		// Add rel=0 to prevent related videos and modestbranding=1 to reduce YouTube branding
-		$params = array();
-		
-		// Handle rel parameter
-		if ( strpos( $url, 'rel=' ) === false ) {
-			$params[] = 'rel=0';
-		} else {
-			// Replace existing rel parameter
-			$url = preg_replace( '/rel=\d+/', 'rel=0', $url );
-		}
-		
-		// Handle modestbranding parameter
-		if ( strpos( $url, 'modestbranding=' ) === false ) {
-			$params[] = 'modestbranding=1';
-		} else {
-			// Replace existing modestbranding parameter
-			$url = preg_replace( '/modestbranding=\d+/', 'modestbranding=1', $url );
-		}
-		
-		// Add parameters to URL if any were added
-		if ( !empty( $params ) ) {
-			$url .= ( strpos( $url, '?' ) !== false ? '&' : '?' ) . implode( '&', $params );
-		}
-		
-		// Regenerate the oembed HTML with the modified URL
-		$html = wp_oembed_get( $url, $attr );
-	}
-	
-	return $html;
+if( function_exists('acf_add_options_page') ) {
+	acf_add_options_page(array(
+		'page_title'    => 'YouTube Import Settings',
+		'menu_title'    => 'YouTube Import',
+		'menu_slug'     => 'youtube-import-settings',
+		'capability'    => 'manage_options',
+	));
 }
-add_filter( 'oembed_result', 'jww_filter_youtube_oembed', 10, 3 );
+
+/**
+ * Include block registration files
+ */
+function jww_include_block_registrations() {
+	require_once get_stylesheet_directory() . '/blocks/index.php';
+}
+add_action('init', 'jww_include_block_registrations', 5);
