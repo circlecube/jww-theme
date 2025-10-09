@@ -8,6 +8,9 @@ require_once( get_stylesheet_directory() . '/includes/updates.php' );
 // YouTube Importer
 require_once( get_stylesheet_directory() . '/includes/class-youtube-importer.php' );
 
+// Link Functions (Music streaming and purchase links)
+require_once( get_stylesheet_directory() . '/includes/link-functions.php' );
+
 /**
  * Enqueue styles - get parent theme styles first.
  */
@@ -24,11 +27,19 @@ function jww_enqueue() {
 		wp_get_theme()->parent()->get('Version')
 	);
 	
+	// Enqueue Font Awesome
+	wp_enqueue_style( 
+		'font-awesome',
+		'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css',
+		array(),
+		'6.5.1'
+	);
+	
 	// Enqueue child theme styles
 	wp_enqueue_style( 
 		'jww-style',
 		get_stylesheet_directory_uri() . '/style.css',
-		array( $parent_style ),
+		array( $parent_style, 'font-awesome' ),
 		wp_get_theme()->get('Version'),
 	);
 	

@@ -7,7 +7,7 @@ Description: Child theme for the Twenty Twenty-Five block theme.
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.0
-Version: 1.1.0
+Version: 1.2.0
 License: GNU General Public License v2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Template: twentytwentyfive
@@ -42,37 +42,37 @@ Tags:
 }
 
 .album-covers-section p {
-  margin-bottom: var(--wp--preset--spacing--30);
   font-weight: 600;
+  margin-bottom: var(--wp--preset--spacing--30);
 }
 
 /* Album Covers Grid */
 .album-covers {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
   gap: var(--wp--preset--spacing--40);
+  grid-template-columns: repeat(3, 1fr);
   margin-top: var(--wp--preset--spacing--30);
 }
 
 /* Individual Album Item */
 .album {
+  align-items: flex-start;
+  background-color: var(--wp--preset--color--contrast);
+  border: 1px solid var(--wp--preset--color--accent-6);
+  border-radius: 3px;
+  color: var(--wp--preset--color--base);
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
   justify-content: start;
-  text-decoration: none;
-  color: var(--wp--preset--color--base);
-  transition: transform 0.2s ease;
-  border-radius: 3px;
   overflow: hidden;
-  border: 1px solid var(--wp--preset--color--accent-6);
-  background-color: var(--wp--preset--color--contrast);
-  text-align:center;
+  text-align: center;
+  text-decoration: none;
+  transition: transform 0.2s ease;
 }
 
 .album:hover {
-  text-decoration: none;
   color: inherit;
+  text-decoration: none;
 }
 
 .album > *  {
@@ -81,43 +81,43 @@ Tags:
 
 /* Album Cover Image */
 .album img {
-  width: 100%;
-  height: auto;
   aspect-ratio: 1;
-  object-fit: cover;
   display: block;
+  height: auto;
+  object-fit: cover;
+  width: 100%;
 }
 
 /* Album Title */
 .album-title {
-  margin: .5rem 0;
-  font-weight: 400;
-  line-height: 1.3;
   color: var(--wp--preset--color--base);
   font-size: var(--wp--preset--font-size--medium);
+  font-weight: 400;
+  line-height: 1.3;
+  margin: .5rem 0;
 }
 
 /* Album Date */
 .album-date {
-  display: block;
-  margin: 0 0 .5rem;
-  font-size: var(--wp--preset--font-size--small);
   color: var(--wp--preset--color--base);
+  display: block;
+  font-size: var(--wp--preset--font-size--small);
   font-weight: 400;
+  margin: 0 0 .5rem;
 }
 
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .album-covers {
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: var(--wp--preset--spacing--30);
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   }
 }
 
 @media (max-width: 480px) {
   .album-covers {
-    grid-template-columns: 1fr;
     gap: var(--wp--preset--spacing--20);
+    grid-template-columns: 1fr;
   }
 }
 
@@ -141,9 +141,9 @@ Tags:
 
 /* Song Title */
 .song-title {
-  margin: 0 0 var(--wp--preset--spacing--20) 0;
   font-size: var(--wp--preset--font-size--large);
   font-weight: 600;
+  margin: 0 0 var(--wp--preset--spacing--20) 0;
 }
 
 .song-title a {
@@ -163,14 +163,14 @@ Tags:
 }
 
 .video-link {
-  display: inline-block;
-  padding: var(--wp--preset--spacing--10) var(--wp--preset--spacing--20);
   background-color: var(--wp--preset--color--accent-3);
-  color: var(--wp--preset--color--base);
-  text-decoration: none;
   border-radius: 4px;
+  color: var(--wp--preset--color--base);
+  display: inline-block;
   font-size: var(--wp--preset--font-size--small);
   font-weight: 500;
+  padding: var(--wp--preset--spacing--10) var(--wp--preset--spacing--20);
+  text-decoration: none;
   transition: background-color 0.2s ease;
 }
 
@@ -182,19 +182,19 @@ Tags:
 
 /* Lyrics Preview */
 .song-lyrics-preview {
-  margin-bottom: var(--wp--preset--spacing--20);
   color: var(--wp--preset--color--accent-4);
   font-style: italic;
   line-height: 1.6;
+  margin-bottom: var(--wp--preset--spacing--20);
 }
 
 /* Song Meta */
 .song-meta {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  font-size: var(--wp--preset--font-size--small);
   color: var(--wp--preset--color--accent-4);
+  display: flex;
+  font-size: var(--wp--preset--font-size--small);
+  justify-content: space-between;
 }
 
 .song-date {
@@ -203,8 +203,8 @@ Tags:
 
 .read-more {
   color: var(--wp--preset--color--accent-4);
-  text-decoration: none;
   font-weight: 500;
+  text-decoration: none;
   transition: color 0.2s ease;
 }
 
@@ -216,8 +216,8 @@ Tags:
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .song-meta {
-    flex-direction: column;
     align-items: flex-start;
+    flex-direction: column;
     gap: var(--wp--preset--spacing--10);
   }
   
@@ -236,20 +236,20 @@ Tags:
 }
 
 .album-release-info {
+  color: var(--wp--preset--color--accent-4);
   display: flex;
   flex-wrap: wrap;
+  font-size: var(--wp--preset--font-size--small);
   gap: 0.2em;
   margin-bottom: var(--wp--preset--spacing--60);
-  color: var(--wp--preset--color--accent-4);
-  font-size: var(--wp--preset--font-size--small);
 }
 
 /* Album Cover and Tracks Layout */
 .album-content {
+  align-items: flex-start;
   display: flex;
   flex-wrap: wrap;
   gap: var(--wp--preset--spacing--40);
-  align-items: flex-start;
 }
 
 .album-cover {
@@ -258,11 +258,11 @@ Tags:
 }
 
 .album-cover img {
-  width: 100%;
-  height: auto;
   aspect-ratio: 1;
-  object-fit: cover;
   border-radius: 8px;
+  height: auto;
+  object-fit: cover;
+  width: 100%;
 }
 
 .album-tracks {
@@ -292,12 +292,12 @@ Tags:
 
 /* Albums Section Heading */
 .albums-section-heading {
+  color: var(--wp--preset--color--contrast);
   font-size: var(--wp--preset--font-size--small);
   font-weight: 700;
   letter-spacing: 1.4px;
-  text-transform: uppercase;
   margin-bottom: var(--wp--preset--spacing--40);
-  color: var(--wp--preset--color--contrast);
+  text-transform: uppercase;
 }
 
 /* Responsive Album Content */
@@ -307,8 +307,8 @@ Tags:
   }
   
   .album-cover {
-    max-width: 100%;
     align-self: center;
+    max-width: 100%;
   }
 } 
 
@@ -337,18 +337,18 @@ Tags:
 
 .nav-link-container {
   background-color: var(--wp--preset--color--contrast);
-  padding: var(--wp--preset--spacing--40);
   border-top: 1px solid var(--wp--preset--color--accent-6);
-  margin-top: var(--wp--preset--spacing--40);
   margin-bottom: 0;
+  margin-top: var(--wp--preset--spacing--40);
+  padding: var(--wp--preset--spacing--40);
 }
 
 .nav-link-container .nav-links {
-  width: 100%;
+  align-items: center;
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  align-items: center;
+  width: 100%;
 }
 
 .nav-links a {
@@ -382,8 +382,8 @@ Tags:
   margin: 0 0 1rem 0;
 }
 .song-list a {
-  text-decoration: none;
   color: var(--wp--preset--color--contrast);
+  text-decoration: none;
   transition: color 0.2s ease;
 }
 .song-list a:hover {
@@ -391,10 +391,10 @@ Tags:
   text-decoration: underline;
 }
 .song-meta {
-  font-size: var(--wp--preset--font-size--small);
-  font-weight: 400;
-  font-style: italic;
   display: inline-block;
+  font-size: var(--wp--preset--font-size--small);
+  font-style: italic;
+  font-weight: 400;
 }
 
 /* Alphabetical song list styles */
@@ -407,15 +407,15 @@ Tags:
 }
 
 .alphabet-letter {
+  border-bottom: 3px solid var(--wp--preset--color--accent-2);
+  color: var(--wp--preset--color--accent-2);
   font-size: 4rem;
   font-weight: 700;
-  color: var(--wp--preset--color--accent-2);
+  line-height: 1;
   margin: 2rem 0 1rem 0;
   padding: 1rem 0;
-  border-bottom: 3px solid var(--wp--preset--color--accent-2);
-  text-align: center;
-  line-height: 1;
   scroll-margin-top: 2rem; /* For smooth scrolling to anchors */
+  text-align: center;
 }
 
 .alphabet-letter:first-child {
@@ -447,15 +447,15 @@ Tags:
 }
 
 .month-heading {
+  border-bottom: 2px solid var(--wp--preset--color--accent-2);
+  color: var(--wp--preset--color--accent-2);
   font-size: 2.5rem;
   font-weight: 600;
-  color: var(--wp--preset--color--accent-2);
+  line-height: 1.2;
   margin: 1.5rem 0 0.75rem 0;
   padding: 0.75rem 0;
-  border-bottom: 2px solid var(--wp--preset--color--accent-2);
-  text-align: center;
-  line-height: 1.2;
   scroll-margin-top: 2rem; /* For smooth scrolling to anchors */
+  text-align: center;
 }
 
 .month-heading:first-child {
@@ -487,15 +487,15 @@ Tags:
 }
 
 .artist-heading {
+  border-bottom: 2px solid var(--wp--preset--color--accent-2);
+  color: var(--wp--preset--color--accent-2);
   font-size: 2rem;
   font-weight: 600;
-  color: var(--wp--preset--color--accent-2);
+  line-height: 1.2;
   margin: 1.25rem 0 0.5rem 0;
   padding: 0.5rem 0;
-  border-bottom: 2px solid var(--wp--preset--color--accent-2);
-  text-align: center;
-  line-height: 1.2;
   scroll-margin-top: 2rem; /* For smooth scrolling to anchors */
+  text-align: center;
 }
 
 .artist-heading:first-child {
@@ -514,5 +514,194 @@ Tags:
   .artist-heading {
     font-size: 1.5rem;
     margin: 0.75rem 0 0.5rem 0;
+  }
+}
+
+/* ==========================================================================
+   Amazon Purchase Links
+   ========================================================================== */
+
+.album-purchase-links {
+  margin: var(--wp--preset--spacing--30) 0;
+}
+
+.amazon-link {
+  align-items: center;
+  background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(255, 149, 0, 0.3);
+  color: white;
+  display: inline-flex;
+  font-size: 0.95rem;
+  font-weight: 600;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.amazon-link:hover {
+  background: linear-gradient(135deg, #e6850e 0%, #e55a00 100%);
+  box-shadow: 0 4px 12px rgba(255, 149, 0, 0.4);
+  color: white;
+  text-decoration: none;
+  transform: translateY(-2px);
+}
+
+.amazon-link:focus {
+  outline: 2px solid #ff9500;
+  outline-offset: 2px;
+}
+
+.amazon-icon {
+  font-size: 1.1rem;
+}
+
+/* Responsive Amazon link */
+@media (max-width: 768px) {
+  .amazon-link {
+    font-size: 0.9rem;
+    padding: 0.625rem 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .amazon-link {
+    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
+  }
+}
+
+/* ==========================================================================
+   Music Service Links
+   ========================================================================== */
+
+.music-service-links {
+  box-sizing: border-box;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  margin: var(--wp--preset--spacing--30) 0;
+}
+
+.music-service-link {
+  align-items: center;
+  background: var(--service-color, #666);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
+  color: white;
+  display: inline-flex;
+  font-size: 0.9rem;
+  font-weight: 600;
+  gap: 0.5rem;
+  justify-content: center;
+  padding: 0.75rem 0.5rem;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.music-service-link:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  color: white;
+  text-decoration: none;
+  transform: translateY(-2px);
+}
+
+.music-service-link:focus {
+  outline: 2px solid var(--service-color, #666);
+  outline-offset: 2px;
+}
+
+.music-service-link i {
+  font-size: 1.1rem;
+}
+
+.service-name {
+  font-size: 0.85rem;
+}
+
+/* Individual service color overrides */
+.music-service-link--amazon {
+  background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%);
+}
+
+.music-service-link--apple_music {
+  background: linear-gradient(135deg, #fa243c 0%, #d70022 100%);
+}
+
+.music-service-link--spotify {
+  background: linear-gradient(135deg, #1db954 0%, #1ed760 100%);
+}
+
+.music-service-link--tidal {
+  background: linear-gradient(135deg, #00ffff 0%, #00cccc 100%);
+  color: #000;
+}
+
+.music-service-link--qobuz {
+  background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+}
+
+.music-service-link--deezer {
+  background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+}
+
+.music-service-link--bandcamp {
+  background: linear-gradient(135deg, #629aa0 0%, #4a7c7e 100%);
+}
+
+.music-service-link--youtube_music {
+  background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+}
+
+.music-service-link--soundcloud {
+  background: linear-gradient(135deg, #ff5500 0%, #ff3300 100%);
+}
+
+.music-service-link--pandora {
+  background: linear-gradient(135deg, #224099 0%, #1a3371 100%);
+}
+
+.music-service-link--iheartradio {
+  background: linear-gradient(135deg, #c6002b 0%, #a00022 100%);
+}
+
+.music-service-link--lastfm {
+  background: linear-gradient(135deg, #d51007 0%, #b00e06 100%);
+}
+
+/* Responsive music service links */
+@media (max-width: 768px) {
+  .music-service-links {
+    gap: 0.5rem;
+  }
+  
+  .music-service-link {
+    font-size: 0.85rem;
+    min-width: 100px;
+    padding: 0.625rem 0.875rem;
+  }
+  
+  .service-name {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .music-service-links {
+    gap: 0.375rem;
+  }
+  
+  .music-service-link {
+    font-size: 0.8rem;
+    justify-content: center;
+    min-width: 40px;
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .service-name {
+    display: none; /* Hide text on very small screens, show only icons */
   }
 }

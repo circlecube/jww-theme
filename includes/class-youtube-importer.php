@@ -81,6 +81,9 @@ class YouTube_Song_Importer {
             return;
         }
 
+        // First, process existing posts that need thumbnails
+        $this->process_existing_posts_for_thumbnails();
+
         include_once ABSPATH . WPINC . '/feed.php';
         
         $feed_url = get_field( 'youtube_feed_url', 'option' );
@@ -149,12 +152,78 @@ class YouTube_Song_Importer {
             // Try setting thumbnail as featured image
             $this->set_featured_image_from_youtube( $post_id, $video_url, $video_title );
 
+            // Mark as imported
+            update_post_meta( $post_id, 'imported', '1' );
+
             $imported_count++;
             $this->log_import_activity( 'Successfully imported: ' . $video_title . ' (ID: ' . $post_id . ')' );
             $items_processed++;
         }
 
         $this->log_import_activity( 'Import completed. Processed: ' . $items_processed . ', Imported: ' . $imported_count );
+    }
+
+    /**
+     * Process existing song posts to add thumbnails if missing
+     * This runs before importing new videos to ensure existing posts have thumbnails
+     */
+    private function process_existing_posts_for_thumbnails() {
+        $this->log_import_activity( 'Processing existing posts for missing thumbnails...' );
+
+        // Get all song posts that have video URLs but no featured image and haven't been processed yet
+        $posts = get_posts( [
+            'post_type'      => 'song',
+            'posts_per_page' => 50, // Process in batches to prevent timeouts
+            'meta_query'     => [
+                'relation' => 'AND',
+                [
+                    'key'     => 'field_68cb1e19f3fe2', // ACF field key for 'video' field
+                    'compare' => 'EXISTS'
+                ],
+                [
+                    'key'     => 'imported',
+                    'compare' => 'NOT EXISTS'
+                ]
+            ]
+        ] );
+
+        $processed_count = 0;
+        $thumbnail_added_count = 0;
+
+        foreach ( $posts as $post ) {
+            // Skip if already has featured image
+            if ( has_post_thumbnail( $post->ID ) ) {
+                // Mark as imported even if it already has a thumbnail
+                update_post_meta( $post->ID, 'imported', '1' );
+                $processed_count++;
+                continue;
+            }
+
+            $video_url = get_field( 'video', $post->ID );
+            if ( ! $video_url ) {
+                // Mark as imported even if no video URL (to avoid checking again)
+                update_post_meta( $post->ID, 'imported', '1' );
+                $processed_count++;
+                continue;
+            }
+
+            // Extract video ID and add it if missing
+            $video_id = $this->extract_video_id_from_url( $video_url );
+            if ( $video_id && ! get_post_meta( $post->ID, 'video_id', true ) ) {
+                update_post_meta( $post->ID, 'video_id', $video_id );
+            }
+
+            // Try to add thumbnail
+            $this->set_featured_image_from_youtube( $post->ID, $video_url, get_the_title( $post->ID ) );
+            
+            // Mark as imported
+            update_post_meta( $post->ID, 'imported', '1' );
+            
+            $processed_count++;
+            $thumbnail_added_count++;
+        }
+
+        $this->log_import_activity( "Processed {$processed_count} existing posts, added thumbnails to {$thumbnail_added_count} posts" );
     }
 
     /**

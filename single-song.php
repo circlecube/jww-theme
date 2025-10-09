@@ -28,6 +28,54 @@ get_header();
 				</div>
 			</div>
 		<?php endif; ?>
+		
+		<?php
+		// Get song and artist info for music service links
+		$song_title = get_the_title();
+		$album = get_field('album');
+		$album_title = '';
+		$artist_name = '';
+		
+		// Get album title if available
+		if ($album) {
+			// Handle different return formats from ACF relationship field
+			if (is_array($album)) {
+				// If it returns an array (multiple selections or object format)
+				$album_id = is_object($album[0]) ? $album[0]->ID : $album[0];
+				$album_title = get_the_title($album_id);
+				
+				// Get artist from album
+				$artist = get_field('artist', $album_id);
+				if ($artist) {
+					$artist_id = is_object($artist) ? $artist->ID : $artist;
+					$artist_name = get_the_title($artist_id);
+				}
+			} else {
+				// If it returns a single ID or post object
+				$album_id = is_object($album) ? $album->ID : $album;
+				$album_title = get_the_title($album_id);
+				
+				// Get artist from album
+				$artist = get_field('artist', $album_id);
+				if ($artist) {
+					$artist_id = is_object($artist) ? $artist->ID : $artist;
+					$artist_name = get_the_title($artist_id);
+				}
+			}
+		}
+		
+		// Filter out common default WordPress titles for both album and artist
+		$default_titles = array('Hello world!', 'Hello World', 'Sample Page', 'Sample Post', 'Uncategorized');
+		if (in_array($album_title, $default_titles)) {
+			$album_title = '';
+		}
+		if (in_array($artist_name, $default_titles)) {
+			$artist_name = '';
+		}
+		
+		// Generate all music service links for the song
+		echo get_song_music_service_links($song_title, $artist_name, $album_title);
+		?>
 	</div>
 </main>
 

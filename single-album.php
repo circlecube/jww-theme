@@ -44,7 +44,15 @@ get_header();
 			</div>
 		</div>
 		
-		<div class="wp-block-post-content alignfull">
+		<div class="wp-block-post-content alignfull is-layout-constrained ">
+			<h4>Find it</h4>
+			<?php
+			// Get album and artist info for music service links
+			$album_title = get_the_title();
+			// Generate all music service links
+			echo get_all_music_service_links($album_title, ARTIST_NAME, 'album');
+			?>
+
 			<?php the_content(); ?>
 		</div>
 		

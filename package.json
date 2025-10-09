@@ -1,6 +1,6 @@
 {
     "name": "jww-theme",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "Jesse Welles World WordPress Theme",
     "main": "index.js",
     "scripts": {
