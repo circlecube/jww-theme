@@ -46,8 +46,44 @@
         },
         {
             "key": "field_68cb1e19f3fe2",
-            "label": "Video",
+            "label": "YouTube Video",
             "name": "video",
+            "aria-label": "",
+            "type": "oembed",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "width": "",
+            "height": "",
+            "allow_in_bindings": 0
+        },
+        {
+            "key": "field_68ee7c26f2346",
+            "label": "Tiktok Video",
+            "name": "tiktok_video",
+            "aria-label": "",
+            "type": "oembed",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "width": "",
+            "height": "",
+            "allow_in_bindings": 0
+        },
+        {
+            "key": "field_68ee7c37f2347",
+            "label": "Instagram Video",
+            "name": "instagram_video",
             "aria-label": "",
             "type": "oembed",
             "instructions": "",
@@ -99,5 +135,6 @@
     "active": true,
     "description": "",
     "show_in_rest": 0,
-    "modified": 1758826716
+    "display_title": "",
+    "modified": 1760475889
 }

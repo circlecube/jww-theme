@@ -32,8 +32,8 @@ if (empty($latest_song)) {
 
 $song = $latest_song[0];
 $song_id = $song->ID;
-$song_title = $song->post_title;
 $video_embed = get_field('video', $song_id);
+$song_title = $song->post_title ?? '';
 
 // Build the output
 $output = '<div class="wp-block-jww-latest-song">';

@@ -93,3 +93,41 @@ function jww_include_block_registrations() {
 	require_once get_stylesheet_directory() . '/blocks/index.php';
 }
 add_action('init', 'jww_include_block_registrations', 5);
+
+/**
+ * Theme Upgrade Handler
+ * 
+ * Handles upgrade routines when the theme is updated.
+ * Uses wp-forge/wp-upgrade-handler for proper version management.
+ */
+function jww_handle_theme_upgrades() {
+	// Only run upgrades in admin
+	if ( ! is_admin() ) {
+		return;
+	}
+	
+	// Define current theme version
+	$current_version = wp_get_theme()->get('Version');
+	
+	// Get the stored theme version from database
+	$stored_version = get_option( 'jww_theme_version', '1.1.9' );
+	
+	// Use the upgrade handler
+	$upgrade_handler = new \WP_Forge\UpgradeHandler\UpgradeHandler(
+		get_stylesheet_directory() . '/upgrades',  // Directory where upgrade routines live
+		$stored_version,                           // Old theme version (from database)
+		$current_version                           // New theme version (from code)
+	);
+	
+	// Run upgrades if needed
+	$did_upgrade = $upgrade_handler->maybe_upgrade();
+	
+	if ( $did_upgrade ) {
+		// Update the stored version to prevent running upgrades again
+		update_option( 'jww_theme_version', $current_version, true );
+		
+		// Log that upgrades were completed
+		error_log( "Theme upgraded from {$stored_version} to {$current_version}" );
+	}
+}
+add_action( 'admin_init', 'jww_handle_theme_upgrades' );

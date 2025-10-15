@@ -38,10 +38,10 @@ $albums_query = new WP_Query($query_args);
 $albums = $albums_query->posts;
 
 // Set the albums and title info in query vars for the template part
-set_query_var('albums', $albums);
-set_query_var('show_title', $show_title);
-set_query_var('title', $title);
-set_query_var('title_level', $title_level);
+set_query_var('albums', $albums ?? []);
+set_query_var('show_title', $show_title ?? true);
+set_query_var('title', $title ?? '');
+set_query_var('title_level', $title_level ?? 2);
 
 // Load the template part
 get_template_part('template-parts/album-covers');

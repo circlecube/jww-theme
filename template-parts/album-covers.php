@@ -6,10 +6,10 @@
  */
 
 // Get albums and title info from query vars (set by parent template or block)
-$albums = get_query_var('albums');
-$show_title = get_query_var('show_title', true);
-$title = get_query_var('title', '');
-$title_level = get_query_var('title_level', 3);
+$albums      = get_query_var('albums') ?? [];
+$show_title  = get_query_var('show_title', true) ?? true;
+$title       = get_query_var('title', '') ?? '';
+$title_level = get_query_var('title_level', 3) ?? 3;
 
 if (!$albums) {
     echo '<p>Not yet released on an album.</p>';
@@ -35,11 +35,10 @@ $title_text = !empty($title) ? $title : 'Appears on:';
         $albums_array = is_array($albums) ? $albums : [$albums];
         foreach ($albums_array as $album): 
             // Handle both post objects and IDs
-            $album_id = is_object($album) ? $album->ID : $album;
-            
-            $album_title = get_the_title($album_id);
-            $album_url = get_permalink($album_id);
-            $album_cover = get_the_post_thumbnail($album_id, 'medium');
+            $album_id    = is_object($album) ? $album->ID : $album;
+            $album_title = get_the_title($album_id) ?? '';
+            $album_url   = get_permalink($album_id) ?? '';
+            $album_cover = get_the_post_thumbnail($album_id, 'medium') ?? '';
             ?>
             <a
                 class="album"

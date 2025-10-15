@@ -149,7 +149,7 @@ get_header();
 		'post_type'      => 'song',
 		'posts_per_page' => -1,
 		'orderby'        => 'meta_value',
-		'meta_key'       => 'attibution',
+		'meta_key'       => 'attribution',
 		'order'          => 'ASC',
 		'tax_query'      => array(
 			array(
@@ -167,7 +167,7 @@ get_header();
 		<?php
 		while ($song_query->have_posts()) {
 			$song_query->the_post();
-			$attribution = get_field('attibution');
+			$attribution = get_field('attribution');
 			$artist_name = $attribution ? $attribution : 'Unknown Artist';
 			
 			// Check if we need to add a new artist header
@@ -190,7 +190,7 @@ get_header();
                 <h4 class="wp-block-heading">
                     <a href="<?php the_permalink(); ?>">
                         <?php the_title(); ?>
-						<!-- <span class="song-meta song-attribution">(<?php the_field('attibution'); ?>)</span> -->
+						<!-- <span class="song-meta song-attribution">(<?php the_field('attribution'); ?>)</span> -->
                     </a>
                 </h4>
             </li>

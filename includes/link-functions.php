@@ -105,7 +105,7 @@ function get_amazon_album_search_url($album_title, $artist_name = ARTIST_NAME, $
     $encoded_query = encode_search_query($query);
     
     // Amazon search URL with affiliate tag
-    return "https://www.{$amazon_domain}/s?k={$encoded_query}&i=music&tag=".AMAZON_AFFILIATE_TAG;
+    return "https://www.{$amazon_domain}/s?k={$encoded_query}&tag=".AMAZON_AFFILIATE_TAG;
 }
 
 /**

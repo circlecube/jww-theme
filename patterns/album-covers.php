@@ -8,7 +8,7 @@
  */
 
 // Get albums from query var (set by parent template)
-$albums = get_query_var('albums');
+$albums = get_query_var('albums') ?? [];
 
 if (!$albums) {
     echo '<!-- wp:paragraph -->
@@ -30,10 +30,10 @@ $albums_array = is_array($albums) ? $albums : [$albums];
     <div class="wp-block-group album-covers">
         <?php foreach ($albums_array as $album): 
             $album_id = is_object($album) ? $album->ID : $album;
-            $album_title = get_the_title($album_id);
-            $album_url = get_permalink($album_id);
-            $album_cover = get_the_post_thumbnail($album_id, 'medium');
-            $album_date = get_field('release_date', $album_id);
+            $album_title = get_the_title($album_id) ?? '';
+            $album_url = get_permalink($album_id) ?? '';
+            $album_cover = get_the_post_thumbnail($album_id, 'medium') ?? '';
+            $album_date = function_exists('get_field') ? (get_field('release_date', $album_id) ?? '') : '';
         ?>
         <!-- wp:group {"className":"album","layout":{"type":"constrained"}} -->
         <div class="wp-block-group album">

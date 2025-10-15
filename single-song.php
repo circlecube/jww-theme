@@ -14,67 +14,73 @@ get_header();
 		
 		<?php the_title('<h1 class="wp-block-post-title alignwide has-text-align-center has-xxx-large-font-size">', '</h1>'); ?>
 		
+		<?php
+			$attribution = get_field( 'attribution' );
+			if ( $attribution ): ?>
+			<div class="wp-block-post-content">
+				<h2 class="wp-block-heading has-text-align-center has-large-font-size">Jesse Welles performing song by <strong><em><?php echo $attribution; ?></em></strong></h2>
+			</div>
+		<?php endif; ?>
+		
 		<div class="wp-block-post-content">
 			<?php the_content(); ?>
 		</div>
 		
 		<?php
 		// Video field
-		$video_embed = get_field('video');
-		if ($video_embed): ?>
+		$yt_video_embed        = get_field('video');
+		$tiktok_video_embed    = get_field('tiktok_video');
+		$instagram_video_embed = get_field('instagram_video');
+		
+		if ( $yt_video_embed ): ?>
 			<div class="wp-block-group alignwide video-section">
 				<div class="video-container has-text-align-center">
-					<?php echo $video_embed; ?>
+					<?php echo $yt_video_embed; ?>
+				</div>
+			</div>
+		<?php elseif ( $tiktok_video_embed ): ?>
+			<div class="wp-block-group alignwide tiktok-video-section">
+				<div class="tiktok-video-container has-text-align-center">
+					<?php echo $tiktok_video_embed; ?>
+				</div>
+			</div>
+		<?php elseif ( $instagram_video_embed ): ?>
+			<div class="wp-block-group alignwide instagram-video-section">
+				<div class="instagram-video-container has-text-align-center">
+					<?php
+					// extract url from instagram_video_embed
+					$instagram_video_url = get_field( 'instagram_video', false, false );
+					?>
+					<blockquote
+						class="instagram-media"
+						data-instgrm-permalink="<?php echo $instagram_video_url; ?>"
+						data-instgrm-version="14"
+						style="
+							background:#FFF;
+							border:0;
+							border-radius:3px;
+							box-shadow:0 0 1px 0 rgba(0,0,0,0.5),0 1px 10px 0 rgba(0,0,0,0.15);
+							margin: 1px;
+							max-width:540px;
+							min-width:326px;
+							padding:0;
+							width:calc(100% - 2px);
+						"
+					>
+					</blockquote>
+					<script async src="//www.instagram.com/embed.js"></script>
 				</div>
 			</div>
 		<?php endif; ?>
 		
 		<?php
+		// $music_video_embed = get_field('music_video');
 		// Get song and artist info for music service links
-		$song_title = get_the_title();
-		$album = get_field('album');
-		$album_title = '';
-		$artist_name = '';
-		
-		// Get album title if available
-		if ($album) {
-			// Handle different return formats from ACF relationship field
-			if (is_array($album)) {
-				// If it returns an array (multiple selections or object format)
-				$album_id = is_object($album[0]) ? $album[0]->ID : $album[0];
-				$album_title = get_the_title($album_id);
-				
-				// Get artist from album
-				$artist = get_field('artist', $album_id);
-				if ($artist) {
-					$artist_id = is_object($artist) ? $artist->ID : $artist;
-					$artist_name = get_the_title($artist_id);
-				}
-			} else {
-				// If it returns a single ID or post object
-				$album_id = is_object($album) ? $album->ID : $album;
-				$album_title = get_the_title($album_id);
-				
-				// Get artist from album
-				$artist = get_field('artist', $album_id);
-				if ($artist) {
-					$artist_id = is_object($artist) ? $artist->ID : $artist;
-					$artist_name = get_the_title($artist_id);
-				}
-			}
-		}
-		
-		// Filter out common default WordPress titles for both album and artist
-		$default_titles = array('Hello world!', 'Hello World', 'Sample Page', 'Sample Post', 'Uncategorized');
-		if (in_array($album_title, $default_titles)) {
-			$album_title = '';
-		}
-		if (in_array($artist_name, $default_titles)) {
-			$artist_name = '';
-		}
+		$song_title = get_the_title() ?? '';
+		$artist_name = get_field('artist') ?? '';
 		
 		// Generate all music service links for the song
-		echo get_song_music_service_links($song_title, $artist_name, $album_title);
+		echo get_song_music_service_links($song_title, $artist_name);
 		?>
 	</div>
 </main>

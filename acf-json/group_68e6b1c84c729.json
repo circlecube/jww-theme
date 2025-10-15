@@ -70,6 +70,24 @@
             "default_value": "",
             "allow_in_bindings": 0,
             "placeholder": ""
+        },
+        {
+            "key": "field_youtube_import_logs",
+            "label": "Import Logs",
+            "name": "youtube_import_logs",
+            "aria-label": "",
+            "type": "message",
+            "instructions": "Recent YouTube import activity logs. Use the buttons below to refresh or clear logs.",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": "youtube-logs-container"
+            },
+            "message": "<div id='youtube-logs-content'>Loading logs...</div><div style='margin-top: 10px;'><button type='button' id='refresh-logs' class='button button-secondary'>Refresh Logs</button> <button type='button' id='clear-logs' class='button button-secondary'>Clear Logs</button></div>",
+            "new_lines": "",
+            "esc_html": 0
         }
     ],
     "location": [
