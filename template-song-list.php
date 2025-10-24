@@ -16,8 +16,9 @@ get_header();
 
 <main class="wp-block-group is-layout-flow wp-block-group-is-layout-flow song-list-tempalte is-layout-constrained">
 	<div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--60)">
-		<h1 class="wp-block-heading">Original Songs</h1>
-		<h2 class="wp-block-heading">Alphabetical</h2>
+		<?php jww_song_list_nav(); ?>
+
+		<h2 class="wp-block-heading song-list-heading" id="alphabetical" name="alphabetical">Alphabetical</h2>
 	<?php
 	$song_query = new WP_Query(array(
 		'post_type'      => 'song',
@@ -79,7 +80,9 @@ get_header();
 	}
 	wp_reset_postdata();
 	?>
-	<h2 class="wp-block-heading">Chronological</h2>
+	
+	<?php jww_song_list_nav(); ?>
+	<h2 class="wp-block-heading song-list-heading" id="chronological" name="chronological">Chronological</h2>
 	<?php
 	$song_query = new WP_Query(array(
 		'post_type'      => 'song',
@@ -98,6 +101,7 @@ get_header();
 	if ($song_query->have_posts()) { 
 		$current_month = '';
 		?>
+		
 		<div class="chronological-song-list">
 		<?php
 		while ($song_query->have_posts()) {
@@ -143,7 +147,8 @@ get_header();
 	wp_reset_postdata();
 	?>
 
-	<h2 class="wp-block-heading">Cover Songs</h2>
+	<?php jww_song_list_nav(); ?>
+	<h2 class="wp-block-heading song-list-heading" id="covers" name="covers">Cover Songs</h2>
 	<?php
 	$song_query = new WP_Query(array(
 		'post_type'      => 'song',

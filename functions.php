@@ -11,6 +11,9 @@ require_once( get_stylesheet_directory() . '/includes/class-youtube-importer.php
 // Link Functions (Music streaming and purchase links)
 require_once( get_stylesheet_directory() . '/includes/link-functions.php' );
 
+// Template Tags
+require_once( get_stylesheet_directory() . '/includes/template-tags.php' );
+
 /**
  * Enqueue styles - get parent theme styles first.
  */
