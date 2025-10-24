@@ -38,13 +38,15 @@ get_header();
 					<?php echo $yt_video_embed; ?>
 				</div>
 			</div>
-		<?php elseif ( $tiktok_video_embed ): ?>
+		<?php endif; ?>
+		<?php if ( $tiktok_video_embed ): ?>
 			<div class="wp-block-group alignwide tiktok-video-section">
 				<div class="tiktok-video-container has-text-align-center">
 					<?php echo $tiktok_video_embed; ?>
 				</div>
 			</div>
-		<?php elseif ( $instagram_video_embed ): ?>
+		<?php endif; ?>
+		<?php if ( $instagram_video_embed ): ?>
 			<div class="wp-block-group alignwide instagram-video-section">
 				<div class="instagram-video-container has-text-align-center">
 					<?php
