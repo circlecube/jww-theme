@@ -1,0 +1,46 @@
+{
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "jww/day-counter",
+    "version": "1.0.0",
+    "title": "Day Counter",
+    "category": "widgets",
+    "icon": "clock",
+    "description": "Display the number of days since Jesse's latest song was published.",
+    "keywords": [
+        "counter",
+        "days",
+        "song",
+        "latest",
+        "timer"
+    ],
+    "textdomain": "jww-theme",
+    "editorScript": "file:../../build/index.js",
+    "editorStyle": "file:../../build/index.css",
+    "style": "file:../../build/style-index.css",
+    "render": "file:./render.php",
+    "supports": {
+        "align": [
+            "wide",
+            "full"
+        ],
+        "spacing": {
+            "padding": true,
+            "margin": true
+        },
+        "typography": {
+            "fontSize": true,
+            "lineHeight": true
+        }
+    },
+    "attributes": {
+        "customText": {
+            "type": "string",
+            "default": "Days since Jesse's latest song."
+        },
+        "showEmoji": {
+            "type": "boolean",
+            "default": true
+        }
+    }
+}

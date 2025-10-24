@@ -1,0 +1,38 @@
+// Editor styles for Day Counter block
+.wp-block-jww-day-counter {
+    .day-counter-preview {
+        padding: 20px;
+        border: 2px dashed #ccc;
+        border-radius: 8px;
+        background: #f9f9f9;
+        text-align: center;
+
+        h3 {
+            margin-top: 0;
+            color: #666;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .preview-content {
+            .day-count {
+                font-size: 2.5em;
+                font-weight: bold;
+                color: #333;
+                margin-bottom: 10px;
+
+                .emoji {
+                    margin-left: 8px;
+                    font-size: 0.8em;
+                }
+            }
+
+            .counter-text {
+                font-size: 1.2em;
+                color: #666;
+                font-style: italic;
+            }
+        }
+    }
+}

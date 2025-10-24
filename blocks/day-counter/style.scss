@@ -1,0 +1,42 @@
+// Frontend styles for Day Counter block
+.wp-block-jww-day-counter {
+    text-align: center;
+    padding: 20px;
+
+    .day-counter-content {
+        display: inline-block;
+
+        .day-count {
+            font-size: 3em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            line-height: 1;
+
+            .emoji {
+                margin-left: 8px;
+                font-size: 0.8em;
+            }
+        }
+
+        .counter-text {
+            font-size: 1.3em;
+            color: #666;
+            font-style: italic;
+            margin-top: 10px;
+        }
+    }
+
+    // Responsive adjustments
+    @media (max-width: 768px) {
+        .day-counter-content {
+            .day-count {
+                font-size: 2.5em;
+            }
+
+            .counter-text {
+                font-size: 1.1em;
+            }
+        }
+    }
+}

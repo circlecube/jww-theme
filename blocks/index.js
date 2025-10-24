@@ -4,3 +4,6 @@ import './latest-song';
 
 // Import album-covers block
 import './album-covers';
+
+// Import day-counter block
+import './day-counter';
