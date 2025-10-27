@@ -85,7 +85,7 @@
                 "class": "",
                 "id": "youtube-logs-container"
             },
-            "message": "<div id='youtube-logs-content'>Loading logs...</div><div style='margin-top: 10px;'><button type='button' id='refresh-logs' class='button button-secondary'>Refresh Logs</button> <button type='button' id='clear-logs' class='button button-secondary'>Clear Logs</button></div>",
+            "message": "<div id='youtube-logs-content'>Loading logs...</div><div style='margin-top: 10px;'><button type='button' id='refresh-logs' class='button button-secondary'>Refresh Logs</button> <button type='button' id='clear-logs' class='button button-secondary'>Clear Logs</button> <button type='button' id='bulk-update-thumbnails' class='button button-primary'>Bulk Update Thumbnails</button></div>",
             "new_lines": "",
             "esc_html": 0
         }

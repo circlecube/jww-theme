@@ -1,0 +1,180 @@
+/* Random Lyrics Block - Frontend Styles */
+
+.wp-block-jww-theme-random-lyrics {
+    margin: 2rem 0;
+    padding: 2rem;
+    background: linear-gradient(165deg, #f8f9fa 40%, #e9ecef 100%);
+    border-radius: 3px;
+    border-left: 1px solid var(--wp--preset--color--accent-4);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.random-lyrics-quote {
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    position: relative;
+}
+
+.random-lyrics-text {
+    font-size: clamp(2rem, 2.5vw, 3rem);
+    font-style: italic;
+    line-height: 1.33;
+    margin: 0 0 1rem 0;
+    color: var(--wp--preset--color--accent-3);
+    font-family: var(--wp--preset--font-family--roboto-slab, serif);
+    text-align: center;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+.random-lyrics-text::before,
+.random-lyrics-text::after {
+    content: '“';
+    font-size: 3em;
+    color: var(--wp--preset--color--accent-4);
+    top: -2rem;
+    font-family: serif;
+}
+
+.random-lyrics-text::after {
+    content: '”';
+}
+
+.random-lyrics-attribution {
+    display: block;
+    margin-top: 1.5rem;
+    font-size: 0.95rem;
+    color: var(--wp--preset--color--base);
+    text-align: center;
+    font-weight: 500;
+}
+
+.random-lyrics-artist {
+    font-style: normal;
+    font-weight: 600;
+    color: var(--wp--preset--color--accent-4);
+    font-family: var(--wp--preset--font-family--roboto-slab, serif);
+}
+
+.random-lyrics-song {
+    color: var(--wp--preset--color--accent-4);
+    font-style: italic;
+    margin-left: 0.5rem;
+}
+
+.random-lyrics-controls {
+    margin-top: 2rem;
+    text-align: center;
+}
+
+.random-lyrics-refresh-btn {
+    background: var(--wp--preset--color--accent-4, #0073aa);
+    color: white;
+    border: none;
+    padding: .5rem 1rem;
+    cursor: pointer;
+    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    transform: translateY(0);
+    transition: all 0.3s ease;
+    border-radius: 6px 0 3px 0;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+}
+
+.random-lyrics-refresh-btn .refresh-text {
+    display: none;
+}
+
+.refresh-icon {
+    font-size: 1.5rem;
+    transition: transform 0.3s ease;
+}
+
+.random-lyrics-loading {
+    text-align: center;
+    color: var(--wp--preset--color--base, #666);
+    font-style: italic;
+    opacity: 0.7;
+    min-height: 120px;
+}
+
+.random-lyrics-placeholder {
+    text-align: center;
+    color: var(--wp--preset--color--base, #999);
+    font-style: italic;
+    padding: 2rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 2px dashed #dee2e6;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .wp-block-jww-theme-random-lyrics {
+        margin: 1.5rem 0;
+        padding: 1.5rem;
+    }
+
+    .random-lyrics-text {
+        font-size: 1.1rem;
+        line-height: 1.6;
+    }
+
+    .random-lyrics-text::before,
+    .random-lyrics-text::after {
+        font-size: 2em;
+    }
+
+    .random-lyrics-text::before {
+        left: -1rem;
+        top: -0.3rem;
+    }
+
+    .random-lyrics-text::after {
+        right: -1rem;
+        bottom: -0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .wp-block-jww-theme-random-lyrics {
+        margin: 1rem 0;
+        padding: 1rem;
+    }
+
+    .random-lyrics-text {
+        font-size: 1rem;
+    }
+
+    .random-lyrics-text::before,
+    .random-lyrics-text::after {
+        font-size: 1.5em;
+    }
+
+    .random-lyrics-refresh-btn {
+        padding: 10px 20px;
+        font-size: 13px;
+    }
+}
+
+/* Block alignment styles */
+.wp-block-jww-theme-random-lyrics.alignwide {
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.wp-block-jww-theme-random-lyrics.alignfull {
+    max-width: none;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+    width: 100vw;
+}

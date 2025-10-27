@@ -50,9 +50,14 @@ if ($show_title && $song_title) {
 
 // Show video if enabled and available
 if ($show_video && $video_embed) {
+    $output .= '<div class="latest-song-block">';
+    $output .= '<h2 class="wp-block-heading">Latest Song</h2>';
+    $output .= '<p class="wp-block-paragraph">New songs posted frequently — as best as we can keep up with Jesse’s pace.</p>';
+    // song title and link to song post
+    $output .= '<h3 class="wp-block-heading"><a href="' . get_the_permalink($song_id) . '">' . esc_html($song_title) . '</a></h3>';
     $output .= '<div class="latest-song-video">';
     $output .= $video_embed; // ACF oembed field already outputs safe HTML
-    $output .= '</div>';
+    $output .= '</div></div>';
 } elseif ($show_video) {
     $output .= '<p class="latest-song-no-video">No video available for this song.</p>';
 }

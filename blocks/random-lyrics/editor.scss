@@ -1,0 +1,130 @@
+/* Random Lyrics Block - Editor Styles */
+
+.random-lyrics-editor-preview {
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    padding: 20px;
+    background: #f9f9f9;
+    margin: 10px 0;
+}
+
+.random-lyrics-quote {
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+}
+
+.random-lyrics-text {
+    font-size: 1.2em;
+    font-style: italic;
+    line-height: 1.6;
+    margin: 0 0 15px 0;
+    color: #333;
+    position: relative;
+}
+
+.random-lyrics-text::before {
+    content: '"';
+    font-size: 2em;
+    color: #ccc;
+    position: absolute;
+    left: -20px;
+    top: -5px;
+}
+
+.random-lyrics-text::after {
+    content: '"';
+    font-size: 2em;
+    color: #ccc;
+    position: absolute;
+    right: -20px;
+    bottom: -15px;
+}
+
+.random-lyrics-attribution {
+    margin-top: 15px;
+    font-size: 0.9em;
+    color: #666;
+}
+
+.random-lyrics-artist {
+    font-style: normal;
+    font-weight: 600;
+    color: #333;
+}
+
+.random-lyrics-song {
+    color: #666;
+    font-style: italic;
+}
+
+.random-lyrics-controls {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.random-lyrics-refresh-btn {
+    background: #0073aa;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.2s;
+}
+
+.random-lyrics-refresh-btn:hover:not(:disabled) {
+    background: #005a87;
+}
+
+.random-lyrics-refresh-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.refresh-icon {
+    font-size: 16px;
+    animation: spin 1s linear infinite;
+}
+
+.refresh-text {
+    font-weight: 500;
+}
+
+.random-lyrics-editor-note {
+    margin-top: 20px;
+    padding: 15px;
+    background: #e7f3ff;
+    border-left: 4px solid #0073aa;
+    border-radius: 4px;
+}
+
+.random-lyrics-editor-note p {
+    margin: 0;
+    color: #0073aa;
+    font-size: 14px;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Block alignment styles */
+.wp-block-jww-theme-random-lyrics.alignwide {
+    max-width: 1200px;
+}
+
+.wp-block-jww-theme-random-lyrics.alignfull {
+    max-width: none;
+}

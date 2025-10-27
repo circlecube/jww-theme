@@ -403,21 +403,21 @@ function get_music_streaming_services() {
         'tidal' => array(
             'name' => 'Tidal',
             'function' => 'get_tidal_album_url',
-            'icon' => '<i class="fas fa-water"></i>',
+            'icon' => '<i class="fab fa-tidal"></i>',
             'affiliate' => false,
             'color' => '#00ffff'
         ),
         'qobuz' => array(
             'name' => 'Qobuz',
             'function' => 'get_qobuz_album_url',
-            'icon' => '<i class="fas fa-music"></i>',
+            'icon' => '<i class="fas fa-record-vinyl"></i>',
             'affiliate' => false,
             'color' => '#1e3a8a'
         ),
         'deezer' => array(
             'name' => 'Deezer',
             'function' => 'get_deezer_album_url',
-            'icon' => '<i class="fas fa-headphones"></i>',
+            'icon' => '<i class="fab fa-deezer"></i>',
             'affiliate' => false,
             'color' => '#ff0000'
         ),
@@ -445,7 +445,7 @@ function get_music_streaming_services() {
         'pandora' => array(
             'name' => 'Pandora',
             'function' => 'get_pandora_album_url',
-            'icon' => '<i class="fas fa-radio"></i>',
+            'icon' => '<i class="fab fa-pandora"></i>',
             'affiliate' => false,
             'color' => '#224099'
         ),

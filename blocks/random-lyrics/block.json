@@ -1,0 +1,60 @@
+{
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "jww-theme/random-lyrics",
+    "version": "1.0.0",
+    "title": "Random Lyrics",
+    "category": "text",
+    "icon": "format-quote",
+    "description": "Display a random lyric line from a random song on your site.",
+    "keywords": [
+        "lyrics",
+        "random",
+        "song",
+        "quote"
+    ],
+    "textdomain": "jww-theme",
+    "editorScript": "file:./index.js",
+    "editorStyle": "file:./editor.scss",
+    "style": "file:./style.scss",
+    "supports": {
+        "html": false,
+        "align": [
+            "wide",
+            "full"
+        ],
+        "spacing": {
+            "margin": true,
+            "padding": true
+        },
+        "typography": {
+            "fontSize": true,
+            "lineHeight": true,
+            "fontFamily": true,
+            "fontWeight": true,
+            "fontStyle": true,
+            "textTransform": true,
+            "textDecoration": true,
+            "letterSpacing": true
+        },
+        "color": {
+            "background": true,
+            "text": true,
+            "link": true
+        }
+    },
+    "attributes": {
+        "showSongTitle": {
+            "type": "boolean",
+            "default": true
+        },
+        "showArtist": {
+            "type": "boolean",
+            "default": true
+        },
+        "refreshOnLoad": {
+            "type": "boolean",
+            "default": true
+        }
+    }
+}

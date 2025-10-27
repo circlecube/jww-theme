@@ -4,8 +4,12 @@
  */
 
 // Get block attributes with defaults
-$custom_text = $attributes['customText'] ?? "Days since Jesse's latest song.";
+$custom_text = "Days since Jesse's latest song, ";
 $show_emoji = $attributes['showEmoji'] ?? true;
+
+if ( $attributes['customText'] && !empty($attributes['customText']) ) {
+    $custom_text = $attributes['customText'];
+}
 
 // Get the most recent song post
 $query_args = [
@@ -23,7 +27,9 @@ if (empty($latest_song)) {
 }
 
 $song = $latest_song[0];
+$song_id = $song->ID;
 $song_date = $song->post_date;
+$song_title = $song->post_title ?? '';
 
 // Calculate days since the song was published
 $song_timestamp = strtotime($song_date);
@@ -58,14 +64,17 @@ if ($show_emoji) {
 $output = '<div class="wp-block-jww-day-counter">';
 $output .= '<div class="day-counter-content">';
 $output .= '<div class="day-count">';
-$output .= '<strong>' . esc_html($days_since) . '</strong>';
-
 if ($show_emoji) {
     $output .= '<span class="emoji">' . $emoji . '</span>';
 }
-
+$output .= '<strong>' . esc_html($days_since) . '</strong>';
 $output .= '</div>';
-$output .= '<div class="counter-text">' . esc_html($custom_text) . '</div>';
+
+$output .= '<div class="counter-text">';
+$output .= esc_html($custom_text);
+// Latest song title and link to song post
+$output .= '<a href="' . get_the_permalink($song_id) . '">' . esc_html($song_title) . '</a>.';
+$output .= '</div>';
 $output .= '</div>';
 $output .= '</div>';
 

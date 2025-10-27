@@ -18,10 +18,13 @@ class YouTube_Song_Importer {
         add_action( 'init', [ $this, 'maybe_add_video_ids_to_existing_posts' ] );
         add_action( 'init', [ $this, 'maybe_fix_featured_images' ] );
         add_action( 'init', [ $this, 'maybe_test_image_import' ] );
+        add_action( 'init', [ $this, 'maybe_test_thumbnail_download' ] );
+        add_action( 'init', [ $this, 'maybe_update_all_thumbnails' ] );
         
         // Add AJAX handlers for logs functionality
         add_action( 'wp_ajax_youtube_get_logs', [ $this, 'ajax_get_logs' ] );
         add_action( 'wp_ajax_youtube_clear_logs', [ $this, 'ajax_clear_logs' ] );
+        add_action( 'wp_ajax_youtube_bulk_update_thumbnails', [ $this, 'ajax_bulk_update_thumbnails' ] );
         
         // Add admin scripts for the options page
         add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_admin_scripts' ] );
@@ -139,6 +142,7 @@ class YouTube_Song_Importer {
             }
 
             $video_url   = esc_url( $item->get_link() );
+            $video_desc  = sanitize_text_field( $item->get_description() );
             $video_title = sanitize_text_field( $item->get_title() );
             $video_id    = $this->extract_video_id_from_url( $video_url );
             $item_number = $items_processed + 1;
@@ -146,7 +150,26 @@ class YouTube_Song_Importer {
 
             // Check if video already imported
             if ( $this->is_video_already_imported( $video_url ) ) {
-                $this->log_import_activity( "SKIP: Video already exists - '{$video_title}' (ID: {$video_id})" );
+                // Before skipping, check if the existing post needs a thumbnail
+                $existing_post_id = $this->get_existing_post_id_by_video_url( $video_url );
+                if ( $existing_post_id ) {
+                    $this->log_import_activity( "EXISTING: Video already exists - '{$video_title}' (ID: {$video_id}, Post ID: {$existing_post_id})" );
+                    
+                    // Check if it needs a thumbnail
+                    if ( ! has_post_thumbnail( $existing_post_id ) ) {
+                        $this->log_import_activity( "MISSING THUMBNAIL: Adding thumbnail to existing post '{$video_title}' (Post ID: {$existing_post_id})" );
+                        $thumbnail_result = $this->set_featured_image_from_youtube( $existing_post_id, $video_url, $video_title );
+                        if ( $thumbnail_result ) {
+                            $this->log_import_activity( "SUCCESS: Added thumbnail to existing post '{$video_title}' (Post ID: {$existing_post_id})" );
+                        } else {
+                            $this->log_import_activity( "WARNING: Failed to add thumbnail to existing post '{$video_title}' (Post ID: {$existing_post_id})" );
+                        }
+                    } else {
+                        $this->log_import_activity( "SKIP: Video already exists with thumbnail - '{$video_title}' (ID: {$video_id}, Post ID: {$existing_post_id})" );
+                    }
+                } else {
+                    $this->log_import_activity( "SKIP: Video already exists but post ID not found - '{$video_title}' (ID: {$video_id})" );
+                }
                 $items_processed++;
                 continue;
             }
@@ -174,6 +197,13 @@ class YouTube_Song_Importer {
                 $this->log_import_activity( "WARNING: Failed to update video field for post ID: {$post_id}" );
             } else {
                 $this->log_import_activity( "SUCCESS: Updated video field for post ID: {$post_id}" );
+            }
+
+            // Save video description into ACF lyrics field
+            if ( ! update_field( 'lyrics', $video_desc, $post_id ) ) {
+                $this->log_import_activity( "WARNING: Failed to update lyrics field for post ID: {$post_id}" );
+            } else {
+                $this->log_import_activity( "SUCCESS: Updated lyrics field for post ID: {$post_id}" );
             }
 
             // Also save video ID as separate meta for reliable duplicate detection
@@ -286,6 +316,58 @@ class YouTube_Song_Importer {
     }
 
     /**
+     * Get the existing post ID for a video URL
+     * Returns the post ID if found, false otherwise
+     */
+    private function get_existing_post_id_by_video_url( $video_url ) {
+        // Extract video ID from URL for more reliable comparison
+        $video_id = $this->extract_video_id_from_url( $video_url );
+        
+        if ( ! $video_id ) {
+            return false;
+        }
+
+        // Method 1: Check by video ID in post meta (most reliable)
+        $posts_by_id = get_posts( [
+            'post_type'  => 'song',
+            'meta_query' => [
+                [
+                    'key'     => 'video_id',
+                    'value'   => $video_id,
+                    'compare' => '='
+                ]
+            ],
+            'fields'     => 'ids',
+        ] );
+
+        if ( ! empty( $posts_by_id ) ) {
+            return $posts_by_id[0];
+        }
+
+        // Method 2: Check by normalized URL in ACF field
+        $normalized_url = $this->normalize_youtube_url( $video_url );
+        $posts_by_url = get_posts( [
+            'post_type'  => 'song',
+            'meta_query' => [
+                'relation' => 'OR',
+                [
+                    'key'     => 'field_68cb1e19f3fe2', // ACF field key for 'video' field
+                    'value'   => $normalized_url,
+                    'compare' => '='
+                ],
+                [
+                    'key'     => 'field_68cb1e19f3fe2',
+                    'value'   => $video_url,
+                    'compare' => '='
+                ]
+            ],
+            'fields'     => 'ids',
+        ] );
+
+        return ! empty( $posts_by_url ) ? $posts_by_url[0] : false;
+    }
+
+    /**
      * Check if a video has already been imported
      * Uses multiple detection methods to catch duplicates
      */
@@ -383,6 +465,20 @@ class YouTube_Song_Importer {
      * Download and attach the YouTube video thumbnail as featured image
      */
     private function set_featured_image_from_youtube( $post_id, $video_url, $video_title = null ) {
+        // Ensure WordPress media functions are loaded first
+        if ( ! function_exists( 'media_handle_sideload' ) ) {
+            $this->log_import_activity( "Loading WordPress media functions..." );
+            require_once( ABSPATH . 'wp-admin/includes/media.php' );
+            require_once( ABSPATH . 'wp-admin/includes/file.php' );
+            require_once( ABSPATH . 'wp-admin/includes/image.php' );
+            
+            if ( ! function_exists( 'media_handle_sideload' ) ) {
+                $this->log_import_activity( "ERROR: WordPress media functions still not available after loading files" );
+                return false;
+            }
+            $this->log_import_activity( "SUCCESS: WordPress media functions loaded" );
+        }
+
         // Extract the video ID from URL using our improved method
         $video_id = $this->extract_video_id_from_url( $video_url );
         if ( ! $video_id ) {
@@ -391,12 +487,6 @@ class YouTube_Song_Importer {
         }
 
         $this->log_import_activity( "Starting featured image process for post {$post_id}, video ID: {$video_id}" );
-
-        // Check if WordPress media functions are available
-        if ( ! function_exists( 'media_handle_sideload' ) ) {
-            $this->log_import_activity( "ERROR: WordPress media functions not available - media_handle_sideload missing" );
-            return false;
-        }
 
         // Check upload directory permissions
         $upload_dir = wp_upload_dir();
@@ -531,21 +621,27 @@ class YouTube_Song_Importer {
             'type'     => 'image/jpeg',
             'tmp_name' => $tmp,
             'size'     => $file_size,
+            'error'    => 0, // Add error field (0 = no error)
         ];
 
         $this->log_import_activity( "Attempting to sideload image with size: {$file_size} bytes" );
 
-        // Include WordPress media functions if not already loaded
-        if ( ! function_exists( 'media_handle_sideload' ) ) {
-            require_once( ABSPATH . 'wp-admin/includes/media.php' );
-            require_once( ABSPATH . 'wp-admin/includes/file.php' );
-            require_once( ABSPATH . 'wp-admin/includes/image.php' );
-        }
+
+        $this->log_import_activity( "Calling media_handle_sideload with file array: " . print_r( $file, true ) );
 
         $attachment_id = media_handle_sideload( $file, $post_id );
         if ( is_wp_error( $attachment_id ) ) {
             $error_message = $attachment_id->get_error_message();
-            $this->log_import_activity( "ERROR: Failed to sideload image: {$error_message}" );
+            $error_code = $attachment_id->get_error_code();
+            $this->log_import_activity( "ERROR: Failed to sideload image - Code: {$error_code}, Message: {$error_message}" );
+            
+            // Log additional debugging info
+            $this->log_import_activity( "DEBUG: Temp file exists: " . ( file_exists( $tmp ) ? 'YES' : 'NO' ) );
+            $this->log_import_activity( "DEBUG: Temp file size: " . ( file_exists( $tmp ) ? filesize( $tmp ) : 'N/A' ) );
+            $this->log_import_activity( "DEBUG: Post ID: {$post_id}" );
+            $this->log_import_activity( "DEBUG: Upload dir: " . wp_upload_dir()['path'] );
+            $this->log_import_activity( "DEBUG: Upload dir writable: " . ( wp_is_writable( wp_upload_dir()['path'] ) ? 'YES' : 'NO' ) );
+            
             @unlink( $tmp );
             return false;
         }
@@ -761,6 +857,122 @@ class YouTube_Song_Importer {
     }
 
     /**
+     * Test method to debug thumbnail download only (without WordPress integration)
+     * Call this manually if needed: ?import_songs=1&test_thumbnail_download=1
+     */
+    public function maybe_test_thumbnail_download() {
+        if ( isset( $_GET['test_thumbnail_download'] ) && current_user_can( 'manage_options' ) ) {
+            if ( ! wp_verify_nonce( $_GET['_wpnonce'], 'import_youtube_songs' ) ) {
+                wp_die( 'Security check failed' );
+            }
+
+            $test_video_id = 'IplNliTAF0A';
+            $this->log_import_activity( "Testing thumbnail download for video ID: {$test_video_id}" );
+
+            // Try multiple thumbnail resolutions
+            $thumbnail_urls = [
+                "https://img.youtube.com/vi/{$test_video_id}/maxresdefault.jpg",
+                "https://img.youtube.com/vi/{$test_video_id}/hqdefault.jpg",
+                "https://img.youtube.com/vi/{$test_video_id}/mqdefault.jpg",
+                "https://img.youtube.com/vi/{$test_video_id}/default.jpg"
+            ];
+
+            foreach ( $thumbnail_urls as $url ) {
+                $this->log_import_activity( "Testing download from: {$url}" );
+                
+                $response = wp_remote_get( $url, [
+                    'timeout'    => 30,
+                    'user-agent' => 'WordPress/' . get_bloginfo( 'version' ) . '; ' . home_url(),
+                    'sslverify'  => true
+                ]);
+                
+                if ( is_wp_error( $response ) ) {
+                    $this->log_import_activity( "Download failed: " . $response->get_error_message() );
+                    continue;
+                }
+                
+                $response_code = wp_remote_retrieve_response_code( $response );
+                $content_type = wp_remote_retrieve_header( $response, 'content-type' );
+                $body_size = strlen( wp_remote_retrieve_body( $response ) );
+                
+                $this->log_import_activity( "Response: HTTP {$response_code}, Content-Type: {$content_type}, Size: {$body_size} bytes" );
+                
+                if ( $response_code === 200 && strpos( $content_type, 'image/jpeg' ) !== false && $body_size > 0 ) {
+                    $this->log_import_activity( "SUCCESS: Valid thumbnail found at {$url}" );
+                    wp_die( "SUCCESS: Thumbnail download test passed! URL: {$url}, Size: {$body_size} bytes" );
+                }
+            }
+            
+            wp_die( "FAILED: No valid thumbnails could be downloaded" );
+        }
+    }
+
+    /**
+     * Update thumbnails for all existing songs that are missing them
+     * Call this manually if needed: ?import_songs=1&update_all_thumbnails=1
+     */
+    public function maybe_update_all_thumbnails() {
+        if ( isset( $_GET['update_all_thumbnails'] ) && current_user_can( 'manage_options' ) ) {
+            if ( ! wp_verify_nonce( $_GET['_wpnonce'], 'import_youtube_songs' ) ) {
+                wp_die( 'Security check failed' );
+            }
+
+            $this->log_import_activity( "Starting bulk thumbnail update for all songs..." );
+
+            // Get all song posts that have video URLs but no featured image
+            $posts = get_posts( [
+                'post_type'      => 'song',
+                'posts_per_page' => -1, // Get all posts
+                'meta_query'     => [
+                    'relation' => 'AND',
+                    [
+                        'key'     => 'field_68cb1e19f3fe2', // ACF field key for 'video' field
+                        'compare' => 'EXISTS'
+                    ]
+                ]
+            ] );
+
+            $processed_count = 0;
+            $thumbnail_added_count = 0;
+            $skipped_count = 0;
+
+            foreach ( $posts as $post ) {
+                $post_title = get_the_title( $post->ID );
+                $processed_count++;
+                
+                // Skip if already has featured image
+                if ( has_post_thumbnail( $post->ID ) ) {
+                    $this->log_import_activity( "SKIP: Post '{$post_title}' (ID: {$post->ID}) already has featured image" );
+                    $skipped_count++;
+                    continue;
+                }
+
+                $video_url = get_field( 'video', $post->ID );
+                if ( ! $video_url ) {
+                    $this->log_import_activity( "SKIP: Post '{$post_title}' (ID: {$post->ID}) has no video URL" );
+                    $skipped_count++;
+                    continue;
+                }
+
+                $video_id = $this->extract_video_id_from_url( $video_url );
+                $this->log_import_activity( "PROCESSING: Adding thumbnail to '{$post_title}' (ID: {$post->ID}, video ID: {$video_id})" );
+
+                // Try to add thumbnail
+                $thumbnail_result = $this->set_featured_image_from_youtube( $post->ID, $video_url, $post_title );
+                if ( $thumbnail_result ) {
+                    $this->log_import_activity( "SUCCESS: Added thumbnail to '{$post_title}' (ID: {$post->ID})" );
+                    $thumbnail_added_count++;
+                } else {
+                    $this->log_import_activity( "WARNING: Failed to add thumbnail to '{$post_title}' (ID: {$post->ID})" );
+                }
+            }
+
+            $this->log_import_activity( "Bulk thumbnail update completed. Processed: {$processed_count}, Added: {$thumbnail_added_count}, Skipped: {$skipped_count}" );
+            wp_die( "Bulk thumbnail update completed! Processed: {$processed_count}, Added: {$thumbnail_added_count}, Skipped: {$skipped_count}" );
+        }
+    }
+
+    /**
      * Enqueue admin scripts for the options page
      */
     public function enqueue_admin_scripts( $hook ) {
@@ -796,6 +1008,13 @@ class YouTube_Song_Importer {
             $('#clear-logs').on('click', function() {
                 if (confirm('Are you sure you want to clear all YouTube import logs?')) {
                     clearLogs();
+                }
+            });
+            
+            // Bulk update thumbnails button
+            $('#bulk-update-thumbnails').on('click', function() {
+                if (confirm('Are you sure you want to bulk update thumbnails for all songs? This may take a while.')) {
+                    bulkUpdateThumbnails();
                 }
             });
             
@@ -841,6 +1060,48 @@ class YouTube_Song_Importer {
                     },
                     error: function() {
                         $('#youtube-logs-content').html('<p style=\"color: red;\">Error clearing logs. Please try again.</p>');
+                    }
+                });
+            }
+            
+            function bulkUpdateThumbnails() {
+                $('#youtube-logs-content').html('Starting bulk thumbnail update... This may take a while.');
+                $('#bulk-update-thumbnails').prop('disabled', true).text('Processing...');
+                
+                $.ajax({
+                    url: ajaxurl,
+                    type: 'POST',
+                    data: {
+                        action: 'youtube_bulk_update_thumbnails',
+                        nonce: '" . wp_create_nonce( 'youtube_logs_nonce' ) . "'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            var data = response.data;
+                            var message = 'Comprehensive bulk update completed!\\n\\n';
+                            message += 'Total songs: ' + data.total_songs + '\\n';
+                            message += 'Processed: ' + data.processed + ' songs\\n';
+                            message += 'Thumbnails added: ' + data.thumbnails_added + '\\n';
+                            message += 'Video IDs added: ' + data.video_ids_added + '\\n';
+                            message += 'Skipped: ' + data.skipped + ' (already had thumbnails)\\n';
+                            message += 'No video URL: ' + data.no_video + '\\n';
+                            
+                            if (data.errors && data.errors.length > 0) {
+                                message += 'Errors: ' + data.errors.length + '\\n';
+                                message += 'Error details: ' + data.errors.join(', ');
+                            }
+                            
+                            alert(message);
+                            loadLogs(); // Refresh logs to show the new activity
+                        } else {
+                            $('#youtube-logs-content').html('<p style=\"color: red;\">Error updating thumbnails: ' + response.data + '</p>');
+                        }
+                    },
+                    error: function() {
+                        $('#youtube-logs-content').html('<p style=\"color: red;\">Error updating thumbnails. Please try again.</p>');
+                    },
+                    complete: function() {
+                        $('#bulk-update-thumbnails').prop('disabled', false).text('Bulk Update Thumbnails');
                     }
                 });
             }
@@ -920,6 +1181,107 @@ class YouTube_Song_Importer {
 
         $this->clear_logs();
         wp_send_json_success( 'Logs cleared successfully' );
+    }
+
+    /**
+     * AJAX handler to bulk update thumbnails
+     */
+    public function ajax_bulk_update_thumbnails() {
+        // Check nonce
+        if ( ! wp_verify_nonce( $_POST['nonce'], 'youtube_logs_nonce' ) ) {
+            wp_die( 'Security check failed' );
+        }
+
+        // Check permissions
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'Insufficient permissions' );
+        }
+
+        $this->log_import_activity( "Starting comprehensive bulk thumbnail update via AJAX..." );
+
+        // Get ALL song posts (not just recent ones)
+        $posts = get_posts( [
+            'post_type'      => 'song',
+            'posts_per_page' => -1, // Get ALL posts
+            'post_status'    => 'any', // Include all post statuses
+            'orderby'        => 'date',
+            'order'          => 'DESC'
+        ] );
+
+        $this->log_import_activity( "Found " . count( $posts ) . " total song posts to check" );
+
+        $processed_count = 0;
+        $thumbnail_added_count = 0;
+        $skipped_count = 0;
+        $video_id_added_count = 0;
+        $no_video_count = 0;
+        $errors = [];
+
+        foreach ( $posts as $post ) {
+            $post_title = get_the_title( $post->ID );
+            $processed_count++;
+            
+            $this->log_import_activity( "Checking post #{$processed_count}: '{$post_title}' (ID: {$post->ID})" );
+
+            // Get video URL
+            $video_url = get_field( 'video', $post->ID );
+            if ( ! $video_url ) {
+                $this->log_import_activity( "SKIP: Post '{$post_title}' (ID: {$post->ID}) has no video URL" );
+                $no_video_count++;
+                continue;
+            }
+
+            // Extract video ID and add it if missing
+            $video_id = $this->extract_video_id_from_url( $video_url );
+            if ( ! $video_id ) {
+                $this->log_import_activity( "SKIP: Post '{$post_title}' (ID: {$post->ID}) - could not extract video ID from URL: {$video_url}" );
+                $skipped_count++;
+                continue;
+            }
+
+            // Add video_id meta if missing
+            $existing_video_id = get_post_meta( $post->ID, 'video_id', true );
+            if ( ! $existing_video_id ) {
+                update_post_meta( $post->ID, 'video_id', $video_id );
+                $this->log_import_activity( "SUCCESS: Added missing video_id meta for '{$post_title}' (ID: {$post->ID}, video ID: {$video_id})" );
+                $video_id_added_count++;
+            }
+
+            // Skip if already has featured image
+            if ( has_post_thumbnail( $post->ID ) ) {
+                $this->log_import_activity( "SKIP: Post '{$post_title}' (ID: {$post->ID}) already has featured image" );
+                $skipped_count++;
+                continue;
+            }
+
+            $this->log_import_activity( "PROCESSING: Adding thumbnail to '{$post_title}' (ID: {$post->ID}, video ID: {$video_id})" );
+
+            // Try to add thumbnail
+            $thumbnail_result = $this->set_featured_image_from_youtube( $post->ID, $video_url, $post_title );
+            if ( $thumbnail_result ) {
+                $this->log_import_activity( "SUCCESS: Added thumbnail to '{$post_title}' (ID: {$post->ID})" );
+                $thumbnail_added_count++;
+            } else {
+                $error_msg = "Failed to add thumbnail to '{$post_title}' (ID: {$post->ID})";
+                $this->log_import_activity( "WARNING: {$error_msg}" );
+                $errors[] = $error_msg;
+            }
+        }
+
+        $total_songs = count( $posts );
+        $this->log_import_activity( "Comprehensive bulk update completed. Total songs: {$total_songs}, Processed: {$processed_count}, Thumbnails added: {$thumbnail_added_count}, Video IDs added: {$video_id_added_count}, Skipped: {$skipped_count}, No video: {$no_video_count}" );
+        
+        $response_data = [
+            'total_songs' => $total_songs,
+            'processed' => $processed_count,
+            'thumbnails_added' => $thumbnail_added_count,
+            'video_ids_added' => $video_id_added_count,
+            'skipped' => $skipped_count,
+            'no_video' => $no_video_count,
+            'errors' => $errors
+        ];
+
+        wp_send_json_success( $response_data );
     }
 
     /**

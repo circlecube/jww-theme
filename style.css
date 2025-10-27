@@ -17,6 +17,33 @@ Primary Branch: main
 Tags: 
 */
 
+:root {
+  --amazon-color: #ff9500;
+  --apple-music-color: #fa243c;
+  --spotify-color: #1db954;
+  --tidal-color: #00ffff;
+  --qobuz-color: #1e3a8a;
+  --deezer-color: #ff0000;
+  --bandcamp-color: #629aa0;
+  --youtube-music-color: #ff0000;
+  --soundcloud-color: #ff5500;
+  --pandora-color: #224099;
+  --iheartradio-color: #c6002b;
+  --lastfm-color: #d51007;
+  --amazon-gradient: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%);
+  --apple-music-gradient: linear-gradient(135deg, #fa243c 0%, #d70022 100%);
+  --spotify-gradient: linear-gradient(135deg, #1db954 0%, #1ed760 100%);
+  --tidal-gradient: linear-gradient(135deg, #00ffff 0%, #00cccc 100%);
+  --qobuz-gradient: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+  --deezer-gradient: linear-gradient(135deg, #ad47ff 0%, #bb73ff 100%);
+  --bandcamp-gradient: linear-gradient(135deg, #629aa0 0%, #4a7c7e 100%);
+  --youtube-music-gradient: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+  --soundcloud-gradient: linear-gradient(135deg, #ff5500 0%, #ff3300 100%);
+  --pandora-gradient: linear-gradient(135deg, #224099 0%, #1a3371 100%);
+  --iheartradio-gradient: linear-gradient(135deg, #c6002b 0%, #a00022 100%);
+  --lastfm-gradient: linear-gradient(135deg, #d51007 0%, #b00e06 100%);
+}
+
 /* YouTube Video Embed responsive */
 .video-section .video-container {
   height: 0;
@@ -679,52 +706,52 @@ Tags:
 
 /* Individual service color overrides */
 .music-service-link--amazon {
-  background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%);
+  background: var(--amazon-gradient);
 }
 
 .music-service-link--apple_music {
-  background: linear-gradient(135deg, #fa243c 0%, #d70022 100%);
+  background: var(--apple-music-gradient);
 }
 
 .music-service-link--spotify {
-  background: linear-gradient(135deg, #1db954 0%, #1ed760 100%);
+  background: var(--spotify-gradient);
 }
 
 .music-service-link--tidal {
-  background: linear-gradient(135deg, #00ffff 0%, #00cccc 100%);
+  background: var(--tidal-gradient);
   color: #000;
 }
 
 .music-service-link--qobuz {
-  background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+  background: var(--qobuz-gradient);
 }
 
 .music-service-link--deezer {
-  background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+  background: var(--deezer-gradient);
 }
 
 .music-service-link--bandcamp {
-  background: linear-gradient(135deg, #629aa0 0%, #4a7c7e 100%);
+  background: var(--bandcamp-gradient);
 }
 
 .music-service-link--youtube_music {
-  background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+  background: var(--youtube-music-gradient);
 }
 
 .music-service-link--soundcloud {
-  background: linear-gradient(135deg, #ff5500 0%, #ff3300 100%);
+  background: var(--soundcloud-gradient);
 }
 
 .music-service-link--pandora {
-  background: linear-gradient(135deg, #224099 0%, #1a3371 100%);
+  background: var(--pandora-gradient);
 }
 
 .music-service-link--iheartradio {
-  background: linear-gradient(135deg, #c6002b 0%, #a00022 100%);
+  background: var(--iheartradio-gradient);
 }
 
 .music-service-link--lastfm {
-  background: linear-gradient(135deg, #d51007 0%, #b00e06 100%);
+  background: var(--lastfm-gradient);
 }
 
 /* Responsive music service links */
@@ -759,4 +786,195 @@ Tags:
   .service-name {
     display: none; /* Hide text on very small screens, show only icons */
   }
+}
+
+/* ==========================================================================
+   Custom Social Link Icons for Music Streaming Platforms
+   ========================================================================== */
+.wp-block-social-link {
+  overflow: hidden; /* fixes anchor background color bleeding out of rounded corners */
+}
+/* Add colors to social links */
+/* Last.fm */
+.wp-social-link-lastfm .wp-block-social-link-anchor {
+  background: var(--lastfm-gradient) !important;
+}
+.wp-social-link-lastfm .wp-block-social-link-anchor svg{
+  width:100%;
+  text-align: center;
+}
+.wp-social-link-spotify .wp-block-social-link-anchor {
+  /* background-color: var(--spotify-color) !important; */
+  background: var(--spotify-gradient) !important;
+}
+.wp-social-link-amazon .wp-block-social-link-anchor {
+  background: var(--amazon-gradient) !important;
+}
+.wp-social-link-soundcloud .wp-block-social-link-anchor {
+  background: var(--soundcloud-gradient) !important;
+}
+
+/* Bandcamp */
+.wp-social-link-bandcamp .wp-block-social-link-anchor {
+  background: var(--bandcamp-gradient) !important;
+}
+/* hide chain for links with custom icons */
+.social-links-listening .wp-social-link-chain svg {
+  display: none;
+}
+.social-links-listening .wp-social-link-chain .wp-block-social-link-anchor {
+  width: 24px;
+  height: 24px;
+}
+.social-links-listening .wp-social-link-chain .wp-block-social-link-anchor:before { 
+  font-family: "Font Awesome 7 Brands" !important;
+  font-size: 1.25rem;
+  width: 100%;
+  text-align: center;
+}
+/* Apple Music */
+.wp-block-social-link--apple_music .wp-block-social-link-anchor {
+  background: var(--apple-music-gradient) !important;
+}
+.wp-block-social-link--apple_music .wp-block-social-link-anchor:before {
+  content: "\f179" !important;
+}
+
+/* YouTube Music */
+.wp-block-social-link--youtube_music .wp-block-social-link-anchor {
+  background: var(--youtube-music-gradient) !important;
+}
+.wp-block-social-link--youtube_music .wp-block-social-link-anchor:before {
+  content: "\f167" !important;
+}
+
+/* Deezer */
+.wp-block-social-link--deezer .wp-block-social-link-anchor {
+  background: var(--deezer-gradient) !important;
+}
+.wp-block-social-link--deezer .wp-block-social-link-anchor:before {
+  content: "\e077" !important;
+}
+
+/* Qobuz */
+.wp-block-social-link--qobuz .wp-block-social-link-anchor {
+  background: var(--qobuz-gradient) !important;
+}
+.social-links-listening .wp-social-link-chain.wp-block-social-link--qobuz .wp-block-social-link-anchor:before {
+  font-family: "FontAwesome" !important;
+  content: "\f8d9" !important;
+}
+
+/* Pandora */
+.wp-block-social-link--pandora .wp-block-social-link-anchor {
+  background-color: var(--pandora-gradient) !important;
+}
+.wp-block-social-link--pandora .wp-block-social-link-anchor:before {
+  content: "\e7da" !important;
+}
+
+/* iHeartRadio */
+.wp-block-social-link--iheartradio .wp-block-social-link-anchor {
+  background: var(--iheartradio-gradient) !important;
+}
+.social-links-listening .wp-social-link-chain.wp-block-social-link--iheartradio .wp-block-social-link-anchor:before {
+  font-family: "Font Awesome 7 Free" !important;
+  content: "\f004" !important;
+}
+
+/* Tidal */
+.wp-block-social-link--tidal .wp-block-social-link-anchor {
+  background: var(--tidal-gradient) !important;
+}
+.wp-block-social-link--tidal .wp-block-social-link-anchor:before {
+  content: "\e7dc" !important;
+}
+
+
+/* Song Grid */
+.song-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--wp--preset--spacing--10);
+}
+
+.song-grid-item {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  aspect-ratio: 1;
+  text-align: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  background-color: var(--wp--preset--color--accent-3);
+  overflow: hidden;
+  transform: scale(0.975);
+}
+.song-grid-item:nth-child(4n+1) {
+  background-color: var(--wp--preset--color--accent-4);
+}
+.song-grid-item:nth-child(4n+2) {
+  background-color: var(--wp--preset--color--accent-1);
+}
+.song-grid-item:nth-child(4n+3) {
+  background-color: var(--wp--preset--color--accent-5);
+}
+.song-grid-item:hover {
+  transform: scale(1.025);
+  z-index: 1000;
+}
+.song-grid-item img {
+  transition: all 0.2s ease;
+  aspect-ratio: 1;
+  object-fit: cover;
+  width: 100%;
+  position: absolute;
+  height: 100%;
+  object-position: center;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+}
+
+.song-grid-item-content {
+  background-color: var(--wp--preset--color--contrast);
+  z-index: 1;
+  position: relative;
+  transition: all 0.2s ease;
+}
+.song-grid-item-title {
+  display: block;
+  font-size: var(--wp--preset--font-size--medium);
+  color: var(--wp--preset--color--base);
+  margin-top: auto;
+  padding: .5rem 1rem 0 1rem;
+}
+.song-grid-item-date {
+  display: block;
+  font-size: var(--wp--preset--font-size--small);
+  color: var(--wp--preset--color--base);
+  padding: 0 1rem .5rem 1rem;
+}
+
+.song-grid-item.has-thumbnail .song-grid-item-content {
+  position: absolute;
+  bottom: -100%;
+  left:0;
+  width:100%;
+  height: auto;
+  z-index: 3;
+}
+.song-grid-item.has-thumbnail:focus .song-grid-item-content,
+.song-grid-item.has-thumbnail:hover .song-grid-item-content {
+  bottom: 0;
+}
+
+.song-grid-item.no-thumbnail .song-grid-item-title {
+  font-size: var(--wp--preset--font-size--x-large);
+}
+.song-grid-item.no-thumbnail .song-grid-item-date {
+  font-size: var(--wp--preset--font-size--medium);
 }
