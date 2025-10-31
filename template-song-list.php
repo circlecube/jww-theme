@@ -31,6 +31,13 @@ get_header();
 				'field'     => 'slug',
 				'terms'    => 'original'
 			)
+		),
+		'meta_query' => array(
+				array(
+					'key'     => 'artist',
+					'value'   => '"7"', // default to Jesse Welles (id: 7)
+					'compare' => 'LIKE'
+				)
 		)
 	));
 	
@@ -95,6 +102,13 @@ get_header();
 				'field'     => 'slug',
 				'terms'    => 'original'
 			)
+		),
+		'meta_query' => array(
+				array(
+					'key'     => 'artist',
+					'value'   => '"7"', // default to Jesse Welles (id: 7)
+					'compare' => 'LIKE'
+				)
 		)
 	));
 	
@@ -162,6 +176,13 @@ get_header();
 				'field'     => 'slug',
 				'terms'    => 'cover'
 			)
+		),
+		'meta_query' => array(
+				array(
+					'key'     => 'artist',
+					'value'   => '"7"', // default to Jesse Welles (id: 7)
+					'compare' => 'LIKE'
+				)
 		)
 	));
 	

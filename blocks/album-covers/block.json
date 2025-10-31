@@ -60,6 +60,10 @@
         "titleLevel": {
             "type": "number",
             "default": 2
+        },
+        "artist": {
+            "type": "string",
+            "default": ""
         }
     }
 }

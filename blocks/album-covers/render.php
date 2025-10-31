@@ -11,6 +11,7 @@ $order = $attributes['order'] ?? 'DESC';
 $show_title = $attributes['showTitle'] ?? true;
 $title = $attributes['title'] ?? '';
 $title_level = $attributes['titleLevel'] ?? 2;
+$artist_id = $attributes['artist'] ?? '';
 
 // Build query arguments
 $query_args = [
@@ -29,6 +30,20 @@ if (!empty($selected_releases)) {
             'field'    => 'term_id',
             'terms'    => array_map('intval', $selected_releases),
             'operator' => 'IN'
+        ]
+    ];
+}
+
+// Add artist filter if artist ID is specified
+if (!empty($artist_id)) {
+    $artist_id = intval($artist_id);
+    // ACF relationship fields store data as serialized arrays or comma-separated IDs
+    // Use meta_query with LIKE to find the artist ID within the stored value
+    $query_args['meta_query'] = [
+        [
+            'key'     => 'artist',
+            'value'   => '"' . $artist_id . '"', // Search for serialized format
+            'compare' => 'LIKE'
         ]
     ];
 }

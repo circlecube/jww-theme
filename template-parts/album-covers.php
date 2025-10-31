@@ -12,7 +12,7 @@ $title       = get_query_var('title', '') ?? '';
 $title_level = get_query_var('title_level', 3) ?? 3;
 
 if (!$albums) {
-    echo '<p>Not yet released on an album.</p>';
+    echo '<p>No releases found.</p>';
     return;
 }
 

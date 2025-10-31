@@ -18,7 +18,24 @@ get_header();
 	<div class="wp-block-group">
 	
 	<?php
-	$song_query = new WP_Query(array(
+	// Get artist ID from page ACF field or URL parameter
+	$artist_id = get_field('artist');
+	if (!$artist_id && isset($_GET['artist'])) {
+		$artist_id = intval($_GET['artist']);
+	}
+	
+	// Handle artist field if it's an object/array (ACF relationship field)
+	if (is_object($artist_id) || is_array($artist_id)) {
+		// If it's an array of objects or single object, get the ID
+		if (is_array($artist_id)) {
+			$artist_id = !empty($artist_id) ? (is_object($artist_id[0]) ? $artist_id[0]->ID : $artist_id[0]) : null;
+		} else {
+			$artist_id = $artist_id->ID ?? null;
+		}
+	}
+	
+	// Build query arguments
+	$song_query_args = array(
 		'post_type'      => 'song',
 		'posts_per_page' => -1,
 		'orderby'        => 'date',
@@ -30,7 +47,22 @@ get_header();
 		// 		'terms'    => 'original'
 		// 	)
 		// )
-	));
+	);
+	
+	// Add artist filter if artist ID is specified
+	if ($artist_id) {
+		// ACF relationship fields store data as serialized arrays or comma-separated IDs
+		// Use meta_query with LIKE to find the artist ID within the stored value
+		$song_query_args['meta_query'] = array(
+			array(
+				'key'     => 'artist',
+				'value'   => '"' . intval($artist_id) . '"', // Search for serialized format
+				'compare' => 'LIKE'
+			)
+		);
+	}
+	
+	$song_query = new WP_Query($song_query_args);
 	
 	if ($song_query->have_posts()) { 
 		?>

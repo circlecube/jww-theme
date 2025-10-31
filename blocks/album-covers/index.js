@@ -10,7 +10,7 @@ import './style.scss';
 
 registerBlockType('jww/album-covers', {
     edit: ({ attributes, setAttributes }) => {
-        const { releases, postsPerPage, orderBy, order, showTitle, title, titleLevel } = attributes;
+        const { releases, postsPerPage, orderBy, order, showTitle, title, titleLevel, artist } = attributes;
         const blockProps = useBlockProps();
 
         // Get available release taxonomy terms
@@ -18,6 +18,15 @@ registerBlockType('jww/album-covers', {
             return select('core').getEntityRecords('taxonomy', 'release', {
                 per_page: -1,
                 orderby: 'name',
+                order: 'asc'
+            });
+        }, []);
+
+        // Get available bands/artists
+        const availableArtists = useSelect((select) => {
+            return select('core').getEntityRecords('postType', 'band', {
+                per_page: -1,
+                orderby: 'title',
                 order: 'asc'
             });
         }, []);
@@ -37,7 +46,7 @@ registerBlockType('jww/album-covers', {
             }
 
             return select('core').getEntityRecords('postType', 'album', queryArgs);
-        }, [releases, postsPerPage, orderBy, order]);
+        }, [releases, postsPerPage, orderBy, order, artist]);
 
         return (
             <div {...blockProps}>
@@ -90,6 +99,20 @@ registerBlockType('jww/album-covers', {
                                 }}
                             />
                         ))}
+
+                        <SelectControl
+                            label={__('Artist/Band', 'jww-theme')}
+                            value={artist || ''}
+                            options={[
+                                { label: __('All Artists', 'jww-theme'), value: '' },
+                                ...(availableArtists ? availableArtists.map((band) => ({
+                                    label: band.title.rendered,
+                                    value: band.id.toString()
+                                })) : [])
+                            ]}
+                            onChange={(value) => setAttributes({ artist: value })}
+                            help={__('Filter albums by a specific artist/band. Leave empty to show all artists.', 'jww-theme')}
+                        />
                     </PanelBody>
 
                     <PanelBody title={__('Display Options', 'jww-theme')} initialOpen={false}>
@@ -147,6 +170,17 @@ registerBlockType('jww/album-covers', {
                                     const release = availableReleases.find(r => r.id.toString() === releaseId);
                                     return release ? release.name : releaseId;
                                 }).join(', ')
+                            }
+                        </div>
+                    )}
+
+                    {/* Show selected artist */}
+                    {artist && (
+                        <div className="preview-artist">
+                            <strong>{__('Filtering by artist:', 'jww-theme')} </strong>
+                            {availableArtists && availableArtists.find(b => b.id.toString() === artist)
+                                ? availableArtists.find(b => b.id.toString() === artist).title.rendered
+                                : artist
                             }
                         </div>
                     )}

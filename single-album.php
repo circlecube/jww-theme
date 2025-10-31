@@ -10,6 +10,13 @@ get_header();
 	<div class="entry-content alignfull wp-block-post-content has-global-padding is-layout-constrained wp-block-post-content-is-layout-constrained" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--60)">
 		
 		<?php the_title('<h1 class="wp-block-post-title">', '</h1>'); ?>
+		<?php
+			$artist_id = get_field('artist');
+			$artist = get_post($artist_id[0]);
+			$artist_name = get_the_title($artist);
+			$artist_link = get_permalink($artist);
+		?>
+		<h2 class="artist-name"><a href="<?php echo $artist_link; ?>"><?php echo $artist_name; ?></a></h2>
 		
 		<div class="album-release-info">
 			<span>Released </span>
@@ -60,9 +67,8 @@ get_header();
 </main>
 
 <!-- Albums Section -->
-<div class="wp-block-group alignwide has-global-padding is-layout-constrained wp-block-post-content-is-layout-constrained" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--60)">
-	<h2 class="albums-section-heading">Albums</h2>
-	
+<div class="wp-block-group alignwide has-global-padding is-layout-constrained wp-block-post-content-is-layout-constrained" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--60)">	
+	<h2 class="albums-section-heading">Other Albums by <?php echo $artist_name; ?></h2>
 	<?php
 	// Get all albums and pass them to the template part
 	$albums = get_posts(array(
@@ -77,7 +83,15 @@ get_header();
 				'terms'    => array( 'album' ),
 				'operator' => 'IN'
 			)
-		)
+		),
+		'meta_query' => array(
+			array(
+				'key'     => 'artist',
+				'value'   => '"' . $artist_id[0] . '"', // default to Jesse Welles (id: 7)
+				'compare' => 'LIKE'
+			)
+			),
+		'exclude' => array( get_the_ID() ), // exclude the current album from the list
 	));
 	
 	set_query_var('albums', $albums);
