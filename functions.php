@@ -74,6 +74,37 @@ function jww_theme_support() {
 
 	// Add support for block template parts
 	add_theme_support( 'block-template-parts' );
+	
+	// Add support for automatic document title generation
+	add_theme_support( 'title-tag' );
+	
+	// Add support for post thumbnails (featured images)
+	add_theme_support( 'post-thumbnails' );
+	
+	// Add support for HTML5 markup
+	add_theme_support( 'html5', array(
+		'search-form',
+		'comment-form',
+		'comment-list',
+		'gallery',
+		'caption',
+		'style',
+		'script',
+	) );
+	
+	// Add support for automatic feed links
+	add_theme_support( 'automatic-feed-links' );
+	
+	// Add support for custom logo
+	add_theme_support( 'custom-logo', array(
+		'height'      => 100,
+		'width'       => 400,
+		'flex-height' => true,
+		'flex-width'  => true,
+	) );
+	
+	// Add support for wide alignment
+	add_theme_support( 'align-wide' );
 }
 add_action( 'after_setup_theme', 'jww_theme_support' );
 
