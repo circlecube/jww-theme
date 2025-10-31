@@ -33,6 +33,80 @@
             "bidirectional_target": [
                 "field_68cc6ef960155"
             ]
+        },
+        {
+            "key": "field_6904fb61dc23f",
+            "label": "Songs",
+            "name": "songs",
+            "aria-label": "",
+            "type": "relationship",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "post_type": [
+                "song"
+            ],
+            "post_status": [
+                "publish"
+            ],
+            "taxonomy": "",
+            "filters": [
+                "search"
+            ],
+            "return_format": "id",
+            "min": "",
+            "max": "",
+            "allow_in_bindings": 0,
+            "elements": "",
+            "bidirectional": 1,
+            "bidirectional_target": [
+                "field_6900d8748ad9f"
+            ]
+        },
+        {
+            "key": "field_69050c950310f",
+            "label": "Founded",
+            "name": "founded",
+            "aria-label": "",
+            "type": "date_picker",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "display_format": "Y",
+            "return_format": "Y",
+            "first_day": 0,
+            "default_to_current_date": 0,
+            "allow_in_bindings": 0
+        },
+        {
+            "key": "field_69050ceb03110",
+            "label": "Disbanded",
+            "name": "disbanded",
+            "aria-label": "",
+            "type": "date_picker",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "display_format": "Y",
+            "return_format": "Y",
+            "first_day": 0,
+            "default_to_current_date": 0,
+            "allow_in_bindings": 0
         }
     ],
     "location": [
@@ -53,5 +127,6 @@
     "active": true,
     "description": "",
     "show_in_rest": 0,
-    "modified": 1758247389
+    "display_title": "",
+    "modified": 1761938906
 }

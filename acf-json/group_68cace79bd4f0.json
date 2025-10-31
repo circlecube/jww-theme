@@ -3,6 +3,40 @@
     "title": "Song Meta Data",
     "fields": [
         {
+            "key": "field_6900d8748ad9f",
+            "label": "Artist\/Band",
+            "name": "artist",
+            "aria-label": "",
+            "type": "relationship",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "post_type": [
+                "band"
+            ],
+            "post_status": [
+                "publish"
+            ],
+            "taxonomy": "",
+            "filters": [
+                "search"
+            ],
+            "return_format": "object",
+            "min": "",
+            "max": "",
+            "allow_in_bindings": 0,
+            "elements": "",
+            "bidirectional": 1,
+            "bidirectional_target": [
+                "field_6904fb61dc23f"
+            ]
+        },
+        {
             "key": "field_68cace791977a",
             "label": "Album",
             "name": "album",
@@ -56,5 +90,6 @@
     "active": true,
     "description": "",
     "show_in_rest": 0,
-    "modified": 1758247419
+    "display_title": "",
+    "modified": 1761934734
 }
