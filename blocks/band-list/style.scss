@@ -1,0 +1,10 @@
+// Frontend styles for Band List block
+// Note: Uses the same markup structure as album-covers, so styles are inherited
+// from the album-covers styles. Additional band-specific styles can be added here if needed.
+
+.wp-block-jww-band-list {
+    .album-covers-section {
+        // Inherits styles from album-covers block styles
+        // Add any band-specific overrides here if needed
+    }
+}

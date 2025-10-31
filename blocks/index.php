@@ -19,6 +19,7 @@ require_once __DIR__ . '/latest-song/register.php';
 require_once __DIR__ . '/album-covers/register.php';
 require_once __DIR__ . '/day-counter/register.php';
 require_once __DIR__ . '/random-lyrics/register.php';
+require_once __DIR__ . '/band-list/register.php';
 
 // Add more blocks here as needed:
 // require_once __DIR__ . '/my-new-block/register.php';

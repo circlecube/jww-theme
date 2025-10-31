@@ -10,3 +10,6 @@ import './day-counter';
 
 // Import random-lyrics block
 import './random-lyrics';
+
+// Import band-list block
+import './band-list';

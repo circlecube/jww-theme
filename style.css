@@ -978,3 +978,15 @@ Tags:
 .song-grid-item.no-thumbnail .song-grid-item-date {
   font-size: var(--wp--preset--font-size--medium);
 }
+
+/* Band Hero Image */
+.band-hero-image {
+  width: 100vw;
+  margin-bottom: var(--wp--preset--spacing--20);
+}
+.band-hero-image img {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  object-position: center;
+}
