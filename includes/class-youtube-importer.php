@@ -329,15 +329,16 @@ class YouTube_Song_Importer {
 
         // Method 1: Check by video ID in post meta (most reliable)
         $posts_by_id = get_posts( [
-            'post_type'  => 'song',
-            'meta_query' => [
+            'post_type'   => 'song',
+            'meta_query'  => [
                 [
                     'key'     => 'video_id',
                     'value'   => $video_id,
                     'compare' => '='
                 ]
             ],
-            'fields'     => 'ids',
+            'post_status' => array('publish', 'pending', 'draft'), // Include pending/draft posts to catch duplicates
+            'fields'       => 'ids',
         ] );
 
         if ( ! empty( $posts_by_id ) ) {
@@ -357,6 +358,16 @@ class YouTube_Song_Importer {
                 ],
                 [
                     'key'     => 'field_68cb1e19f3fe2',
+                    'value'   => $video_url,
+                    'compare' => '='
+                ],
+                [
+                    'key'     => 'field_68cace34ebd2f', // ACF field key for 'music_video' field
+                    'value'   => $normalized_url,
+                    'compare' => '='
+                ],
+                [
+                    'key'     => 'field_68cace34ebd2f',
                     'value'   => $video_url,
                     'compare' => '='
                 ]
