@@ -31,6 +31,7 @@ get_header();
 		$yt_video_embed        = get_field('video');
 		$tiktok_video_embed    = get_field('tiktok_video');
 		$instagram_video_embed = get_field('instagram_video');
+		$music_video_embed     = get_field('music_video');
 		
 		if ( $yt_video_embed ): ?>
 			<div class="wp-block-group alignwide video-section">
@@ -74,9 +75,15 @@ get_header();
 				</div>
 			</div>
 		<?php endif; ?>
+		<?php if ( $music_video_embed ): ?>
+			<div class="wp-block-group alignwide video-section music-video-section">
+				<div class="video-container has-text-align-center">
+					<?php echo $music_video_embed; ?>
+				</div>
+			</div>
+		<?php endif; ?>
 		
 		<?php
-		// $music_video_embed = get_field('music_video');
 		// Get song and artist info for music service links
 		$song_title = get_the_title() ?? '';
 		$artist_name = get_field('artist') ?? '';
