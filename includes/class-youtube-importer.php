@@ -142,7 +142,7 @@ class YouTube_Song_Importer {
             }
 
             $video_url   = esc_url( $item->get_link() );
-            $video_desc  = sanitize_text_field( $item->get_description() );
+            $video_desc  = $this->get_video_description( $item );
             $video_title = sanitize_text_field( $item->get_title() );
             $video_id    = $this->extract_video_id_from_url( $video_url );
             $item_number = $items_processed + 1;
@@ -203,7 +203,7 @@ class YouTube_Song_Importer {
             if ( ! update_field( 'lyrics', $video_desc, $post_id ) ) {
                 $this->log_import_activity( "WARNING: Failed to update lyrics field for post ID: {$post_id}" );
             } else {
-                $this->log_import_activity( "SUCCESS: Updated lyrics field for post ID: {$post_id}" );
+                $this->log_import_activity( "SUCCESS: Updated lyrics field for post ID: {$post_id}, lyrics: {$video_desc}" );
             }
 
             // Also save video ID as separate meta for reliable duplicate detection
@@ -318,6 +318,7 @@ class YouTube_Song_Importer {
     /**
      * Get the existing post ID for a video URL
      * Returns the post ID if found, false otherwise
+     * Checks both video and music_video ACF fields
      */
     private function get_existing_post_id_by_video_url( $video_url ) {
         // Extract video ID from URL for more reliable comparison
@@ -337,7 +338,7 @@ class YouTube_Song_Importer {
                     'compare' => '='
                 ]
             ],
-            'post_status' => array('publish', 'pending', 'draft'), // Include pending/draft posts to catch duplicates
+            'post_status' => array('publish', 'pending', 'draft'),
             'fields'       => 'ids',
         ] );
 
@@ -345,89 +346,168 @@ class YouTube_Song_Importer {
             return $posts_by_id[0];
         }
 
-        // Method 2: Check by normalized URL in ACF field
-        $normalized_url = $this->normalize_youtube_url( $video_url );
-        $posts_by_url = get_posts( [
-            'post_type'  => 'song',
-            'meta_query' => [
-                'relation' => 'OR',
-                [
-                    'key'     => 'field_68cb1e19f3fe2', // ACF field key for 'video' field
-                    'value'   => $normalized_url,
-                    'compare' => '='
-                ],
-                [
-                    'key'     => 'field_68cb1e19f3fe2',
-                    'value'   => $video_url,
-                    'compare' => '='
-                ],
-                [
-                    'key'     => 'field_68cace34ebd2f', // ACF field key for 'music_video' field
-                    'value'   => $normalized_url,
-                    'compare' => '='
-                ],
-                [
-                    'key'     => 'field_68cace34ebd2f',
-                    'value'   => $video_url,
-                    'compare' => '='
-                ]
-            ],
-            'fields'     => 'ids',
+        // Method 2: Check by extracting video IDs from stored URLs in ACF fields
+        // Get ALL song posts to check (not filtering by meta_query to ensure we catch all posts)
+        $all_songs = get_posts( [
+            'post_type'      => 'song',
+            'post_status'    => array('publish', 'pending', 'draft', 'private'),
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
         ] );
 
-        return ! empty( $posts_by_url ) ? $posts_by_url[0] : false;
+        // Check each post's video and music_video fields
+        foreach ( $all_songs as $post_id ) {
+            // Check video field
+            $stored_video_url = get_field( 'video', $post_id );
+            if ( $stored_video_url && ! empty( trim( $stored_video_url ) ) ) {
+                $stored_video_id = $this->extract_video_id_from_url( $stored_video_url );
+                if ( $stored_video_id && $stored_video_id === $video_id ) {
+                    return $post_id;
+                }
+            }
+
+            // Check music_video field
+            $stored_music_video_url = get_field( 'music_video', $post_id );
+            if ( $stored_music_video_url && ! empty( trim( $stored_music_video_url ) ) ) {
+                $stored_music_video_id = $this->extract_video_id_from_url( $stored_music_video_url );
+                if ( $stored_music_video_id && $stored_music_video_id === $video_id ) {
+                    return $post_id;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
      * Check if a video has already been imported
      * Uses multiple detection methods to catch duplicates
+     * Checks both video and music_video ACF fields
      */
     private function is_video_already_imported( $video_url ) {
         // Extract video ID from URL for more reliable comparison
         $video_id = $this->extract_video_id_from_url( $video_url );
         
+        $this->log_import_activity( "Checking if video is already imported - URL: {$video_url}, Video ID: " . ( $video_id ? $video_id : 'NOT FOUND' ) );
+        
         if ( ! $video_id ) {
+            $this->log_import_activity( "WARNING: Could not extract video ID from URL: {$video_url}" );
             return false;
         }
 
-        // Method 1: Check by video ID in post meta (most reliable)
+        // Method 1: Check by video ID in post meta (most reliable - finds videos imported as main video)
         $posts_by_id = get_posts( [
-            'post_type'  => 'song',
-            'meta_query' => [
+            'post_type'   => 'song',
+            'meta_query'  => [
                 [
                     'key'     => 'video_id',
                     'value'   => $video_id,
                     'compare' => '='
                 ]
             ],
-            'fields'     => 'ids',
+            'post_status' => array('publish', 'pending', 'draft'),
+            'fields'       => 'ids',
         ] );
 
         if ( ! empty( $posts_by_id ) ) {
+            $this->log_import_activity( "Found existing video by video_id meta: {$video_id} (Post IDs: " . implode( ', ', $posts_by_id ) . ")" );
             return true;
         }
 
-        // Method 2: Check by normalized URL in ACF field
-        $normalized_url = $this->normalize_youtube_url( $video_url );
-        $posts_by_url = get_posts( [
-            'post_type'  => 'song',
-            'meta_query' => [
-                'relation' => 'OR',
-                [
-                    'key'     => 'field_68cb1e19f3fe2', // ACF field key for 'video' field
-                    'value'   => $normalized_url,
-                    'compare' => '='
-                ],
-                [
-                    'key'     => 'field_68cb1e19f3fe2',
-                    'value'   => $video_url,
-                    'compare' => '='
-                ]
-            ],
-            'fields'     => 'ids',
+        // Method 2: Check by extracting video IDs from stored URLs in ACF fields
+        // Get ALL song posts to check (not filtering by meta_query to ensure we catch all posts)
+        $all_songs = get_posts( [
+            'post_type'      => 'song',
+            'post_status'    => array('publish', 'pending', 'draft', 'private'),
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
         ] );
 
-        return ! empty( $posts_by_url );
+        $this->log_import_activity( "Checking " . count( $all_songs ) . " song posts for video ID: {$video_id}" );
+
+        // Check each post's video and music_video fields
+        foreach ( $all_songs as $post_id ) {
+            // Check video field
+            $stored_video_url = get_field( 'video', $post_id );
+            if ( $stored_video_url && ! empty( trim( $stored_video_url ) ) ) {
+                $stored_video_id = $this->extract_video_id_from_url( $stored_video_url );
+                if ( $stored_video_id && $stored_video_id === $video_id ) {
+                    $this->log_import_activity( "Found existing video in 'video' field: {$video_id} (Post ID: {$post_id}, URL: {$stored_video_url})" );
+                    return true;
+                }
+            }
+
+            // Check music_video field
+            $stored_music_video_url = get_field( 'music_video', $post_id );
+            if ( $stored_music_video_url && ! empty( trim( $stored_music_video_url ) ) ) {
+                $stored_music_video_id = $this->extract_video_id_from_url( $stored_music_video_url );
+                if ( $stored_music_video_id && $stored_music_video_id === $video_id ) {
+                    $this->log_import_activity( "Found existing video in 'music_video' field: {$video_id} (Post ID: {$post_id}, URL: {$stored_music_video_url})" );
+                    return true;
+                }
+            }
+            
+            // Debug logging for post 359 specifically
+            if ( $post_id == 359 ) {
+                $this->log_import_activity( "DEBUG Post 359 - video field: " . ( $stored_video_url ? $stored_video_url : 'empty' ) . ", music_video field: " . ( $stored_music_video_url ? $stored_music_video_url : 'empty' ) );
+            }
+        }
+
+        $this->log_import_activity( "Video ID {$video_id} not found in any existing posts - will import as new" );
+        return false;
+    }
+
+    /**
+     * Get video description from YouTube feed item
+     * Tries multiple methods to access the media:group>media:description node
+     */
+    private function get_video_description( $item ) {
+        // Method 1: Try to get media:description from Media RSS namespace
+        // YouTube feeds use http://search.yahoo.com/mrss/ namespace
+        $media_tags = $item->get_item_tags( 'http://search.yahoo.com/mrss/', 'description' );
+        if ( ! empty( $media_tags ) && isset( $media_tags[0]['data'] ) ) {
+            $description = $media_tags[0]['data'];
+            if ( ! empty( $description ) ) {
+                $this->log_import_activity( "Found description via Media RSS namespace: " . substr( $description, 0, 100 ) );
+                return sanitize_textarea_field( $description );
+            }
+        }
+        
+        // Method 2: Try alternative namespace (some feeds use different URIs)
+        $media_tags = $item->get_item_tags( 'http://video.search.yahoo.com/mrss/', 'description' );
+        if ( ! empty( $media_tags ) && isset( $media_tags[0]['data'] ) ) {
+            $description = $media_tags[0]['data'];
+            if ( ! empty( $description ) ) {
+                $this->log_import_activity( "Found description via alternative Media RSS namespace: " . substr( $description, 0, 100 ) );
+                return sanitize_textarea_field( $description );
+            }
+        }
+        
+        // Method 3: Try accessing media:group>media:description directly
+        $media_group = $item->get_item_tags( 'http://search.yahoo.com/mrss/', 'group' );
+        if ( ! empty( $media_group ) && isset( $media_group[0]['child'] ) ) {
+            $children = $media_group[0]['child'];
+            if ( isset( $children['http://search.yahoo.com/mrss/']['description'] ) ) {
+                $description_tag = $children['http://search.yahoo.com/mrss/']['description'][0];
+                if ( isset( $description_tag['data'] ) ) {
+                    $description = $description_tag['data'];
+                    if ( ! empty( $description ) ) {
+                        $this->log_import_activity( "Found description via media:group structure: " . substr( $description, 0, 100 ) );
+                        return sanitize_textarea_field( $description );
+                    }
+                }
+            }
+        }
+        
+        // Method 4: Fallback to standard description
+        $description = $item->get_description();
+        if ( ! empty( $description ) ) {
+            $this->log_import_activity( "Using fallback description: " . substr( $description, 0, 100 ) );
+            return sanitize_textarea_field( $description );
+        }
+        
+        $this->log_import_activity( "WARNING: No description found for video item" );
+        return '';
     }
 
     /**
