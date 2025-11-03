@@ -21,7 +21,9 @@ $artist_name = 'Jesse Welles'; // Default artist name
 // Check if there's an artist field
 $artist_field = get_field('artist', $song_id);
 if (!empty($artist_field)) {
-    $artist_name = $artist_field;
+    $artist_name = get_the_title($artist_field[0]);
+} else {
+    $artist_name = 'Jesse Welles';
 }
 ?>
 
