@@ -255,3 +255,43 @@ function jww_open_graph_tags() {
 	echo '<meta property="og:type" content="article" />' . "\n";
 }
 add_action( 'wp_head', 'jww_open_graph_tags', 5 );
+
+/**
+ * Add featured image URL to REST API response for all post types
+ * 
+ * Adds a 'featured_image_url' field to all REST API responses for post types
+ * that support featured images
+ */
+function jww_register_featured_image_rest_field() {
+	// Get all public post types that support thumbnails
+	$post_types = get_post_types( array(
+		'public'       => true,
+		'show_in_rest' => true,
+	), 'names' );
+	
+	foreach ( $post_types as $post_type ) {
+		// Check if post type supports thumbnails
+		if ( post_type_supports( $post_type, 'thumbnail' ) ) {
+			register_rest_field(
+				$post_type,
+				'featured_image_url',
+				array(
+					'get_callback' => function( $post ) {
+						$featured_image_id = get_post_thumbnail_id( $post['id'] );
+						if ( $featured_image_id ) {
+							return wp_get_attachment_image_url( $featured_image_id, 'full' );
+						}
+						return null;
+					},
+					'schema' => array(
+						'description' => __( 'URL of the featured image (full size).' ),
+						'type'        => 'string',
+						'format'      => 'uri',
+						'context'     => array( 'view', 'edit' ),
+					),
+				)
+			);
+		}
+	}
+}
+add_action( 'rest_api_init', 'jww_register_featured_image_rest_field' );
