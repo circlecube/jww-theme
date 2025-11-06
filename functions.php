@@ -199,3 +199,59 @@ function jww_rest_song_collection_params( $query_params ) {
 }
 add_filter( 'rest_song_collection_params', 'jww_rest_song_collection_params', 10, 1 );
 
+/**
+ * Add Open Graph meta tags for all posts
+ * 
+ * Sets the featured image as the Open Graph image for all singular posts
+ */
+function jww_open_graph_tags() {
+	// Only run on singular posts (single post, page, or custom post type)
+	if ( ! is_singular() ) {
+		return;
+	}
+	
+	global $post;
+	
+	// Get the featured image
+	$featured_image_id = get_post_thumbnail_id( $post->ID );
+	
+	if ( $featured_image_id ) {
+		// Get the full-size image URL
+		$image_url = wp_get_attachment_image_url( $featured_image_id, 'full' );
+		
+		if ( $image_url ) {
+			// Get image dimensions
+			$image_meta = wp_get_attachment_image_src( $featured_image_id, 'full' );
+			$image_width = isset( $image_meta[1] ) ? $image_meta[1] : '';
+			$image_height = isset( $image_meta[2] ) ? $image_meta[2] : '';
+			
+			// Output Open Graph tags
+			echo '<meta property="og:image" content="' . esc_url( $image_url ) . '" />' . "\n";
+			
+			if ( $image_width ) {
+				echo '<meta property="og:image:width" content="' . esc_attr( $image_width ) . '" />' . "\n";
+			}
+			
+			if ( $image_height ) {
+				echo '<meta property="og:image:height" content="' . esc_attr( $image_height ) . '" />' . "\n";
+			}
+			
+			// Get image MIME type
+			$mime_type = get_post_mime_type( $featured_image_id );
+			if ( $mime_type ) {
+				echo '<meta property="og:image:type" content="' . esc_attr( $mime_type ) . '" />' . "\n";
+			}
+		}
+	}
+	
+	// Also set standard Open Graph tags if not already set
+	$og_title = get_the_title( $post->ID );
+	$og_description = has_excerpt( $post->ID ) ? get_the_excerpt( $post->ID ) : wp_trim_words( get_the_content( $post->ID ), 30 );
+	$og_url = get_permalink( $post->ID );
+	
+	echo '<meta property="og:title" content="' . esc_attr( $og_title ) . '" />' . "\n";
+	echo '<meta property="og:description" content="' . esc_attr( wp_strip_all_tags( $og_description ) ) . '" />' . "\n";
+	echo '<meta property="og:url" content="' . esc_url( $og_url ) . '" />' . "\n";
+	echo '<meta property="og:type" content="article" />' . "\n";
+}
+add_action( 'wp_head', 'jww_open_graph_tags', 5 );
