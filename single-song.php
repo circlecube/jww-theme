@@ -22,7 +22,7 @@ get_header();
 			$artist_link = get_permalink($artist);
 			
 		?>
-		<h2 class="wp-block-heading has-large-font-size song-artist-heading">
+		<h2 class="wp-block-heading has-large-font-size song-artist-heading alignwide">
 			<strong><em>
 				<a href="<?php echo $artist_link; ?>" class="artist-link">
 					<img src="<?php echo get_the_post_thumbnail_url($artist, 'thumbnail'); ?>" alt="<?php echo $artist_name; ?>" class="artist-image">
