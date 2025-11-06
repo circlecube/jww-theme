@@ -165,3 +165,37 @@ function jww_handle_theme_upgrades() {
 	}
 }
 add_action( 'admin_init', 'jww_handle_theme_upgrades' );
+
+/**
+ * Add support for orderby=rand in REST API for songs
+ * 
+ * Allows random ordering of songs via REST API query parameter:
+ * /wp-json/wp/v2/song?orderby=rand
+ */
+function jww_rest_song_query( $args, $request ) {
+	// Check if orderby=rand is requested
+	if ( isset( $request['orderby'] ) && $request['orderby'] === 'rand' ) {
+		$args['orderby'] = 'rand';
+		// Remove order parameter when using rand (it's not applicable)
+		unset( $args['order'] );
+	}
+	
+	return $args;
+}
+add_filter( 'rest_song_query', 'jww_rest_song_query', 10, 2 );
+
+/**
+ * Register orderby=rand as a valid REST API parameter for songs
+ */
+function jww_rest_song_collection_params( $query_params ) {
+	if ( isset( $query_params['orderby'] ) && isset( $query_params['orderby']['enum'] ) ) {
+		// Add 'rand' to the allowed orderby values if not already present
+		if ( ! in_array( 'rand', $query_params['orderby']['enum'], true ) ) {
+			$query_params['orderby']['enum'][] = 'rand';
+		}
+	}
+	
+	return $query_params;
+}
+add_filter( 'rest_song_collection_params', 'jww_rest_song_collection_params', 10, 1 );
+
