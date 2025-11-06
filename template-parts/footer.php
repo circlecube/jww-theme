@@ -54,6 +54,8 @@
         <!-- wp:social-link {"url":"https://www.reddit.com/r/JesseWelles/","service":"reddit"} /-->
         <!-- wp:social-link {"url":"https://www.facebook.com/share/g/19vTkV2P4A/","service":"facebook"} /-->
         <!-- wp:social-link {"url":"https://discord.gg/gT8dz7DgCH","service":"discord"} /-->
+        <!-- wp:social-link {"url":"https://mas.to/@jessewellsworld","service":"mastodon"} /-->
+        <!-- wp:social-link {"url":"https://bsky.app/profile/jessewellesworld.com","service":"bluesky"} /-->
     </ul>
     <!-- /wp:social-links -->';
     $listening_links = '

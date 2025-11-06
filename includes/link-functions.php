@@ -33,12 +33,12 @@ const AMAZON_AFFILIATE_TAG = 'circubstu-20';
  * @return string The properly encoded query
  */
 function encode_search_query($query) {
-    // Make "Jesse Welles Devil's Den" become "Jesse%20Welles%20Devil%27s%20Den"
+    // Make "Jesse Welles Devil's Den" becomes "Jesse%20Welles%20Devil%27s%20Den"
     
     // Handle spaces and plus signs
     $query = str_replace('%', "%25", $query);  // Percent
     $query = str_replace(' ', "%20", $query);
-    $query = str_replace('+', "%20", $query);
+    // $query = str_replace('+', "%20", $query);
     
     // Handle apostrophes and quotes
     $query = str_replace('’', "%27", $query); // Regular apostrophe to %27
@@ -46,31 +46,31 @@ function encode_search_query($query) {
     
     // Handle other common punctuation
     $query = str_replace('&', "%26", $query);  // Ampersand
-    $query = str_replace('#', "%23", $query);  // Hash
-    $query = str_replace('$', "%24", $query);  // Dollar sign
-    $query = str_replace('@', "%40", $query);  // At symbol
-    $query = str_replace('!', "%21", $query);  // Exclamation
-    $query = str_replace('?', "%3F", $query);  // Question mark
-    $query = str_replace('(', "%28", $query);  // Left parenthesis
-    $query = str_replace(')', "%29", $query);  // Right parenthesis
-    $query = str_replace('[', "%5B", $query);  // Left bracket
-    $query = str_replace(']', "%5D", $query);  // Right bracket
-    $query = str_replace('{', "%7B", $query);  // Left brace
-    $query = str_replace('}', "%7D", $query);  // Right brace
-    $query = str_replace('=', "%3D", $query);  // Equals
-    $query = str_replace('|', "%7C", $query);  // Pipe
-    $query = str_replace('\\', "%5C", $query); // Backslash
-    $query = str_replace(':', "%3A", $query);  // Colon
-    $query = str_replace(';', "%3B", $query);  // Semicolon
-    $query = str_replace('<', "%3C", $query);  // Less than
-    $query = str_replace('>', "%3E", $query);  // Greater than
-    $query = str_replace(',', "%2C", $query);  // Comma
-    $query = str_replace('.', "%2E", $query);  // Period
-    $query = str_replace('/', "%2F", $query);  // Forward slash
-    $query = str_replace('~', "%7E", $query);  // Tilde
-    $query = str_replace('`', "%60", $query);  // Backtick
-    $query = str_replace('^', "%5E", $query);  // Caret
-    $query = str_replace('%2B', "%20", $query);  // Plus sign to space
+    // $query = str_replace('#', "%23", $query);  // Hash
+    // $query = str_replace('$', "%24", $query);  // Dollar sign
+    // $query = str_replace('@', "%40", $query);  // At symbol
+    // $query = str_replace('!', "%21", $query);  // Exclamation
+    // $query = str_replace('?', "%3F", $query);  // Question mark
+    // $query = str_replace('(', "%28", $query);  // Left parenthesis
+    // $query = str_replace(')', "%29", $query);  // Right parenthesis
+    // $query = str_replace('[', "%5B", $query);  // Left bracket
+    // $query = str_replace(']', "%5D", $query);  // Right bracket
+    // $query = str_replace('{', "%7B", $query);  // Left brace
+    // $query = str_replace('}', "%7D", $query);  // Right brace
+    // $query = str_replace('=', "%3D", $query);  // Equals
+    // $query = str_replace('|', "%7C", $query);  // Pipe
+    // $query = str_replace('\\', "%5C", $query); // Backslash
+    // $query = str_replace(':', "%3A", $query);  // Colon
+    // $query = str_replace(';', "%3B", $query);  // Semicolon
+    // $query = str_replace('<', "%3C", $query);  // Less than
+    // $query = str_replace('>', "%3E", $query);  // Greater than
+    // $query = str_replace(',', "%2C", $query);  // Comma
+    // $query = str_replace('.', "%2E", $query);  // Period
+    // $query = str_replace('/', "%2F", $query);  // Forward slash
+    // $query = str_replace('~', "%7E", $query);  // Tilde
+    // $query = str_replace('`', "%60", $query);  // Backtick
+    // $query = str_replace('^', "%5E", $query);  // Caret
+    // $query = str_replace('%2B', "%20", $query);  // Plus sign to space
     
     return $query;
 }
@@ -99,7 +99,7 @@ function get_amazon_album_search_url($album_title, $artist_name = ARTIST_NAME, $
     // $search_terms[] = 'CD';
     
     // Join terms with spaces
-    $query = implode(' ', $search_terms);
+    $query = implode('+', $search_terms);
     
     // URL encode the search query with proper space encoding
     $encoded_query = encode_search_query($query);

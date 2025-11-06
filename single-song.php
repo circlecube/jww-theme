@@ -12,16 +12,28 @@ get_header();
 		style="padding-top:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--50)"
 	>
 		
-		<?php the_title('<h1 class="wp-block-post-title alignwide has-text-align-center has-xxx-large-font-size">', '</h1>'); ?>
+		<?php the_title('<h1 class="wp-block-post-title alignwide has-xxx-large-font-size">', '</h1>'); ?>
 		
 		<?php
 			$attribution = get_field( 'attribution' );
-			if ( $attribution ): ?>
-			<div class="wp-block-post-content">
-				<h2 class="wp-block-heading has-text-align-center has-large-font-size">Jesse Welles performing song by <strong><em><?php echo $attribution; ?></em></strong></h2>
-			</div>
-		<?php endif; ?>
-		
+			$artist_id = get_field('artist');
+			$artist = get_post($artist_id[0]);
+			$artist_name = get_the_title($artist);
+			$artist_link = get_permalink($artist);
+			
+		?>
+		<h2 class="wp-block-heading has-large-font-size song-artist-heading">
+			<strong><em>
+				<a href="<?php echo $artist_link; ?>" class="artist-link">
+					<img src="<?php echo get_the_post_thumbnail_url($artist, 'thumbnail'); ?>" alt="<?php echo $artist_name; ?>" class="artist-image">
+					<?php echo $artist_name; ?>
+				</a>
+			</em></strong>
+			<?php if ( $attribution ): ?>
+				<span class="wp-block-heading has-large-font-size">performing <strong><em><?php echo $attribution; ?></em></strong></span>
+			<?php endif; ?>
+		</h2>
+
 		<div class="wp-block-post-content">
 			<?php the_content(); ?>
 		</div>
@@ -86,8 +98,6 @@ get_header();
 		<?php
 		// Get song and artist info for music service links
 		$song_title = get_the_title() ?? '';
-		$artist_name = get_field('artist') ?? '';
-		
 		// Generate all music service links for the song
 		echo get_song_music_service_links($song_title, $artist_name);
 		?>
@@ -95,7 +105,7 @@ get_header();
 </main>
 
 <!-- Lyrics Section -->
-<div class="wp-block-group has-accent-6-background-color has-background is-layout-constrained" style="border-style:none;border-width:0px">
+<div class="wp-block-group has-accent-6-background-color has-background is-layout-constrained has-global-padding" style="border-style:none;border-width:0px">
 	<div style="height:4rem" aria-hidden="true" class="wp-block-spacer"></div>
 	
 	<div class="wp-block-post-content">
@@ -116,7 +126,7 @@ get_header();
 </div>
 
 <!-- Annotations Section -->
-<div class="wp-block-group is-style-default has-base-background-color has-background is-layout-constrained" style="margin-top:0;margin-bottom:0">
+<div class="wp-block-group is-style-default has-base-background-color has-background is-layout-constrained has-global-padding" style="margin-top:0;margin-bottom:0">
 	<div style="height:4rem" aria-hidden="true" class="wp-block-spacer"></div>
 	
 	<div class="wp-block-post-content">
@@ -137,7 +147,7 @@ get_header();
 </div>
 
 <!-- Appears on Section -->
-<div class="wp-block-group is-style-default has-base-background-color has-background is-layout-constrained" style="margin-top:0;margin-bottom:0">
+<div class="wp-block-group is-style-default has-base-background-color has-background is-layout-constrained has-global-padding" style="margin-top:0;margin-bottom:0">
 	
 	<div class="wp-block-post-content">
 		<?php
