@@ -30,7 +30,7 @@ get_header();
 			}
 		?>
 		</h2>
-		<div class="wp-block-post-content alignfull is-layout-constrained ">
+		<div class="wp-block-post-content alignfull is-layout-constrained has-global-padding">
 			<?php the_content(); ?>
 		</div>
 		
@@ -38,7 +38,7 @@ get_header();
 </main>
 
 <!-- Albums Section -->
-<div class="wp-block-group alignwide has-global-padding is-layout-constrained wp-block-post-content-is-layout-constrained" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--60)">	
+<div class="wp-block-group alignwide has-global-padding is-layout-constrained wp-block-post-content-is-layout-constrained has-global-padding" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--60)">	
 	<h2 class="albums-section-heading">Albums by <?php the_title(); ?></h2>
 	<?php
 	// Get all albums and pass them to the template part

@@ -18,7 +18,7 @@ if ( post_password_required() ) {
 }
 ?>
 
-<div id="comments" class="comments-area is-layout-constrained">
+<div id="comments" class="comments-area is-layout-constrained has-global-padding">
 
 	<?php if ( have_comments() ) : ?>
 		<h2 class="comments-title">

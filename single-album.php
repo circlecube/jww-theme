@@ -51,7 +51,7 @@ get_header();
 			</div>
 		</div>
 		
-		<div class="wp-block-post-content alignfull is-layout-constrained ">
+		<div class="wp-block-post-content alignfull is-layout-constrained has-global-padding">
 			<h4>Find it</h4>
 			<?php
 			// Get album and artist info for music service links
