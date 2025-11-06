@@ -1174,6 +1174,7 @@ class YouTube_Song_Importer {
                             message += 'Processed: ' + data.processed + ' songs\\n';
                             message += 'Thumbnails added: ' + data.thumbnails_added + '\\n';
                             message += 'Video IDs added: ' + data.video_ids_added + '\\n';
+                            message += 'Lyrics tags added: ' + data.lyrics_tags_added + '\\n';
                             message += 'Skipped: ' + data.skipped + ' (already had thumbnails)\\n';
                             message += 'No video URL: ' + data.no_video + '\\n';
                             
@@ -1306,6 +1307,7 @@ class YouTube_Song_Importer {
         $skipped_count = 0;
         $video_id_added_count = 0;
         $no_video_count = 0;
+        $lyrics_tag_added_count = 0;
         $errors = [];
 
         foreach ( $posts as $post ) {
@@ -1313,6 +1315,34 @@ class YouTube_Song_Importer {
             $processed_count++;
             
             $this->log_import_activity( "Checking post #{$processed_count}: '{$post_title}' (ID: {$post->ID})" );
+
+            // Check for lyrics and add 'needs-lyrics' tag if missing
+            $lyrics = get_field( 'lyrics', $post->ID );
+            if ( empty( $lyrics ) || trim( $lyrics ) === '' ) {
+                // Get existing tags
+                $existing_tags = wp_get_post_terms( $post->ID, 'post_tag', array( 'fields' => 'slugs' ) );
+                
+                // Add 'needs-lyrics' tag if not already present
+                if ( ! in_array( 'needs-lyrics', $existing_tags ) ) {
+                    if ( empty( $existing_tags ) ) {
+                        $existing_tags = array();
+                    }
+                    $existing_tags[] = 'needs-lyrics';
+                    wp_set_post_terms( $post->ID, $existing_tags, 'post_tag' );
+                    $this->log_import_activity( "SUCCESS: Added 'needs-lyrics' tag to '{$post_title}' (ID: {$post->ID})" );
+                    $lyrics_tag_added_count++;
+                } else {
+                    $this->log_import_activity( "SKIP: Post '{$post_title}' (ID: {$post->ID}) already has 'needs-lyrics' tag" );
+                }
+            } else {
+                // Remove 'needs-lyrics' tag if lyrics exist
+                $existing_tags = wp_get_post_terms( $post->ID, 'post_tag', array( 'fields' => 'slugs' ) );
+                if ( in_array( 'needs-lyrics', $existing_tags ) ) {
+                    $existing_tags = array_diff( $existing_tags, array( 'needs-lyrics' ) );
+                    wp_set_post_terms( $post->ID, $existing_tags, 'post_tag' );
+                    $this->log_import_activity( "SUCCESS: Removed 'needs-lyrics' tag from '{$post_title}' (ID: {$post->ID}) - lyrics found" );
+                }
+            }
 
             // Get video URL
             $video_url = get_field( 'video', $post->ID );
@@ -1360,13 +1390,14 @@ class YouTube_Song_Importer {
         }
 
         $total_songs = count( $posts );
-        $this->log_import_activity( "Comprehensive bulk update completed. Total songs: {$total_songs}, Processed: {$processed_count}, Thumbnails added: {$thumbnail_added_count}, Video IDs added: {$video_id_added_count}, Skipped: {$skipped_count}, No video: {$no_video_count}" );
+        $this->log_import_activity( "Comprehensive bulk update completed. Total songs: {$total_songs}, Processed: {$processed_count}, Thumbnails added: {$thumbnail_added_count}, Video IDs added: {$video_id_added_count}, Lyrics tags added: {$lyrics_tag_added_count}, Skipped: {$skipped_count}, No video: {$no_video_count}" );
         
         $response_data = [
             'total_songs' => $total_songs,
             'processed' => $processed_count,
             'thumbnails_added' => $thumbnail_added_count,
             'video_ids_added' => $video_id_added_count,
+            'lyrics_tags_added' => $lyrics_tag_added_count,
             'skipped' => $skipped_count,
             'no_video' => $no_video_count,
             'errors' => $errors
