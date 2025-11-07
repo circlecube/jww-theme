@@ -13,3 +13,6 @@ import './random-lyrics';
 
 // Import band-list block
 import './band-list';
+
+// Import song-list block
+import './song-list';

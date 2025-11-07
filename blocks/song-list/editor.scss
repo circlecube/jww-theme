@@ -1,0 +1,36 @@
+.song-list-preview {
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #f9f9f9;
+
+    h3 {
+        margin-top: 0;
+        margin-bottom: 15px;
+    }
+
+    .preview-info {
+        margin-bottom: 15px;
+        
+        p {
+            margin: 5px 0;
+        }
+    }
+
+    .preview-songs {
+        margin-top: 15px;
+    }
+
+    .preview-song-list {
+        list-style: disc;
+        padding-left: 20px;
+        margin: 10px 0;
+    }
+
+    .preview-note {
+        margin-top: 10px;
+        font-style: italic;
+        color: #666;
+    }
+}
+

@@ -213,46 +213,72 @@ function jww_open_graph_tags() {
 	global $post;
 	
 	// Get the featured image
-	$featured_image_id = get_post_thumbnail_id( $post->ID );
+	// Also set standard Open Graph tags if not already set
+	$og_title       = get_the_title( $post->ID );
+	$post_type      = get_post_type( $post->ID );
+	$og_description = has_excerpt( $post->ID ) ? get_the_excerpt( $post->ID ) : wp_trim_words( get_the_content( $post->ID ), 30 );
+	$og_url         = get_permalink( $post->ID );
+	$featured_image = get_post_thumbnail_id( $post->ID );
+	$default_image  = get_theme_file_uri( 'assets/jesse-welles-world-illustration.png' );
 	
-	if ( $featured_image_id ) {
+	if ( $featured_image ) {
 		// Get the full-size image URL
-		$image_url = wp_get_attachment_image_url( $featured_image_id, 'full' );
+		$image_url = wp_get_attachment_image_url( $featured_image, 'large' );
 		
 		if ( $image_url ) {
-			// Get image dimensions
-			$image_meta = wp_get_attachment_image_src( $featured_image_id, 'full' );
-			$image_width = isset( $image_meta[1] ) ? $image_meta[1] : '';
-			$image_height = isset( $image_meta[2] ) ? $image_meta[2] : '';
-			
-			// Output Open Graph tags
 			echo '<meta property="og:image" content="' . esc_url( $image_url ) . '" />' . "\n";
-			
-			if ( $image_width ) {
-				echo '<meta property="og:image:width" content="' . esc_attr( $image_width ) . '" />' . "\n";
-			}
-			
-			if ( $image_height ) {
-				echo '<meta property="og:image:height" content="' . esc_attr( $image_height ) . '" />' . "\n";
-			}
-			
 			// Get image MIME type
-			$mime_type = get_post_mime_type( $featured_image_id );
+			$mime_type = get_post_mime_type( $featured_image );
 			if ( $mime_type ) {
 				echo '<meta property="og:image:type" content="' . esc_attr( $mime_type ) . '" />' . "\n";
 			}
 		}
+	} else {
+		// fallback to the site logo
+		echo '<meta property="og:image" content="' . esc_url( $default_image ) . '" />' . "\n";
 	}
-	
-	// Also set standard Open Graph tags if not already set
-	$og_title = get_the_title( $post->ID );
-	$og_description = has_excerpt( $post->ID ) ? get_the_excerpt( $post->ID ) : wp_trim_words( get_the_content( $post->ID ), 30 );
-	$og_url = get_permalink( $post->ID );
-	
-	echo '<meta property="og:title" content="' . esc_attr( $og_title ) . '" />' . "\n";
-	echo '<meta property="og:description" content="' . esc_attr( wp_strip_all_tags( $og_description ) ) . '" />' . "\n";
+	// get artist
+	if ( isset( $post_type ) && ( $post_type === 'song' || $post_type === 'album' ) ) {
+		$artist_id = get_field('artist', $post->ID);
+		$artist_name = get_the_title($artist_id[0]);
+		$title = $artist_name . ' - ' . $post_type . ' - ' . $og_title;
+	} elseif ( isset( $post_type ) && $post_type === 'band' ) {
+		$artist_name = get_the_title($post->ID);
+		$title = $artist_name;
+	} else {
+		$artist_name = 'Jesse Welles';
+		$title = $artist_name . ' - ' . $post_type . ' - ' . $og_title;
+	}
+	echo '<meta property="og:title" content="' . esc_attr( $title ) . '" />' . "\n";
 	echo '<meta property="og:url" content="' . esc_url( $og_url ) . '" />' . "\n";
-	echo '<meta property="og:type" content="article" />' . "\n";
+	echo '<meta property="og:logo" content="' . esc_url( $default_image ) . '" />' . "\n";
+
+	switch ($post_type) {
+		case 'song':
+			echo '<meta property="og:type" content="music.song" />' . "\n";
+			echo '<meta property="og:music:musician" content="' . esc_attr( $artist_name ) . '" />' . "\n";
+			echo '<meta property="og:music:album" content="' . esc_attr( $album_name ) . '" />' . "\n";
+			echo '<meta property="og:description" content="' . esc_attr( $og_title ) . ' by ' . esc_attr( $artist_name ) . '" />' . "\n";
+			echo '<meta property="og:image:alt" content="' . esc_attr( $artist_name ) . ' playing ' . esc_attr( $og_title ) . '" />' . "\n";
+			break;
+		case 'album':
+			echo '<meta property="og:type" content="music.album" />' . "\n";
+			echo '<meta property="og:music:musician" content="' . esc_attr( $artist_name ) . '" />' . "\n";
+			echo '<meta property="og:description" content="' . esc_attr( $og_title ) . ' by ' . esc_attr( $artist_name ) . '" />' . "\n";
+			echo '<meta property="og:image:alt" content="' . esc_attr( $artist_name ) . ' released ' . esc_attr( $og_title ) . '" />' . "\n";
+			break;
+		case 'band':
+			echo '<meta property="og:type" content="music.musician" />' . "\n";
+			echo '<meta property="og:music:musician" content="' . esc_attr( $artist_name ) . '" />' . "\n";
+			echo '<meta property="og:description" content="' . esc_attr( $artist_name ) . '" />' . "\n";
+			echo '<meta property="og:image:alt" content="' . esc_attr( $artist_name ) . '" />' . "\n";
+			break;
+		default: // post, page, etc.
+			echo '<meta property="og:type" content="article" />' . "\n";
+			echo '<meta property="og:description" content="' . esc_attr( $og_description ) . '" />' . "\n";
+			echo '<meta property="og:image:alt" content="' . esc_attr( $og_description ) . '" />' . "\n";
+			break;
+	}
 }
 add_action( 'wp_head', 'jww_open_graph_tags', 5 );
 

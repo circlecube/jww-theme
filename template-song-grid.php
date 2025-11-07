@@ -39,14 +39,7 @@ get_header();
 		'post_type'      => 'song',
 		'posts_per_page' => -1,
 		'orderby'        => 'date',
-		'order'          => 'DESC',
-		// 'tax_query'      => array(
-		// 	array(
-		// 		'taxonomy' => 'category',
-		// 		'field'     => 'slug',
-		// 		'terms'    => 'original'
-		// 	)
-		// )
+		'order'          => 'DESC'
 	);
 	
 	// Add artist filter if artist ID is specified
