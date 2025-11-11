@@ -5,12 +5,15 @@
  * @package jww-theme
  */
 
-// Get artist_id and show_headers from query vars (passed from block or template)
+// Get artist_id, show_headers, and include_covers from query vars (passed from block or template)
 $artist_id = get_query_var('artist_id', '');
 $show_headers = get_query_var('show_headers', true);
+$include_covers = get_query_var('include_covers', false);
 ?>
 
-<h2 class="wp-block-heading song-list-heading" id="chronological" name="chronological">Chronological</h2>
+<?php if ($show_headers) { ?>
+    <h2 class="wp-block-heading song-list-heading" id="chronological" name="chronological">Chronological</h2>
+<?php } ?>
 	<?php
 	$query_args = array(
 		'post_type'      => 'song',
@@ -21,7 +24,7 @@ $show_headers = get_query_var('show_headers', true);
 			array(
 				'taxonomy' => 'category',
 				'field'     => 'slug',
-				'terms'    => 'original'
+				'terms'    => $include_covers ? array('original', 'cover') : 'original'
 			)
 		)
 	);
@@ -46,7 +49,7 @@ $show_headers = get_query_var('show_headers', true);
 		$current_month = '';
 		?>
 		
-		<div class="chronological-song-list">
+		<div class="chronological-song-list <?php echo $show_headers ? 'with-headers' : ''; ?>">
 		<?php
 		while ($song_query->have_posts()) {
 			$song_query->the_post();
@@ -74,12 +77,12 @@ $show_headers = get_query_var('show_headers', true);
 			}
 			?>
 			<li class="wp-block-list-item">
-				<h4 class="wp-block-heading">
+				<?php if ($show_headers) { ?><h4 class="wp-block-heading"><?php } ?>
 					<a href="<?php the_permalink(); ?>">
 						<?php the_title(); ?>
 						<span class="song-meta song-date">(<?php echo get_the_date(); ?>)</span>
 					</a>
-				</h4>
+				<?php if ($show_headers) { ?></h4><?php } ?>
 			</li>
 			<?php
 		}

@@ -40,7 +40,12 @@
         "listType": {
             "type": "string",
             "default": "alphabetical",
-            "enum": ["alphabetical", "chronological", "covers", "grid"]
+            "enum": [
+                "alphabetical",
+                "chronological",
+                "covers",
+                "grid"
+            ]
         },
         "artistId": {
             "type": "string",
@@ -49,7 +54,10 @@
         "showHeaders": {
             "type": "boolean",
             "default": true
+        },
+        "includeCovers": {
+            "type": "boolean",
+            "default": false
         }
     }
 }
-

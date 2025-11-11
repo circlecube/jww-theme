@@ -5,8 +5,9 @@
  * @package jww-theme
  */
 
-// Get artist_id from query vars (passed from block or template)
+// Get artist_id and include_covers from query vars (passed from block or template)
 $artist_id = get_query_var('artist_id', '');
+$include_covers = get_query_var('include_covers', false);
 
 // Build query arguments
 $query_args = array(
@@ -15,6 +16,26 @@ $query_args = array(
 	'orderby'        => 'date',
 	'order'          => 'DESC'
 );
+
+// Add category filter if include_covers is false (only show original songs)
+// If include_covers is true, show both original and cover songs
+if (!$include_covers) {
+	$query_args['tax_query'] = array(
+		array(
+			'taxonomy' => 'category',
+			'field'     => 'slug',
+			'terms'    => 'original'
+		)
+	);
+} else {
+	$query_args['tax_query'] = array(
+		array(
+			'taxonomy' => 'category',
+			'field'     => 'slug',
+			'terms'    => array('original', 'cover')
+		)
+	);
+}
 
 // Add artist filter if artist_id is provided
 if (!empty($artist_id)) {

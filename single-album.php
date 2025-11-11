@@ -57,7 +57,7 @@ get_header();
 			// Get album and artist info for music service links
 			$album_title = get_the_title();
 			// Generate all music service links
-			echo get_all_music_service_links($album_title, ARTIST_NAME, 'album');
+			echo get_all_music_service_links($album_title, $artist_name, 'album');
 			?>
 
 			<?php the_content(); ?>

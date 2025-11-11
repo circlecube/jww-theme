@@ -10,7 +10,7 @@ import './style.scss';
 
 registerBlockType('jww/song-list', {
     edit: ({ attributes, setAttributes }) => {
-        const { listType, artistId, showHeaders } = attributes;
+        const { listType, artistId, showHeaders, includeCovers } = attributes;
         const blockProps = useBlockProps();
 
         // Get available bands/artists
@@ -31,8 +31,25 @@ registerBlockType('jww/song-list', {
                 order: listType === 'chronological' ? 'desc' : 'asc'
             };
 
+            // Add meta filter for artist if artistId is selected
+            // Note: REST API filtering by ACF relationship fields may not be perfect
+            // due to serialized storage format, but we'll attempt it
+            if (artistId) {
+                queryArgs.meta_key = 'artist';
+                // Try to match the serialized format used by ACF
+                queryArgs.meta_value = artistId.toString();
+                queryArgs.compare = 'LIKE';
+                // queryArgs.meta_query = [
+                //     {
+                //         key: 'artist',
+                //         value: artistId.toString(),
+                //         compare: 'LIKE'
+                //     }
+                // ];
+            }
+
             return select('core').getEntityRecords('postType', 'song', queryArgs);
-        }, [listType]);
+        }, [listType, artistId]);
 
         const listTypeOptions = [
             { label: __('Alphabetical', 'jww-theme'), value: 'alphabetical' },
@@ -75,12 +92,21 @@ registerBlockType('jww/song-list', {
                                 help={__('Display section headers (letters, months, or artists) depending on list type', 'jww-theme')}
                             />
                         )}
+
+                        {listType !== 'covers' && (
+                            <ToggleControl
+                                label={__('Include Cover Songs', 'jww-theme')}
+                                checked={includeCovers}
+                                onChange={(value) => setAttributes({ includeCovers: value })}
+                                help={__('Include cover songs in the list along with original songs', 'jww-theme')}
+                            />
+                        )}
                     </PanelBody>
                 </InspectorControls>
 
                 <div className="song-list-preview">
                     <h3>{__('Song List Preview', 'jww-theme')}</h3>
-                    
+
                     <div className="preview-info">
                         <p>
                             <strong>{__('List Type:', 'jww-theme')}</strong> {
@@ -103,6 +129,13 @@ registerBlockType('jww/song-list', {
                             <p>
                                 <strong>{__('Show Headers:', 'jww-theme')}</strong> {
                                     showHeaders ? __('Yes', 'jww-theme') : __('No', 'jww-theme')
+                                }
+                            </p>
+                        )}
+                        {listType !== 'covers' && (
+                            <p>
+                                <strong>{__('Include Covers:', 'jww-theme')}</strong> {
+                                    includeCovers ? __('Yes', 'jww-theme') : __('No', 'jww-theme')
                                 }
                             </p>
                         )}

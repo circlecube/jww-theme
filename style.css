@@ -410,7 +410,7 @@ Tags:
   margin: var(--wp--preset--spacing--70) 0;
 }
 
-.song-list {
+.with-headers .song-list {
   list-style: none;
 }
 .song-list h3 {

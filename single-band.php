@@ -74,33 +74,56 @@ get_header();
 <div class="wp-block-group alignwide has-global-padding is-layout-constrained wp-block-post-content-is-layout-constrained" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--60)">	
 	<h2 class="albums-section-heading">EPs & Singles by <?php the_title(); ?></h2>
 	<?php
-	// Get all albums and pass them to the template part
-	$albums = get_posts(array(
-		'order'          => 'DESC',
-		'orderby'        => 'date',
-		'post_type'      => 'album',
-		'posts_per_page' => 100,
-		'tax_query'      => array(
-			array(
-				'taxonomy' => 'release',
-				'field'    => 'name',
-				'terms'    => array( 'ep', 'single' ),
-				'operator' => 'IN'
+		// Get all albums and pass them to the template part
+		$albums = get_posts(array(
+			'order'          => 'DESC',
+			'orderby'        => 'date',
+			'post_type'      => 'album',
+			'posts_per_page' => 100,
+			'tax_query'      => array(
+				array(
+					'taxonomy' => 'release',
+					'field'    => 'name',
+					'terms'    => array( 'ep', 'single' ),
+					'operator' => 'IN'
+				)
+			),
+			'meta_query' => array(
+				array(
+					'key'     => 'artist',
+					'value'   => '"' . get_the_ID() . '"', // current band ID
+					'compare' => 'LIKE'
+				)
 			)
-		),
-		'meta_query' => array(
-			array(
-				'key'     => 'artist',
-				'value'   => '"' . get_the_ID() . '"', // current band ID
-				'compare' => 'LIKE'
-			)
-		)
-	));
-	
-	set_query_var('albums', $albums);
-	set_query_var('show_title', true);
-	set_query_var('title', 'Releases');
-	get_template_part('template-parts/album-covers');
+		));
+		
+		set_query_var('albums', $albums);
+		set_query_var('show_title', true);
+		set_query_var('title', 'Releases');
+		get_template_part('template-parts/album-covers');
+	?>
+</div>
+<div class="wp-block-group alignwide has-global-padding is-layout-constrained wp-block-post-content-is-layout-constrained" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--60)">	
+	<h2 class="albums-section-heading">All Songs by <?php the_title(); ?></h2>
+	<?php
+		// Get all songs and pass them to the template part
+		set_query_var('artist_id', get_the_ID());
+		set_query_var('show_headers', false);
+		set_query_var('include_covers', true);
+		get_template_part('template-parts/song-list-alphabetical');
+
+		// manual song list from acf field
+		// $songs = get_field('songs');
+		// echo $songs;
+		// if ($songs) {
+		// 	echo '<ul class="wp-block-list song-list">';
+		// 	foreach ($songs as $song) {
+		// 		// echo $song;
+		// 		$songpost = get_post($song);
+		// 		echo '<li class="wp-block-list-item"><a href="' . get_permalink($song) . '">' . get_the_title($song) . '</a></li>';
+		// 	}
+		// 	echo '</ul>';
+		// }
 	?>
 </div>
 
