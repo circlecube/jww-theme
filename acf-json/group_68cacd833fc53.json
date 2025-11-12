@@ -115,6 +115,69 @@
             "width": "",
             "height": "",
             "allow_in_bindings": 1
+        },
+        {
+            "key": "field_691394d9330fe",
+            "label": "Bandcamp Iframe",
+            "name": "bandcamp_iframe",
+            "aria-label": "",
+            "type": "textarea",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "maxlength": "",
+            "allow_in_bindings": 0,
+            "rows": 3,
+            "placeholder": "",
+            "new_lines": ""
+        },
+        {
+            "key": "field_6913967474707",
+            "label": "Bandcamp Album Id",
+            "name": "bandcamp_album_id",
+            "aria-label": "",
+            "type": "text",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "50",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "maxlength": "",
+            "allow_in_bindings": 0,
+            "placeholder": "",
+            "prepend": "",
+            "append": ""
+        },
+        {
+            "key": "field_691396e574708",
+            "label": "Bandcamp Song Id",
+            "name": "bandcamp_song_id",
+            "aria-label": "",
+            "type": "text",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "50",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "maxlength": "",
+            "allow_in_bindings": 0,
+            "placeholder": "",
+            "prepend": "",
+            "append": ""
         }
     ],
     "location": [
@@ -136,5 +199,5 @@
     "description": "",
     "show_in_rest": 0,
     "display_title": "",
-    "modified": 1761934742
+    "modified": 1762892461
 }

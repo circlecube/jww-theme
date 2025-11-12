@@ -23,6 +23,34 @@
             "allow_in_bindings": 0
         },
         {
+            "key": "field_6913540bbf765",
+            "label": "Release Date Alt",
+            "name": "release_date_alt",
+            "aria-label": "",
+            "type": "text",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": [
+                [
+                    {
+                        "field": "field_68cb0b66cee33",
+                        "operator": "==empty"
+                    }
+                ]
+            ],
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "maxlength": "",
+            "allow_in_bindings": 0,
+            "placeholder": "",
+            "prepend": "",
+            "append": ""
+        },
+        {
             "key": "field_68cc6ef960155",
             "label": "Artist\/Band",
             "name": "artist",
@@ -74,5 +102,5 @@
     "description": "",
     "show_in_rest": 0,
     "display_title": "",
-    "modified": 1761934762
+    "modified": 1762897371
 }

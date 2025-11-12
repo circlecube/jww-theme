@@ -48,7 +48,15 @@ $title_text = !empty($title) ? $title : 'Appears on:';
                     <?php echo $album_cover; ?>
                 <?php endif; ?>
                 <h2 class="album-title"><?php echo esc_html($album_title); ?></h2>
-                <span class="album-date"><?php echo get_field('release_date', $album_id); ?></span>
+                <span class="album-date">
+                    <?php 
+                        if (get_field('release_date', $album_id)) { 
+                            echo get_field('release_date', $album_id);
+                        } else if (get_field('release_date_alt', $album_id)) {
+                            echo get_field('release_date_alt', $album_id);
+                        }
+                    ?>
+                </span>
             </a>
         <?php endforeach; ?>
     </div>

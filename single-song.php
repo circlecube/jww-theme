@@ -37,9 +37,33 @@ get_header();
 		<div class="wp-block-post-content">
 			<?php the_content(); ?>
 		</div>
+
+		<?php
+		// Bandcamp song and album id
+		$bandcamp_song_id  = get_field('bandcamp_song_id') ?? '';
+		$bandcamp_album_id = get_field('bandcamp_album_id') ?? '';
+		$bandcamp_iframe   = get_field('bandcamp_iframe') ?? ''; // default to iframe field
+		// override iframe with custom iframe if song and album are available
+		if ( $bandcamp_song_id && $bandcamp_album_id ) {
+			$bandcamp_iframe = '<iframe ' .
+				'style="border: 0; width: 100%; height: 120px;" ' .
+				'src="https://bandcamp.com/EmbeddedPlayer/' .
+				'/size=large/bgcol=ffffff/linkcol=0687f5/tracklist=false/artwork=small/transparent=true' .
+				'/album=' . $bandcamp_album_id . // album id is optional and adds track nav buttons
+				'/track=' . $bandcamp_song_id . // song id is required
+				'" seamless></iframe>';
+		}
+		?>
+		<?php if ( $bandcamp_iframe ): ?>
+			<div class="wp-block-group bandcamp-section">
+				<div class="bandcamp-container has-text-align-center">
+					<?php echo $bandcamp_iframe; ?>
+				</div>
+			</div>
+		<?php endif; ?>
 		
 		<?php
-		// Video field
+		// Video fields
 		$yt_video_embed        = get_field('video');
 		$tiktok_video_embed    = get_field('tiktok_video');
 		$instagram_video_embed = get_field('instagram_video');
