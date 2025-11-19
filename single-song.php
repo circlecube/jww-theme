@@ -32,7 +32,9 @@ get_header();
 			<?php if ( $attribution ): ?>
 				<span class="wp-block-heading has-large-font-size">performing <strong><em><?php echo $attribution; ?></em></strong></span>
 			<?php endif; ?>
+			<!-- post date -->
 		</h2>
+		<span class="has-small-font-size" title="First published on"><?php echo get_the_date('F j, Y'); ?></span>
 
 		<div class="wp-block-post-content">
 			<?php the_content(); ?>
@@ -122,16 +124,16 @@ get_header();
 		<?php
 		// Get song and artist info for music service links
 		$song_title = get_the_title() ?? '';
-		// Generate all music service links for the song
-		echo get_song_music_service_links($song_title, $artist_name);
+		// Get ACF song links repeater field
+		$song_links = get_field('song_links');
+		// Generate all music service links for the song (ACF links will override generated ones)
+		echo get_song_music_service_links($song_title, $artist_name, '', array(), $song_links);
 		?>
 	</div>
 </main>
 
 <!-- Lyrics Section -->
 <div class="wp-block-group has-accent-6-background-color has-background is-layout-constrained has-global-padding" style="border-style:none;border-width:0px">
-	<div style="height:4rem" aria-hidden="true" class="wp-block-spacer"></div>
-	
 	<div class="wp-block-post-content">
 	<h2 class="wp-block-heading">Lyrics</h2>
 	
@@ -145,30 +147,25 @@ get_header();
 		<p>Sorry, no lyrics yet.</p>
 	<?php endif; ?>
 	
-	<div style="height:4rem" aria-hidden="true" class="wp-block-spacer"></div>
 	</div>
 </div>
 
-<!-- Annotations Section -->
-<div class="wp-block-group is-style-default has-base-background-color has-background is-layout-constrained has-global-padding" style="margin-top:0;margin-bottom:0">
-	<div style="height:4rem" aria-hidden="true" class="wp-block-spacer"></div>
-	
-	<div class="wp-block-post-content">
-	<h3 class="wp-block-heading">Annotations and Notes on Lyrics</h3>
-	
-	<?php
+<?php
 	$annotations = get_field( 'lyric_annotations' ); // ACF field name
 	if ( $annotations ): ?>
-		<div class="annotations-content has-medium-font-size">
-			<?php echo wp_kses_post( $annotations ); ?>
+		<!-- Annotations Section -->
+		<div class="wp-block-group is-style-default has-base-background-color has-background is-layout-constrained has-global-padding" style="margin-top:0;margin-bottom:0">
+			<div class="wp-block-post-content">
+			<h3 class="wp-block-heading">Annotations and Notes on Lyrics</h3>
+			
+			
+				<div class="annotations-content has-medium-font-size">
+					<?php echo wp_kses_post( $annotations ); ?>
+				</div>
+				
+			</div>
 		</div>
-	<?php else: ?>
-		<p>Sorry, no notes yet.</p>
-	<?php endif; ?>
-	
-	<div style="height:4rem" aria-hidden="true" class="wp-block-spacer"></div>
-	</div>
-</div>
+<?php endif; ?>
 
 <!-- Appears on Section -->
 <div class="wp-block-group is-style-default has-base-background-color has-background is-layout-constrained has-global-padding" style="margin-top:0;margin-bottom:0">

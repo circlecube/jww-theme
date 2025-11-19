@@ -178,6 +178,89 @@
             "placeholder": "",
             "prepend": "",
             "append": ""
+        },
+        {
+            "key": "field_691de796e037d",
+            "label": "Song Links",
+            "name": "song_links",
+            "aria-label": "",
+            "type": "repeater",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "layout": "table",
+            "pagination": 0,
+            "min": 0,
+            "max": 0,
+            "collapsed": "",
+            "button_label": "Add Row",
+            "rows_per_page": 20,
+            "sub_fields": [
+                {
+                    "key": "field_691de7a4e037e",
+                    "label": "service",
+                    "name": "service",
+                    "aria-label": "",
+                    "type": "select",
+                    "instructions": "",
+                    "required": 0,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "choices": {
+                        "Amazon": "Amazon",
+                        "Apple": "Apple",
+                        "Spotify": "Spotify",
+                        "Tidal": "Tidal",
+                        "Qobuz": "Qobuz",
+                        "Deezer": "Deezer",
+                        "Bandcamp": "Bandcamp",
+                        "YouTube": "YouTube",
+                        "Soundcloud": "Soundcloud",
+                        "Pandora": "Pandora",
+                        "IHeartRadio": "IHeartRadio",
+                        "Last.fm": "Last.fm"
+                    },
+                    "default_value": false,
+                    "return_format": "value",
+                    "multiple": 0,
+                    "allow_null": 0,
+                    "allow_in_bindings": 0,
+                    "ui": 0,
+                    "ajax": 0,
+                    "placeholder": "",
+                    "create_options": 0,
+                    "save_options": 0,
+                    "parent_repeater": "field_691de796e037d"
+                },
+                {
+                    "key": "field_691de82fe037f",
+                    "label": "Link",
+                    "name": "link",
+                    "aria-label": "",
+                    "type": "url",
+                    "instructions": "",
+                    "required": 0,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "default_value": "",
+                    "allow_in_bindings": 0,
+                    "placeholder": "",
+                    "parent_repeater": "field_691de796e037d"
+                }
+            ]
         }
     ],
     "location": [
@@ -199,5 +282,5 @@
     "description": "",
     "show_in_rest": 0,
     "display_title": "",
-    "modified": 1762892461
+    "modified": 1763567745
 }

@@ -201,7 +201,7 @@ function get_qobuz_album_url($album_title, $artist_name = ARTIST_NAME) {
     $query = implode(' ', $search_terms);
     $encoded_query = encode_search_query($query);
     
-    return "https://www.qobuz.com/search?q={$encoded_query}";
+    return "https://www.qobuz.com/us-en/search/tracks/{$encoded_query}";
 }
 
 /**
@@ -419,7 +419,7 @@ function get_music_streaming_services() {
             'function' => 'get_deezer_album_url',
             'icon' => '<i class="fab fa-deezer"></i>',
             'affiliate' => false,
-            'color' => '#ff0000'
+            'color' => '#ad47ff'
         ),
         'bandcamp' => array(
             'name' => 'Bandcamp',
@@ -467,15 +467,66 @@ function get_music_streaming_services() {
 }
 
 /**
+ * Map ACF service names to internal service keys
+ * 
+ * @param string $acf_service_name The service name from ACF field
+ * @return string|false The internal service key, or false if not found
+ */
+function map_acf_service_to_key($acf_service_name) {
+    $mapping = array(
+        'Amazon' => 'amazon',
+        'Apple' => 'apple_music',
+        'Spotify' => 'spotify',
+        'Tidal' => 'tidal',
+        'Qobuz' => 'qobuz',
+        'Deezer' => 'deezer',
+        'Bandcamp' => 'bandcamp',
+        'YouTube' => 'youtube_music',
+        'Soundcloud' => 'soundcloud',
+        'Pandora' => 'pandora',
+        'IHeartRadio' => 'iheartradio',
+        'Last.fm' => 'lastfm'
+    );
+    
+    return isset($mapping[$acf_service_name]) ? $mapping[$acf_service_name] : false;
+}
+
+/**
+ * Process ACF song links repeater field into a keyed array
+ * 
+ * @param array $acf_links The ACF repeater field data
+ * @return array Array of service_key => url pairs
+ */
+function process_acf_song_links($acf_links) {
+    $processed_links = array();
+    
+    if (!is_array($acf_links) || empty($acf_links)) {
+        return $processed_links;
+    }
+    
+    foreach ($acf_links as $link_row) {
+        if (isset($link_row['service']) && isset($link_row['link']) && !empty($link_row['link'])) {
+            $service_key = map_acf_service_to_key($link_row['service']);
+            if ($service_key) {
+                $processed_links[$service_key] = esc_url_raw($link_row['link']);
+            }
+        }
+    }
+    
+    return $processed_links;
+}
+
+/**
  * Generate all music service links for an album or song
  * 
  * @param string $title The title of the album or song
  * @param string $artist_name The name of the artist/band
  * @param string $type The type of content ('album' or 'song')
  * @param array $excluded_services Array of service keys to exclude
+ * @param array $custom_links Array of service_key => url pairs to override generated links
  * @return string HTML output of all music service links
  */
-function get_all_music_service_links($title, $artist_name = ARTIST_NAME, $type = 'album', $excluded_services = array()) {
+function get_all_music_service_links($title, $artist_name = ARTIST_NAME, $type = 'album', $excluded_services = array(), $custom_links = array()) {
     $services = get_music_streaming_services();
     $links_html = '<div class="music-service-links">';
     
@@ -485,8 +536,13 @@ function get_all_music_service_links($title, $artist_name = ARTIST_NAME, $type =
             continue;
         }
         
-        // Get the URL using the service's function
-        $url = call_user_func($service['function'], $title, $artist_name);
+        // Use custom link if available, otherwise generate one
+        if (isset($custom_links[$key]) && !empty($custom_links[$key])) {
+            $url = $custom_links[$key];
+        } else {
+            // Get the URL using the service's function
+            $url = call_user_func($service['function'], $title, $artist_name);
+        }
         
         // Build the link HTML
         $links_html .= sprintf(
@@ -512,9 +568,10 @@ function get_all_music_service_links($title, $artist_name = ARTIST_NAME, $type =
  * @param string $artist_name The name of the artist/band
  * @param string $album_title The title of the album (optional)
  * @param array $excluded_services Array of service keys to exclude
+ * @param array $acf_links Optional ACF repeater field data for song_links
  * @return string HTML output of all music service links
  */
-function get_song_music_service_links($song_title, $artist_name = ARTIST_NAME, $album_title = '', $excluded_services = array()) {
+function get_song_music_service_links($song_title, $artist_name = ARTIST_NAME, $album_title = '', $excluded_services = array(), $acf_links = null) {
     // Use default artist name if none provided
     if (empty($artist_name)) {
         $artist_name = ARTIST_NAME;
@@ -532,7 +589,13 @@ function get_song_music_service_links($song_title, $artist_name = ARTIST_NAME, $
         $search_title = $song_title . ' ' . $album_title;
     }
     
-    return get_all_music_service_links($search_title, $artist_name, 'song', $excluded_services);
+    // Process ACF links if provided
+    $custom_links = array();
+    if ($acf_links !== null && $acf_links !== false && !empty($acf_links)) {
+        $custom_links = process_acf_song_links($acf_links);
+    }
+    
+    return get_all_music_service_links($search_title, $artist_name, 'song', $excluded_services, $custom_links);
 }
 
 /**

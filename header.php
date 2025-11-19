@@ -11,6 +11,13 @@
 <?php wp_body_open(); ?>
 
 <?php
-// Load the PHP header template part
-get_template_part('template-parts/header');
+// Load the header HTML template part directly
+$header_template = get_stylesheet_directory() . '/parts/header.html';
+if ( file_exists( $header_template ) ) {
+    $header_content = file_get_contents( $header_template );
+    // Process block markup first, then shortcodes
+    $header_blocks = do_blocks( $header_content );
+    // Process shortcodes (needed for shortcodes inside HTML blocks)
+    echo do_shortcode( $header_blocks );
+}
 ?>

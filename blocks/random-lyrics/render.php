@@ -5,23 +5,23 @@
 
 // Get block attributes
 $show_song_title = $attributes['showSongTitle'] ?? true;
-$show_artist = $attributes['showArtist'] ?? true;
+$show_artist     = $attributes['showArtist'] ?? true;
 $refresh_on_load = $attributes['refreshOnLoad'] ?? true;
 
 // Get all song posts that have lyrics
 $songs = get_posts([
-    'post_type' => 'song',
+    'post_type'      => 'song',
     'posts_per_page' => 1,
     'orderby'        => 'rand',
     'order'          => 'DESC',
     'meta_query' => [
         [
-            'key' => 'lyrics',
+            'key'     => 'lyrics',
             'compare' => 'EXISTS'
         ],
         [
-            'key' => 'lyrics',
-            'value' => '',
+            'key'     => 'lyrics',
+            'value'   => '',
             'compare' => '!='
         ]
     ],
@@ -44,8 +44,8 @@ if (empty($songs)) {
 
 // Get a random song
 $random_song_id = $songs[0];
-$song_title = get_the_title($random_song_id);
-$lyrics = get_field('lyrics', $random_song_id);
+$song_title     = get_the_title($random_song_id);
+$lyrics         = get_field('lyrics', $random_song_id);
 
 if (empty($lyrics)) {
     echo '<div class="wp-block-jww-theme-random-lyrics">';
@@ -87,10 +87,10 @@ $refresh_class = $refresh_on_load ? 'refresh-on-load' : '';
     <?php 
     // Use shared template part
     $args = [
-        'song_id' => $random_song_id,
-        'lyrics_line' => $random_line,
+        'song_id'         => $random_song_id,
+        'lyrics_line'     => $random_line,
         'show_song_title' => $show_song_title,
-        'show_artist' => $show_artist
+        'show_artist'     => $show_artist,
     ];
     echo '<div class="random-lyrics-quote-container">';
     get_template_part('template-parts/random-lyrics-quote', null, $args);

@@ -321,3 +321,320 @@ function jww_register_featured_image_rest_field() {
 	}
 }
 add_action( 'rest_api_init', 'jww_register_featured_image_rest_field' );
+
+/**
+ * Include custom post types (bands, albums, songs) in WordPress search results
+ * 
+ * Modifies the main search query to include band, album, and song post types.
+ * This ensures that bands, albums, and songs (including their lyrics/content)
+ * appear in search results.
+ */
+function jww_include_custom_post_types_in_search( $query ) {
+	// Only modify the main search query on the frontend
+	if ( ! is_admin() && $query->is_main_query() && $query->is_search() ) {
+		// Get the current post types being searched
+		$post_types = $query->get( 'post_type' );
+		
+		// If post_type is not set or is a string, convert to array
+		if ( empty( $post_types ) ) {
+			$post_types = array( 'post', 'page' );
+		} elseif ( is_string( $post_types ) ) {
+			$post_types = array( $post_types );
+		}
+		
+		// Add our custom post types to the search
+		$custom_post_types = array( 'band', 'album', 'song' );
+		$post_types = array_merge( $post_types, $custom_post_types );
+		
+		// Remove duplicates and ensure we have valid post types
+		$post_types = array_unique( $post_types );
+		
+		// Exclude attachments (media files) from search results
+		$post_types = array_diff( $post_types, array( 'attachment', 'acf-field', 'acf-field-group' ) );
+		
+		// Set the modified post types
+		$query->set( 'post_type', $post_types );
+		
+		// Set custom ordering: songs, albums, bands, pages, posts
+		$query->set( 'orderby', 'post_type' );
+		$query->set( 'order', 'ASC' );
+	}
+}
+add_action( 'pre_get_posts', 'jww_include_custom_post_types_in_search' );
+
+/**
+ * Exclude attachments from search results in REST API queries
+ * 
+ * Block templates use REST API queries which bypass pre_get_posts.
+ * This filter catches those queries and excludes attachments.
+ * 
+ * @param array           $args    Query arguments
+ * @param WP_REST_Request $request REST API request object
+ * @return array Modified query arguments
+ */
+function jww_exclude_attachments_from_rest_search( $args, $request ) {
+	// Check if this is a search query (search parameter or s parameter)
+	if ( ( isset( $request['search'] ) && ! empty( $request['search'] ) ) || 
+	     ( isset( $args['s'] ) && ! empty( $args['s'] ) ) ) {
+		// Get current post types
+		$post_types = isset( $args['post_type'] ) ? $args['post_type'] : array( 'post', 'page', 'song', 'album', 'band' );
+		
+		// Convert to array if string
+		if ( is_string( $post_types ) ) {
+			$post_types = array( $post_types );
+		}
+		
+		// Exclude attachments
+		$post_types = array_diff( $post_types, array( 'attachment', 'acf-field', 'acf-field-group' ) );
+		
+		// Set the modified post types
+		$args['post_type'] = $post_types;
+		
+		// Set custom ordering: songs, albums, bands, pages, posts
+		// Note: REST API queries will be sorted by the posts_results filter
+		$args['orderby'] = 'post_type';
+		$args['order'] = 'ASC';
+	}
+	
+	return $args;
+}
+// Apply to all post types that might be searched
+add_filter( 'rest_post_query', 'jww_exclude_attachments_from_rest_search', 10, 2 );
+add_filter( 'rest_page_query', 'jww_exclude_attachments_from_rest_search', 10, 2 );
+add_filter( 'rest_song_query', 'jww_exclude_attachments_from_rest_search', 10, 2 );
+add_filter( 'rest_album_query', 'jww_exclude_attachments_from_rest_search', 10, 2 );
+add_filter( 'rest_band_query', 'jww_exclude_attachments_from_rest_search', 10, 2 );
+
+/**
+ * Filter search results to remove attachments and sort by post type priority
+ * 
+ * This is a final safety net to remove any attachments that might
+ * slip through from block template queries, and also sorts results
+ * by post type priority: songs, albums, bands, pages, posts.
+ * 
+ * @param array    $posts Array of post objects
+ * @param WP_Query $query The WordPress query object
+ * @return array Filtered and sorted array of post objects
+ */
+function jww_filter_attachments_from_search_results( $posts, $query ) {
+	// Only filter search queries on the frontend
+	if ( ! is_admin() && $query->is_search() ) {
+		// Remove attachments and ACF post types from results
+		$excluded_types = array( 'attachment', 'acf-field', 'acf-field-group' );
+		$posts = array_filter( $posts, function( $post ) use ( $excluded_types ) {
+			return ! in_array( $post->post_type, $excluded_types, true );
+		} );
+		
+		// Define post type priority order
+		$post_type_order = array(
+			'song'  => 1,
+			'album' => 2,
+			'band'  => 3,
+			'page'  => 4,
+			'post'  => 5,
+		);
+		
+		// Sort posts by post type priority
+		usort( $posts, function( $a, $b ) use ( $post_type_order ) {
+			$a_priority = isset( $post_type_order[ $a->post_type ] ) ? $post_type_order[ $a->post_type ] : 999;
+			$b_priority = isset( $post_type_order[ $b->post_type ] ) ? $post_type_order[ $b->post_type ] : 999;
+			
+			// If same priority, maintain original order (by date)
+			if ( $a_priority === $b_priority ) {
+				return strtotime( $b->post_date ) - strtotime( $a->post_date );
+			}
+			
+			return $a_priority - $b_priority;
+		} );
+		
+		// Re-index array
+		$posts = array_values( $posts );
+	}
+	return $posts;
+}
+add_filter( 'posts_results', 'jww_filter_attachments_from_search_results', 10, 2 );
+
+/**
+ * Include ACF fields (lyrics and lyric_annotations) in WordPress search
+ * 
+ * Modifies the search query to search within ACF custom fields for songs.
+ * This allows searching song lyrics and lyric annotations in addition to
+ * the standard post title, content, and excerpt.
+ */
+function jww_search_acf_fields( $search, $wp_query ) {
+	// Only modify the main search query on the frontend
+	if ( ! is_admin() && $wp_query->is_main_query() && $wp_query->is_search() && ! empty( $wp_query->get( 's' ) ) ) {
+		global $wpdb;
+		
+		// Get the search term
+		$search_term = $wp_query->get( 's' );
+		
+		// Escape the search term for SQL
+		$search_term = $wpdb->esc_like( $search_term );
+		$search_term = '%' . $search_term . '%';
+		
+		// Get the post types being searched
+		$post_types = $wp_query->get( 'post_type' );
+		if ( empty( $post_types ) ) {
+			$post_types = array( 'post', 'page' );
+		} elseif ( is_string( $post_types ) ) {
+			$post_types = array( $post_types );
+		}
+		
+		// Only add ACF field search if 'song' post type is included
+		if ( in_array( 'song', $post_types, true ) ) {
+			// Add OR condition to search in ACF meta fields
+			$search .= $wpdb->prepare(
+				" OR (
+					EXISTS (
+						SELECT 1 FROM {$wpdb->postmeta}
+						WHERE {$wpdb->postmeta}.post_id = {$wpdb->posts}.ID
+						AND (
+							({$wpdb->postmeta}.meta_key = 'lyrics' AND {$wpdb->postmeta}.meta_value LIKE %s)
+							OR ({$wpdb->postmeta}.meta_key = 'lyric_annotations' AND {$wpdb->postmeta}.meta_value LIKE %s)
+						)
+					)
+				)",
+				$search_term,
+				$search_term
+			);
+		}
+	}
+	
+	return $search;
+}
+add_filter( 'posts_search', 'jww_search_acf_fields', 10, 2 );
+
+/**
+ * Get random lyrics data for reuse across templates
+ * 
+ * @return array|false Array with 'song_id', 'lyrics_line', and 'song_title', or false on failure
+ */
+function jww_get_random_lyrics_data() {
+	// Get a random song that has lyrics
+	$songs = get_posts([
+		'post_type' => 'song',
+		'posts_per_page' => 1,
+		'orderby'        => 'rand',
+		'order'          => 'DESC',
+		'meta_query' => [
+			[
+				'key' => 'lyrics',
+				'compare' => 'EXISTS'
+			],
+			[
+				'key' => 'lyrics',
+				'value' => '',
+				'compare' => '!='
+			]
+		],
+		'tax_query'      => array(
+			array(
+				'taxonomy' => 'category',
+				'field'     => 'slug',
+				'terms'    => 'original'
+			)
+		),
+		'fields' => 'ids'
+	]);
+
+	if (empty($songs)) {
+		return false;
+	}
+
+	// Get a random song
+	$random_song_id = $songs[0];
+	$song_title = get_the_title($random_song_id);
+	$lyrics = get_field('lyrics', $random_song_id);
+
+	if (empty($lyrics)) {
+		return false;
+	}
+
+	// Split lyrics into lines and filter out empty lines
+	$lyrics_lines = array_filter(
+		array_map('trim', explode("\n", $lyrics)),
+		function($line) {
+			return !empty($line) && strlen($line) > 10; // Filter out very short lines
+		}
+	);
+
+	if (empty($lyrics_lines)) {
+		return false;
+	}
+
+	// Get a random line
+	$random_line = $lyrics_lines[array_rand($lyrics_lines)];
+	
+	// Strip HTML tags from the lyrics line
+	$random_line = strip_tags($random_line);
+
+	return [
+		'song_id' => $random_song_id,
+		'lyrics_line' => $random_line,
+		'song_title' => $song_title
+	];
+}
+
+/**
+ * Shortcode for displaying random lyrics inline (minimal format)
+ * Usage: [random_lyrics_inline]
+ * 
+ * @return string HTML output or empty string on failure
+ */
+function jww_random_lyrics_inline_shortcode() {
+	$random_lyrics = jww_get_random_lyrics_data();
+	
+	if (!$random_lyrics) {
+		return '';
+	}
+	
+	ob_start();
+	get_template_part('template-parts/random-lyrics-p', null, $random_lyrics);
+	return ob_get_clean();
+}
+add_shortcode('random_lyrics_inline', 'jww_random_lyrics_inline_shortcode');
+
+/**
+ * Is Home Page
+ * 
+ * @return bool True if current page is the home page, false otherwise
+ */
+function jww_is_home_page() {
+	return is_front_page() || is_home();
+}
+
+/**
+ * Shortcode for header site title (adapts based on page type)
+ * Usage: [header_site_title]
+ * 
+ * @return string HTML output
+ */
+function jww_header_site_title_shortcode() {	
+	if ( jww_is_home_page() ) {
+		$site_title = '<!-- wp:site-title {"level":0,"className":"header-large-text","style":{"typography":{"fontSize":"7vw","lineHeight":"1.2"},"layout":{"selfStretch":"fill","flexSize":null},"elements":{"link":{"color":{"text":"var:preset|color|base"}}}},"textColor":"base"} /-->';
+	} else {
+		$site_title = '<!-- wp:site-title {"level":2,"className":"header-normal-text","fontSize":"xx-large","fontFamily":"roboto-slab"} /-->';
+	}
+
+	
+	return do_blocks($site_title);
+}
+add_shortcode('header_site_title', 'jww_header_site_title_shortcode');
+
+/**
+ * Shortcode for header navigation (adapts based on page type)
+ * Usage: [header_navigation]
+ * 
+ * @return string HTML output
+ */
+function jww_header_navigation_shortcode() {
+	if ( jww_is_home_page() ) {
+		$navigation = '<!-- wp:navigation {"overlayBackgroundColor":"base","overlayTextColor":"contrast","className":"header-nav-home","style":{"spacing":{"blockGap":"var:preset|spacing|20"}},"layout":{"type":"flex","justifyContent":"right","orientation":"vertical","flexWrap":"nowrap"}} /-->';
+	} else {
+		$navigation = '<!-- wp:navigation {"className":"header-nav-site","overlayBackgroundColor":"base","overlayTextColor":"contrast","style":{"spacing":{"blockGap":"var:preset|spacing|40"}},"fontSize":"medium","layout":{"type":"flex","justifyContent":"right","flexWrap":"wrap"}} /-->';
+	}
+	
+	return do_blocks($navigation);
+}
+add_shortcode('header_navigation', 'jww_header_navigation_shortcode');
