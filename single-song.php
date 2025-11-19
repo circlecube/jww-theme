@@ -11,7 +11,6 @@ get_header();
 		class="wp-block-group has-global-padding is-layout-constrained wp-block-group-is-layout-constrained" 
 		style="padding-top:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--50)"
 	>
-		
 		<?php the_title('<h1 class="wp-block-post-title alignwide has-xxx-large-font-size">', '</h1>'); ?>
 		
 		<?php
@@ -34,9 +33,11 @@ get_header();
 			<?php endif; ?>
 			<!-- post date -->
 		</h2>
-		<span class="has-small-font-size" title="First published on"><?php echo get_the_date('F j, Y'); ?></span>
+		<div class="alignwide song-meta">
+			<span class="has-small-font-size" title="First published on"><?php echo get_the_date('F j, Y'); ?></span>
+			</div>
 
-		<div class="wp-block-post-content">
+		<div class="wp-block-post-content alignwide">
 			<?php the_content(); ?>
 		</div>
 
