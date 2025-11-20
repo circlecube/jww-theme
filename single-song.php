@@ -21,21 +21,21 @@ get_header();
 			$artist_link = get_permalink($artist);
 			
 		?>
-		<h2 class="wp-block-heading has-large-font-size song-artist-heading alignwide">
-			<strong><em>
-				<a href="<?php echo $artist_link; ?>" class="artist-link">
-					<img src="<?php echo get_the_post_thumbnail_url($artist, 'thumbnail'); ?>" alt="<?php echo $artist_name; ?>" class="artist-image">
-					<?php echo $artist_name; ?>
-				</a>
-			</em></strong>
-			<?php if ( $attribution ): ?>
-				<span class="wp-block-heading has-large-font-size">performing <strong><em><?php echo $attribution; ?></em></strong></span>
-			<?php endif; ?>
-			<!-- post date -->
-		</h2>
-		<div class="alignwide song-meta">
-			<span class="has-small-font-size" title="First published on"><?php echo get_the_date('F j, Y'); ?></span>
-			</div>
+		<div class="wp-block-group is-layout-flex is-content-justification-space-between flex-direction-row alignwide song-post-meta">
+			<h2 class="wp-block-heading has-large-font-size song-artist-heading">
+				<strong><em>
+					<a href="<?php echo $artist_link; ?>" class="artist-link">
+						<img src="<?php echo get_the_post_thumbnail_url($artist, 'thumbnail'); ?>" alt="<?php echo $artist_name; ?>" class="artist-image">
+						<?php echo $artist_name; ?>
+					</a>
+				</em></strong>
+				<?php if ( $attribution ): ?>
+					<span class="wp-block-heading has-large-font-size">performing <strong><em><?php echo $attribution; ?></em></strong></span>
+				<?php endif; ?>
+				<!-- post date -->
+			</h2>
+			<span class="has-small-font-size song-post-date" title="First published on"><?php echo get_the_date('F j, Y'); ?></span>
+		</div>
 
 		<div class="wp-block-post-content alignwide">
 			<?php the_content(); ?>

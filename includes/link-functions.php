@@ -200,7 +200,9 @@ function get_qobuz_album_url($album_title, $artist_name = ARTIST_NAME) {
     
     $query = implode(' ', $search_terms);
     $encoded_query = encode_search_query($query);
-    
+    //https://www.qobuz.com/us-en/search/tracks/
+    //https://www.qobuz.com/us-en/search/albums/
+    //https://www.qobuz.com/us-en/search/artists/
     return "https://www.qobuz.com/us-en/search/tracks/{$encoded_query}";
 }
 
