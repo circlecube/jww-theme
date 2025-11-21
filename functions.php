@@ -1053,13 +1053,68 @@ add_shortcode('header_site_title', 'jww_header_site_title_shortcode');
  * @return string HTML output
  */
 function jww_header_navigation_shortcode() {
-	if ( jww_is_home_page() ) {
-		$navigation = '<!-- wp:navigation {"icon":"menu","overlayBackgroundColor":"base","overlayTextColor":"contrast","className":"header-nav-site","style":{"spacing":{"blockGap":"var:preset|spacing|30"}},"fontSize":"medium","layout":{"type":"flex","justifyContent":"right","orientation":"vertical","flexWrap":"nowrap"}} /-->';
+	// Get the primary menu location or first available menu
+	$menu_locations = get_nav_menu_locations();
+	$menu_location_name = null;
+	$menu_id = null;
+	
+	// Try to get primary menu location first
+	if ( ! empty( $menu_locations['primary'] ) ) {
+		$menu_location_name = 'primary';
+		$menu_id = $menu_locations['primary'];
+	} elseif ( ! empty( $menu_locations ) ) {
+		// Fallback to first available menu location
+		$menu_location_name = array_key_first( $menu_locations );
+		$menu_id = $menu_locations[ $menu_location_name ];
 	} else {
-		$navigation = '<!-- wp:navigation {"icon":"menu","overlayBackgroundColor":"base","overlayTextColor":"contrast","className":"header-nav-site","style":{"spacing":{"blockGap":"var:preset|spacing|40"}},"fontSize":"medium","layout":{"type":"flex","justifyContent":"right","orientation":"horizontal","flexWrap":"nowrap"}} /-->';
+		// Fallback: get first menu from menus
+		$menus = wp_get_nav_menus();
+		if ( ! empty( $menus ) ) {
+			$menu_id = $menus[0]->term_id;
+		}
 	}
 	
-	return do_blocks($navigation);
+	// Build navigation block attributes
+	$base_attrs = array(
+		'icon' => 'menu',
+		'overlayBackgroundColor' => 'base',
+		'overlayTextColor' => 'contrast',
+		'className' => 'header-nav-site',
+		'style' => array(
+			'spacing' => array(
+				'blockGap' => jww_is_home_page() ? 'var:preset|spacing|30' : 'var:preset|spacing|40'
+			)
+		),
+		'fontSize' => 'medium',
+		'layout' => array(
+			'type' => 'flex',
+			'justifyContent' => 'right',
+			'orientation' => jww_is_home_page() ? 'vertical' : 'horizontal',
+			'flexWrap' => 'nowrap'
+		)
+	);
+	
+	// Add menu reference - use menuId for menu term ID, or menuLocation for location name
+	if ( $menu_id ) {
+		$base_attrs['menuId'] = $menu_id;
+	}
+	if ( $menu_location_name ) {
+		$base_attrs['menuLocation'] = $menu_location_name;
+	}
+	
+	// Convert to JSON for block markup (unescaped slashes for proper JSON)
+	$attrs_json = wp_json_encode( $base_attrs, JSON_UNESCAPED_SLASHES );
+	$navigation = '<!-- wp:navigation ' . $attrs_json . ' /-->';
+	
+	$output = do_blocks( $navigation );
+	
+	// Ensure navigation block scripts are loaded
+	// This is critical for mobile menu functionality
+	if ( ! wp_script_is( 'wp-block-navigation-view-script', 'enqueued' ) ) {
+		wp_enqueue_script( 'wp-block-navigation-view-script' );
+	}
+	
+	return $output;
 }
 add_shortcode('header_navigation', 'jww_header_navigation_shortcode');
 

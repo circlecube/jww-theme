@@ -7,7 +7,7 @@ Description: Child theme for the Twenty Twenty-Five block theme.
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.0
-Version: 2.1.0
+Version: 2.2.0
 License: GNU General Public License v2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Template: twentytwentyfive
@@ -1116,7 +1116,8 @@ header .wp-block-site-title a[rel="home"] {
   margin-top: auto;
   padding: .5rem 1rem 0 1rem;
 }
-.song-grid-item-date {
+.song-grid-item-date,
+.song-grid-item-attribution {
   display: block;
   font-size: var(--wp--preset--font-size--small);
   color: var(--wp--preset--color--base);
@@ -1233,4 +1234,71 @@ header .wp-block-site-title a[rel="home"] {
   height: auto;
   object-fit: cover;
   object-position: center;
+}
+
+/* Song List Configurable Template Styles */
+.songs-template .wp-block-group {
+  padding-top: 0;
+  padding-bottom: var(--wp--preset--spacing--60);
+}
+
+.song-list-controls {
+  margin-bottom: var(--wp--preset--spacing--40);
+  padding: var(--wp--preset--spacing--20);
+  background-color: var(--wp--preset--color--accent-3);
+  font-size: 0.875rem;
+}
+
+.song-list-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--wp--preset--spacing--20);
+  align-items: end;
+}
+@media (max-width: 768px) {
+  .song-list-filters {
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
+    gap: var(--wp--preset--spacing--30);
+  }
+}
+@media (max-width: 480px) {
+  .song-list-filters {
+    grid-template-columns: 1fr;
+    gap: var(--wp--preset--spacing--40);
+  }
+}
+
+.filter-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: start;
+  justify-content: center;
+  padding: 0 1rem;
+}
+
+.filter-label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--wp--preset--color--base);
+  padding-left: .75rem;
+}
+
+.filter-select {
+  width: 100%;
+  padding: 0.375rem 0.5rem;
+  border: 0px solid var(--wp--preset--color--accent-6);
+  border-radius: 3px;
+  font-size: 0.875rem;
+  background-color: transparent;
+  color: var(--wp--preset--color--base);
+}
+
+.filter-section.filter-checkbox .filter-label {
+  margin: 0;
+  cursor: pointer;
 }

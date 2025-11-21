@@ -1,22 +1,26 @@
 <!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|70","bottom":"var:preset|spacing|70","left":"var:preset|spacing|50","right":"var:preset|spacing|50"},"blockGap":"var:preset|spacing|20","margin":{"top":"0","bottom":"0"}},"border":{"top":{"width":"2px"},"bottom":{"width":"2px"}},"elements":{"link":{"color":{"text":"var:preset|color|contrast"}}}},"backgroundColor":"base","textColor":"contrast","layout":{"type":"constrained"}} -->
 <div id="footer"
     class="wp-block-group has-contrast-color has-base-background-color has-text-color has-background has-link-color"
-    style="border-top-width:2px;margin:0;padding:var(--wp--preset--spacing--40) var(--wp--preset--spacing--50) var(--wp--preset--spacing--70);">
-    <!-- wp:group {"align":"wide","layout":{"type":"default"}} -->
+    style="border-top-width:2px;border-bottom-width:2px;margin-top:0;margin-bottom:0;padding-top:var(--wp--preset--spacing--70);padding-right:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--70);padding-left:var(--wp--preset--spacing--50)">
+    <!-- wp:group {"align":"wide","className":"is-layout-flow wp-block-group-is-layout-flow","layout":{"type":"default"}} -->
     <div class="wp-block-group alignwide is-layout-flow wp-block-group-is-layout-flow">
-        <!-- wp:group {"align":"full","layout":{"type":"flex","flexWrap":"wrap","justifyContent":"center","verticalAlignment":"center"}} -->
+        <!-- wp:group {"layout":{"type":"flex","orientation":"vertical","justifyContent":"center"}} -->
+        <div class="wp-block-group">
+            <!-- wp:navigation {"ref":31,"overlayMenu":"never","overlayBackgroundColor":"base","overlayTextColor":"contrast","style":{"spacing":{"blockGap":"var:preset|spacing|30"}},"fontSize":"large","layout":{"type":"flex","orientation":"horizontal","justifyContent":"center","flexWrap":"wrap"}} /-->
 
-        <!-- wp:navigation {"overlayBackgroundColor":"base","overlayTextColor":"contrast","style":{"spacing":{"blockGap":"var:preset|spacing|30"}},"fontSize":"large","layout":{"type":"flex","orientation":"horizontal","justifyContent":"center"}} /-->
+            <!-- wp:search {"label":"Search","showLabel":false,"placeholder":"Search...","width":100,"widthUnit":"%","buttonText":"Search","buttonPosition":"button-inside","style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"}},"border":{"width":"0px","style":"none"}}} /-->
+        </div>
+        <!-- /wp:group -->
 
-        <!-- wp:search {"label":"Search","showLabel":false,"placeholder":"Search...","buttonText":"Search","buttonPosition":"button-inside","style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"}}},"width":100,"widthUnit":"%"} /-->
-
-        <!-- wp:separator {"className":"is-style-wide","style":{"spacing":{"margin":{"top":"0","bottom":"var:preset|spacing|50"}}},"backgroundColor":"contrast"} -->
-        <hr class="wp-block-separator has-text-color has-contrast-color has-alpha-channel-opacity has-contrast-background-color has-background is-style-wide"
-            style="margin-top:0;margin:var(--wp--preset--spacing--40) 0 var(--wp--preset--spacing--50) 0;" />
-        <!-- /wp:separator -->
+        <!-- wp:group {"align":"full","className":"is-content-justification-center is-layout-flex wp-block-group-is-layout-flex","layout":{"type":"flex","flexWrap":"wrap","justifyContent":"center","verticalAlignment":"center"}} -->
         <div
             class="wp-block-group alignfull is-content-justification-center is-layout-flex wp-block-group-is-layout-flex">
-            <!-- wp:group {"style":{"spacing":{"blockGap":"var:preset|spacing|20","padding":{"top":"0","bottom":"0","left":"0","right":"0"}}},"layout":{"type":"flex","orientation":"vertical","flexWrap":"nowrap","justifyContent":"center"}} -->
+            <!-- wp:separator {"className":"is-style-wide","style":{"spacing":{"margin":{"top":"0","bottom":"var:preset|spacing|50"}}},"backgroundColor":"contrast"} -->
+            <hr class="wp-block-separator has-text-color has-contrast-color has-alpha-channel-opacity has-contrast-background-color has-background is-style-wide"
+                style="margin-top:0;margin-bottom:var(--wp--preset--spacing--50)" />
+            <!-- /wp:separator -->
+
+            <!-- wp:group {"className":"is-vertical is-nowrap is-layout-flex wp-block-group-is-layout-flex","style":{"spacing":{"blockGap":"var:preset|spacing|20","padding":{"top":"0","bottom":"0","left":"0","right":"0"}}},"layout":{"type":"flex","orientation":"vertical","flexWrap":"nowrap","justifyContent":"center"}} -->
             <div class="wp-block-group is-vertical is-nowrap is-layout-flex wp-block-group-is-layout-flex"
                 style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0">
                 <!-- wp:site-logo {"width":300,"shouldSyncIcon":true} /-->
@@ -26,7 +30,6 @@
                 <!-- wp:site-tagline /-->
             </div>
             <!-- /wp:group -->
-
         </div>
         <!-- /wp:group -->
     </div>
@@ -36,67 +39,90 @@
     <div style="height:var(--wp--preset--spacing--60)" aria-hidden="true" class="wp-block-spacer"></div>
     <!-- /wp:spacer -->
 
-    <!-- wp:group {"style":{"spacing":{"blockGap":"var:preset|spacing|50"}},"layout":{"type":"flex","flexWrap":"wrap","justifyContent":"center"}} -->
+    <!-- wp:group {"className":"footer-links-container is-content-justification-center is-layout-flex has-gap-normal wp-block-group-is-layout-flex","style":{"spacing":{"blockGap":"var:preset|spacing|50"}},"layout":{"type":"flex","flexWrap":"wrap","justifyContent":"center"}} -->
     <div
-        class="footer-links-container wp-block-group is-content-justification-center is-layout-flex has-gap-normal wp-block-group-is-layout-flex">
-        <!-- wp:group {"layout":{"type":"flex","orientation":"vertical","justifyContent":"center"}} -->
-        <div
-            class="social-links-official wp-block-group is-vertical is-content-justification-center is-layout-flex wp-block-group-is-layout-flex">
-            <!-- wp:paragraph {"align":"center"} -->
-            <p class="has-text-align-center"><em>Jesse's Official Links</em></p>
-            <!-- /wp:paragraph -->
+        class="wp-block-group footer-links-container is-content-justification-center is-layout-flex has-gap-normal wp-block-group-is-layout-flex">
+        <!-- wp:group {"style":{"spacing":{"blockGap":"var:preset|spacing|50"}},"layout":{"type":"flex","flexWrap":"wrap","justifyContent":"space-between"}} -->
+        <div class="wp-block-group">
+            <!-- wp:group {"className":"social-links-official is-vertical is-content-justification-center is-layout-flex wp-block-group-is-layout-flex","layout":{"type":"flex","orientation":"vertical","justifyContent":"center"}} -->
+            <div
+                class="wp-block-group social-links-official is-vertical is-content-justification-center is-layout-flex wp-block-group-is-layout-flex">
+                <!-- wp:paragraph {"align":"center"} -->
+                <p class="has-text-align-center"><em>Jesse's Official Links</em></p>
+                <!-- /wp:paragraph -->
 
-            <!-- wp:social-links {"openInNewTab":true,"iconColor":"base","iconColorValue":"#f4eee1","iconBackgroundColor":{"color":"#182949","name":"Accent 3","slug":"accent-3","class":"has-accent-3-icon-background-color"},"iconBackgroundColorValue":"#182949","className":"is-style-default","layout":{"type":"flex","justifyContent":"center"}} -->
-            <ul class="wp-block-social-links has-icon-color has-icon-background-color is-style-default">
-                <!-- wp:social-link {"url":"https://www.wellesmusic.com/","service":"chain"} /-->
-                <!-- wp:social-link {"url":"https://youtube.com/@hellswelles","service":"youtube"} /-->
-                <!-- wp:social-link {"url":"https://instagram.com/wellesmusic","service":"instagram"} /-->
-                <!-- wp:social-link {"url":"https://www.tiktok.com/@jessewelles","service":"tiktok"} /-->
-                <!-- wp:social-link {"url":"https://www.facebook.com/wellesmusic","service":"facebook"} /-->
-            </ul>
-            <!-- /wp:social-links -->
+                <!-- wp:social-links {"iconColor":"base","iconColorValue":"#f4eee1","iconBackgroundColorValue":"#182949","openInNewTab":true,"className":"is-style-default","layout":{"type":"flex","justifyContent":"center"}} -->
+                <ul class="wp-block-social-links has-icon-color has-icon-background-color is-style-default">
+                    <!-- wp:social-link {"url":"https://www.wellesmusic.com/","service":"chain"} /-->
+
+                    <!-- wp:social-link {"url":"https://youtube.com/@hellswelles","service":"youtube"} /-->
+
+                    <!-- wp:social-link {"url":"https://instagram.com/wellesmusic","service":"instagram"} /-->
+
+                    <!-- wp:social-link {"url":"https://www.tiktok.com/@jessewelles","service":"tiktok"} /-->
+
+                    <!-- wp:social-link {"url":"https://www.facebook.com/wellesmusic","service":"facebook"} /-->
+                </ul>
+                <!-- /wp:social-links -->
+            </div>
+            <!-- /wp:group -->
+
+            <!-- wp:group {"className":"social-links-unofficial is-vertical is-content-justification-center is-layout-flex wp-block-group-is-layout-flex","layout":{"type":"flex","orientation":"vertical","justifyContent":"center"}} -->
+            <div
+                class="wp-block-group social-links-unofficial is-vertical is-content-justification-center is-layout-flex wp-block-group-is-layout-flex">
+                <!-- wp:paragraph {"align":"center"} -->
+                <p class="has-text-align-center"><em>Unofficial Links</em></p>
+                <!-- /wp:paragraph -->
+
+                <!-- wp:social-links {"iconColor":"base","iconColorValue":"#f4eee1","iconBackgroundColor":"accent-3","iconBackgroundColorValue":"#182949","openInNewTab":true,"layout":{"type":"flex","justifyContent":"center","flexWrap":"wrap"}} -->
+                <ul class="wp-block-social-links has-icon-color has-icon-background-color">
+                    <!-- wp:social-link {"url":"https://www.reddit.com/r/JesseWelles/","service":"reddit"} /-->
+
+                    <!-- wp:social-link {"url":"https://www.facebook.com/share/g/19vTkV2P4A/","service":"facebook"} /-->
+
+                    <!-- wp:social-link {"url":"https://discord.gg/gT8dz7DgCH","service":"discord"} /-->
+
+                    <!-- wp:social-link {"url":"https://mas.to/@jessewellsworld","service":"mastodon"} /-->
+
+                    <!-- wp:social-link {"url":"https://bsky.app/profile/jessewellesworld.com","service":"bluesky"} /-->
+                </ul>
+                <!-- /wp:social-links -->
+            </div>
+            <!-- /wp:group -->
         </div>
         <!-- /wp:group -->
 
-        <!-- wp:group {"layout":{"type":"flex","orientation":"vertical","justifyContent":"center"}} -->
+        <!-- wp:group {"className":"social-links-listen is-vertical is-content-justification-center is-layout-flex wp-block-group-is-layout-flex","layout":{"type":"flex","orientation":"vertical","justifyContent":"center"}} -->
         <div
-            class="social-links-unofficial wp-block-group is-vertical is-content-justification-center is-layout-flex wp-block-group-is-layout-flex">
-            <!-- wp:paragraph {"align":"center"} -->
-            <p class="has-text-align-center"><em>Unofficial Links</em></p>
-            <!-- /wp:paragraph -->
-
-            <!-- wp:social-links {"openInNewTab":true,"iconColor":"base","iconColorValue":"#f4eee1","iconBackgroundColor":"accent-3","iconBackgroundColorValue":"#182949","layout":{"type":"flex","justifyContent":"center","flexWrap":"wrap"}} -->
-            <ul class="wp-block-social-links has-icon-color has-icon-background-color">
-                <!-- wp:social-link {"url":"https://www.reddit.com/r/JesseWelles/","service":"reddit"} /-->
-                <!-- wp:social-link {"url":"https://www.facebook.com/share/g/19vTkV2P4A/","service":"facebook"} /-->
-                <!-- wp:social-link {"url":"https://discord.gg/gT8dz7DgCH","service":"discord"} /-->
-                <!-- wp:social-link {"url":"https://mas.to/@jessewellsworld","service":"mastodon"} /-->
-                <!-- wp:social-link {"url":"https://bsky.app/profile/jessewellesworld.com","service":"bluesky"} /-->
-            </ul>
-            <!-- /wp:social-links -->
-        </div>
-        <!-- /wp:group -->
-
-        <!-- wp:group {"layout":{"type":"flex","orientation":"vertical","justifyContent":"center"}} -->
-        <div
-            class="social-links-listen wp-block-group is-vertical is-content-justification-center is-layout-flex wp-block-group-is-layout-flex">
+            class="wp-block-group social-links-listen is-vertical is-content-justification-center is-layout-flex wp-block-group-is-layout-flex">
             <!-- wp:paragraph {"align":"center"} -->
             <p class="has-text-align-center"><em>Listening Links</em></p>
             <!-- /wp:paragraph -->
 
-            <!-- wp:social-links {"openInNewTab":true,"iconColor":"base","iconColorValue":"#f4eee1","layout":{"type":"flex","justifyContent":"center","flexWrap":"wrap"}} -->
+            <!-- wp:social-links {"iconColor":"base","iconColorValue":"#f4eee1","openInNewTab":true,"className":"has-icon-background-color social-links-listening","layout":{"type":"flex","justifyContent":"center","flexWrap":"wrap"}} -->
             <ul class="wp-block-social-links has-icon-color has-icon-background-color social-links-listening">
                 <!-- wp:social-link {"url":"https://music.amazon.com/artists/B07S2BD74W/jesse-welles?tag=circubstu-20","service":"amazon"} /-->
-                <!-- wp:social-link {"url":"https://music.apple.com/us/artist/jesse-welles/1737507146","service":"chain","className":"wp-block-social-link--apple_music"} /-->
+
+                <!-- wp:social-link {"url":"https://music.apple.com/us/artist/jesse-welles/1737507146","service":"chain","className":"wp-block-social-link\u002d\u002dapple_music"} /-->
+
                 <!-- wp:social-link {"url":"https://open.spotify.com/artist/366xgdzfRGQoiDRGidGlDJ","service":"spotify"} /-->
-                <!-- wp:social-link {"url":"https://tidal.com/artist/15803343","service":"chain","className":"wp-block-social-link--tidal"} /-->
-                <!-- wp:social-link {"url":"https://www.qobuz.com/us-en/interpreter/jesse-welles/4543994","service":"chain","className":"wp-block-social-link--qobuz"} /-->
-                <!-- wp:social-link {"url":"https://www.deezer.com/en/artist/65777342","service":"chain","className":"wp-block-social-link--deezer"} /-->
+
+                <!-- wp:social-link {"url":"https://tidal.com/artist/15803343","service":"chain","className":"wp-block-social-link\u002d\u002dtidal"} /-->
+
+                <!-- wp:social-link {"url":"https://www.qobuz.com/us-en/interpreter/jesse-welles/4543994","service":"chain","className":"wp-block-social-link\u002d\u002dqobuz"} /-->
+
+                <!-- wp:social-link {"url":"https://www.deezer.com/en/artist/65777342","service":"chain","className":"wp-block-social-link\u002d\u002ddeezer"} /-->
+
                 <!-- wp:social-link {"url":"https://jessewelles.bandcamp.com/","service":"bandcamp"} /-->
-                <!-- wp:social-link {"url":"https://music.youtube.com/channel/UCWqIYTXNoYty8gH1eNE-YMw","service":"chain","className":"wp-block-social-link--youtube_music"} /-->
+
+                <!-- wp:social-link {"url":"https://music.youtube.com/channel/UCWqIYTXNoYty8gH1eNE-YMw","service":"chain","className":"wp-block-social-link\u002d\u002dyoutube_music"} /-->
+
                 <!-- wp:social-link {"url":"https://soundcloud.com/jesse-welles","service":"soundcloud"} /-->
-                <!-- wp:social-link {"url":"https://www.pandora.com/artist/jesse-welles/ARcPbbrhlnrfjtK","service":"chain","className":"wp-block-social-link--pandora"} /-->
-                <!-- wp:social-link {"url":"https://www.iheart.com/artist/jesse-welles-42675048/","service":"chain","className":"wp-block-social-link--iheartradio"} /-->
+
+                <!-- wp:social-link {"url":"https://www.pandora.com/artist/jesse-welles/ARcPbbrhlnrfjtK","service":"chain","className":"wp-block-social-link\u002d\u002dpandora"} /-->
+
+                <!-- wp:social-link {"url":"https://www.iheart.com/artist/jesse-welles-42675048/","service":"chain","className":"wp-block-social-link\u002d\u002diheartradio"} /-->
+
                 <!-- wp:social-link {"url":"https://www.last.fm/music/Jesse+Welles","service":"lastfm"} /-->
             </ul>
             <!-- /wp:social-links -->
@@ -109,17 +135,20 @@
     <div style="height:var(--wp--preset--spacing--60)" aria-hidden="true" class="wp-block-spacer"></div>
     <!-- /wp:spacer -->
 
-    <!-- wp:group {"align":"wide","layout":{"type":"default"}} -->
+    <!-- wp:group {"align":"wide","className":"is-layout-flow wp-block-group-is-layout-flow","layout":{"type":"default"}} -->
     <div class="wp-block-group alignwide is-layout-flow wp-block-group-is-layout-flow">
-        <!-- wp:group {"align":"full","layout":{"type":"flex","flexWrap":"wrap","justifyContent":"space-between"}} -->
+        <!-- wp:group {"align":"full","className":"is-content-justification-space-between is-layout-flex wp-block-group-is-layout-flex","layout":{"type":"flex","flexWrap":"wrap","justifyContent":"space-between"}} -->
         <div
             class="wp-block-group alignfull is-content-justification-space-between is-layout-flex wp-block-group-is-layout-flex">
-            <!-- wp:html {"fontSize":"small"} -->
-            <div class="has-small-font-size">
+            <!-- wp:group {"fontSize":"small","layout":{"type":"constrained","justifyContent":"left"}} -->
+            <div class="wp-block-group has-small-font-size"><!-- wp:shortcode -->
                 [random_lyrics_inline]
+                <!-- /wp:shortcode -->
+                <!-- wp:paragraph -->
                 <p>© Woah!</p>
+                <!-- /wp:paragraph -->
             </div>
-            <!-- /wp:html -->
+            <!-- /wp:group -->
 
             <!-- wp:paragraph {"fontSize":"small"} -->
             <p class="has-small-font-size">Powered with WordPress</p>

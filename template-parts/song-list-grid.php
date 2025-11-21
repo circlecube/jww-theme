@@ -5,21 +5,36 @@
  * @package jww-theme
  */
 
-// Get artist_id and include_covers from query vars (passed from block or template)
+// Get artist_id, song_type, and sort from query vars (passed from block or template)
 $artist_id = get_query_var('artist_id', '');
-$include_covers = get_query_var('include_covers', false);
+$song_type = get_query_var('song_type', 'originals');
+$sort = get_query_var('sort', 'date');
 
 // Build query arguments
 $query_args = array(
 	'post_type'      => 'song',
-	'posts_per_page' => -1,
-	'orderby'        => 'date',
-	'order'          => 'DESC'
+	'posts_per_page' => -1
 );
 
-// Add category filter if include_covers is false (only show original songs)
-// If include_covers is true, show both original and cover songs
-if (!$include_covers) {
+// Set orderby based on sort parameter
+if ($sort === 'alpha') {
+	$query_args['orderby'] = 'title';
+	$query_args['order'] = 'ASC';
+} else {
+	$query_args['orderby'] = 'date';
+	$query_args['order'] = 'DESC';
+}
+
+// Add tax_query based on song_type
+if ($song_type === 'covers') {
+	$query_args['tax_query'] = array(
+		array(
+			'taxonomy' => 'category',
+			'field'     => 'slug',
+			'terms'    => 'cover'
+		)
+	);
+} elseif ($song_type === 'originals') {
 	$query_args['tax_query'] = array(
 		array(
 			'taxonomy' => 'category',
@@ -27,7 +42,7 @@ if (!$include_covers) {
 			'terms'    => 'original'
 		)
 	);
-} else {
+} elseif ($song_type === 'both') {
 	$query_args['tax_query'] = array(
 		array(
 			'taxonomy' => 'category',
@@ -38,7 +53,7 @@ if (!$include_covers) {
 }
 
 // Add artist filter if artist_id is provided
-if (!empty($artist_id)) {
+if (!empty($artist_id) && $artist_id !== 'all') {
 	$artist_id = intval($artist_id);
 	// ACF relationship fields store data as serialized arrays
 	// Check for the ID in serialized format: "i:ID;" or "s:2:\"ID\";"
@@ -56,7 +71,7 @@ $song_query = new WP_Query($query_args);
 if ($song_query->have_posts()) { 
 	?>
 	
-	<div class="song-grid is-layout-flow wp-block-group-is-layout-flow alignfull">
+	<div class="song-grid alignfull">
 	<?php
 	while ($song_query->have_posts()) {
 		$song_query->the_post();
@@ -75,6 +90,14 @@ if ($song_query->have_posts()) {
 			<?php the_post_thumbnail('medium'); ?>
 			<span class="song-grid-item-content">
 				<span class="song-grid-item-title"><?php the_title(); ?></span>
+				<?php 
+					$cats = get_the_category();
+					foreach ($cats as $cat) {
+						if ($cat->slug === 'cover') {
+							echo '<span class="song-grid-item-attribution">(' . get_field('attribution') . ')</span>';
+						}
+					}
+				?>
 				<span class="song-grid-item-date"><?php echo get_the_date(); ?></span>
 			</span>
 		</a>
