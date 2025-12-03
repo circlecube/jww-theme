@@ -241,19 +241,27 @@ class YouTube_Song_Importer {
     /**
      * Process existing song posts to add thumbnails if missing
      * This runs before importing new videos to ensure existing posts have thumbnails
+     * Checks YouTube and TikTok video fields
      */
     private function process_existing_posts_for_thumbnails() {
         $this->log_import_activity( 'Processing existing posts for missing thumbnails...' );
 
-        // Get all song posts that have video URLs but no featured image and haven't been processed yet
+        // Get all song posts that have video URLs (YouTube or TikTok) but no featured image and haven't been processed yet
         $posts = get_posts( [
             'post_type'      => 'song',
             'posts_per_page' => 50, // Process in batches to prevent timeouts
             'meta_query'     => [
                 'relation' => 'AND',
                 [
-                    'key'     => 'field_68cb1e19f3fe2', // ACF field key for 'video' field
-                    'compare' => 'EXISTS'
+                    'relation' => 'OR',
+                    [
+                        'key'     => 'field_68cb1e19f3fe2', // ACF field key for 'video' field (YouTube)
+                        'compare' => 'EXISTS'
+                    ],
+                    [
+                        'key'     => 'field_68ee7c26f2346', // ACF field key for 'tiktok_video' field
+                        'compare' => 'EXISTS'
+                    ]
                 ],
                 [
                     'key'     => 'imported',
@@ -279,31 +287,63 @@ class YouTube_Song_Importer {
                 continue;
             }
 
+            $thumbnail_result = false;
             $video_url = get_field( 'video', $post->ID );
-            if ( ! $video_url ) {
-                $this->log_import_activity( "SKIP: Post '{$post_title}' (ID: {$post->ID}) has no video URL" );
-                // Mark as imported even if no video URL (to avoid checking again)
-                update_post_meta( $post->ID, 'imported', '1' );
-                $processed_count++;
-                continue;
+            $tiktok_url = get_field( 'tiktok_video', $post->ID );
+
+            // Try YouTube first if available
+            if ( $video_url ) {
+                $video_id = $this->extract_video_id_from_url( $video_url );
+                $this->log_import_activity( "PROCESSING: Adding YouTube thumbnail to '{$post_title}' (ID: {$post->ID}, video ID: {$video_id})" );
+
+                // Extract video ID and add it if missing
+                if ( $video_id && ! get_post_meta( $post->ID, 'video_id', true ) ) {
+                    update_post_meta( $post->ID, 'video_id', $video_id );
+                    $this->log_import_activity( "SUCCESS: Added video ID meta for post ID: {$post->ID}" );
+                }
+
+                // Try to add thumbnail
+                $thumbnail_result = $this->set_featured_image_from_youtube( $post->ID, $video_url, $post_title );
+                if ( $thumbnail_result ) {
+                    $this->log_import_activity( "SUCCESS: Added YouTube thumbnail to '{$post_title}' (ID: {$post->ID})" );
+                    $thumbnail_added_count++;
+                } else {
+                    $this->log_import_activity( "WARNING: Failed to add YouTube thumbnail to '{$post_title}' (ID: {$post->ID})" );
+                }
             }
 
-            $video_id = $this->extract_video_id_from_url( $video_url );
-            $this->log_import_activity( "PROCESSING: Adding thumbnail to '{$post_title}' (ID: {$post->ID}, video ID: {$video_id})" );
-
-            // Extract video ID and add it if missing
-            if ( $video_id && ! get_post_meta( $post->ID, 'video_id', true ) ) {
-                update_post_meta( $post->ID, 'video_id', $video_id );
-                $this->log_import_activity( "SUCCESS: Added video ID meta for post ID: {$post->ID}" );
+            // If YouTube didn't work or wasn't available, try TikTok
+            if ( ! $thumbnail_result && $tiktok_url ) {
+                // Extract TikTok URL from oembed field if needed (get raw value to avoid HTML)
+                $tiktok_url_raw = get_field( 'tiktok_video', $post->ID, false );
+                if ( empty( $tiktok_url_raw ) ) {
+                    $tiktok_url_raw = $tiktok_url;
+                }
+                
+                // If the URL is wrapped in HTML, extract it
+                if ( is_string( $tiktok_url_raw ) && strpos( $tiktok_url_raw, '<' ) !== false ) {
+                    if ( preg_match( '/href=["\']([^"\']+)["\']/', $tiktok_url_raw, $matches ) ) {
+                        $tiktok_url_raw = $matches[1];
+                    } elseif ( preg_match( '/https?:\/\/[^\s<>"\']+/', $tiktok_url_raw, $matches ) ) {
+                        $tiktok_url_raw = $matches[0];
+                    }
+                }
+                
+                $this->log_import_activity( "PROCESSING: Adding TikTok thumbnail to '{$post_title}' (ID: {$post->ID}, TikTok URL: {$tiktok_url_raw})" );
+                
+                // Try to add thumbnail from TikTok
+                $thumbnail_result = $this->set_featured_image_from_tiktok( $post->ID, $tiktok_url_raw, $post_title );
+                if ( $thumbnail_result ) {
+                    $this->log_import_activity( "SUCCESS: Added TikTok thumbnail to '{$post_title}' (ID: {$post->ID})" );
+                    $thumbnail_added_count++;
+                } else {
+                    $this->log_import_activity( "WARNING: Failed to add TikTok thumbnail to '{$post_title}' (ID: {$post->ID})" );
+                }
             }
 
-            // Try to add thumbnail
-            $thumbnail_result = $this->set_featured_image_from_youtube( $post->ID, $video_url, $post_title );
-            if ( $thumbnail_result ) {
-                $this->log_import_activity( "SUCCESS: Added thumbnail to '{$post_title}' (ID: {$post->ID})" );
-                $thumbnail_added_count++;
-            } else {
-                $this->log_import_activity( "WARNING: Failed to add thumbnail to '{$post_title}' (ID: {$post->ID})" );
+            // If neither YouTube nor TikTok worked, log it
+            if ( ! $video_url && ! $tiktok_url ) {
+                $this->log_import_activity( "SKIP: Post '{$post_title}' (ID: {$post->ID}) has no video URL (YouTube or TikTok)" );
             }
             
             // Mark as imported
@@ -755,6 +795,251 @@ class YouTube_Song_Importer {
     }
 
     /**
+     * Download and attach the TikTok video thumbnail as featured image
+     */
+    private function set_featured_image_from_tiktok( $post_id, $tiktok_url, $post_title = null ) {
+        // Ensure WordPress media functions are loaded first
+        if ( ! function_exists( 'media_handle_sideload' ) ) {
+            $this->log_import_activity( "Loading WordPress media functions..." );
+            require_once( ABSPATH . 'wp-admin/includes/media.php' );
+            require_once( ABSPATH . 'wp-admin/includes/file.php' );
+            require_once( ABSPATH . 'wp-admin/includes/image.php' );
+            
+            if ( ! function_exists( 'media_handle_sideload' ) ) {
+                $this->log_import_activity( "ERROR: WordPress media functions still not available after loading files" );
+                return false;
+            }
+            $this->log_import_activity( "SUCCESS: WordPress media functions loaded" );
+        }
+
+        // Normalize TikTok URL
+        $tiktok_url = esc_url_raw( trim( $tiktok_url ) );
+        if ( empty( $tiktok_url ) ) {
+            $this->log_import_activity( "ERROR: Empty TikTok URL provided" );
+            return false;
+        }
+
+        // Extract TikTok video ID from URL
+        $video_id = $this->extract_tiktok_video_id_from_url( $tiktok_url );
+        if ( ! $video_id ) {
+            $this->log_import_activity( "ERROR: Could not extract TikTok video ID from URL: {$tiktok_url}" );
+            return false;
+        }
+
+        $this->log_import_activity( "Starting featured image process for post {$post_id}, TikTok video ID: {$video_id}" );
+
+        // Check upload directory permissions
+        $upload_dir = wp_upload_dir();
+        if ( ! $upload_dir || $upload_dir['error'] ) {
+            $this->log_import_activity( "ERROR: Upload directory not accessible: " . ( $upload_dir['error'] ?? 'Unknown error' ) );
+            return false;
+        }
+
+        // Check if upload directory is writable
+        if ( ! wp_is_writable( $upload_dir['path'] ) ) {
+            $this->log_import_activity( "ERROR: Upload directory not writable: {$upload_dir['path']}" );
+            return false;
+        }
+
+        $this->log_import_activity( "Upload directory check passed: {$upload_dir['path']}" );
+
+        // Get thumbnail URL from TikTok oEmbed API
+        $thumbnail_url = $this->get_tiktok_thumbnail_url( $tiktok_url );
+        
+        if ( ! $thumbnail_url ) {
+            $this->log_import_activity( "ERROR: Could not retrieve thumbnail URL from TikTok for: {$tiktok_url}" );
+            return false;
+        }
+
+        $this->log_import_activity( "Attempting download from TikTok: {$thumbnail_url}" );
+
+        // Download the thumbnail
+        $response = wp_remote_get( $thumbnail_url, [
+            'timeout'    => 30,
+            'user-agent' => 'WordPress/' . get_bloginfo( 'version' ) . '; ' . home_url(),
+            'sslverify'  => true
+        ] );
+
+        if ( is_wp_error( $response ) ) {
+            $error_msg = $response->get_error_message();
+            $this->log_import_activity( "ERROR: Failed to download TikTok thumbnail: {$error_msg}" );
+            return false;
+        }
+
+        $response_code = wp_remote_retrieve_response_code( $response );
+        if ( $response_code !== 200 ) {
+            $this->log_import_activity( "ERROR: Failed to download TikTok thumbnail: HTTP {$response_code}" );
+            return false;
+        }
+
+        $body = wp_remote_retrieve_body( $response );
+        if ( empty( $body ) ) {
+            $this->log_import_activity( "ERROR: Empty response body from TikTok thumbnail" );
+            return false;
+        }
+
+        // Check if it's actually an image
+        $content_type = wp_remote_retrieve_header( $response, 'content-type' );
+        if ( strpos( $content_type, 'image' ) === false ) {
+            $this->log_import_activity( "ERROR: Invalid content type from TikTok ({$content_type})" );
+            return false;
+        }
+
+        // Save to temporary file
+        $tmp = wp_tempnam( 'tiktok_thumb_' );
+        if ( ! $tmp ) {
+            $this->log_import_activity( "ERROR: Could not create temp file for TikTok thumbnail" );
+            return false;
+        }
+
+        $bytes_written = file_put_contents( $tmp, $body );
+        if ( $bytes_written === false || $bytes_written === 0 ) {
+            $this->log_import_activity( "ERROR: Could not write to temp file for TikTok thumbnail" );
+            @unlink( $tmp );
+            return false;
+        }
+
+        $this->log_import_activity( "SUCCESS: Downloaded TikTok thumbnail ({$bytes_written} bytes)" );
+
+        // Verify the downloaded file exists and has content
+        $file_size = filesize( $tmp );
+        if ( $file_size === false || $file_size === 0 ) {
+            $this->log_import_activity( "ERROR: Downloaded file is empty or doesn't exist: {$tmp}" );
+            @unlink( $tmp );
+            return false;
+        }
+
+        // Check file size limits
+        $max_size = wp_max_upload_size();
+        if ( $file_size > $max_size ) {
+            $this->log_import_activity( "ERROR: File too large: {$file_size} bytes (max: {$max_size} bytes)" );
+            @unlink( $tmp );
+            return false;
+        }
+
+        $this->log_import_activity( "File validation passed: {$file_size} bytes" );
+
+        // Use post title, fallback if not provided
+        if ( ! $post_title ) {
+            $post_title = get_the_title( $post_id );
+        }
+
+        // Sanitize filename
+        $safe_title = sanitize_file_name( $post_title );
+        $safe_title = substr( $safe_title, 0, 50 ); // Limit length
+
+        // Determine file extension from content type
+        $extension = 'jpg'; // default
+        if ( strpos( $content_type, 'image/png' ) !== false ) {
+            $extension = 'png';
+        } elseif ( strpos( $content_type, 'image/webp' ) !== false ) {
+            $extension = 'webp';
+        }
+
+        // Create filename: post-title-tiktok-video-id.ext
+        $filename = $safe_title . '-tiktok-' . $video_id . '.' . $extension;
+
+        $this->log_import_activity( "Using filename: {$filename} (from post title: {$post_title})" );
+
+        // Use WordPress media API to sideload
+        $file = [
+            'name'     => $filename,
+            'type'     => $content_type,
+            'tmp_name' => $tmp,
+            'size'     => $file_size,
+            'error'    => 0,
+        ];
+
+        $this->log_import_activity( "Attempting to sideload TikTok image with size: {$file_size} bytes" );
+
+        $attachment_id = media_handle_sideload( $file, $post_id );
+        if ( is_wp_error( $attachment_id ) ) {
+            $error_message = $attachment_id->get_error_message();
+            $error_code = $attachment_id->get_error_code();
+            $this->log_import_activity( "ERROR: Failed to sideload TikTok image - Code: {$error_code}, Message: {$error_message}" );
+            @unlink( $tmp );
+            return false;
+        }
+
+        $this->log_import_activity( "SUCCESS: TikTok image sideloaded with attachment ID: {$attachment_id}" );
+
+        // Set as featured image
+        $result = set_post_thumbnail( $post_id, $attachment_id );
+        if ( $result ) {
+            $this->log_import_activity( "SUCCESS: Set featured image for post {$post_id} (attachment: {$attachment_id})" );
+        } else {
+            $this->log_import_activity( "ERROR: Failed to set featured image for post {$post_id} (attachment: {$attachment_id})" );
+        }
+
+        // Clean up temp file
+        @unlink( $tmp );
+
+        return $result;
+    }
+
+    /**
+     * Extract TikTok video ID from URL
+     */
+    private function extract_tiktok_video_id_from_url( $url ) {
+        // Handle various TikTok URL formats:
+        // https://www.tiktok.com/@username/video/VIDEO_ID
+        // https://vm.tiktok.com/SHORT_CODE/
+        // https://tiktok.com/@username/video/VIDEO_ID
+        $patterns = [
+            '/tiktok\.com\/@[^\/]+\/video\/(\d+)/',
+            '/vm\.tiktok\.com\/([a-zA-Z0-9]+)/',
+        ];
+
+        foreach ( $patterns as $pattern ) {
+            if ( preg_match( $pattern, $url, $matches ) ) {
+                return $matches[1];
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Get TikTok thumbnail URL using oEmbed API
+     */
+    private function get_tiktok_thumbnail_url( $tiktok_url ) {
+        // Use TikTok oEmbed API to get thumbnail
+        $oembed_url = 'https://www.tiktok.com/oembed?url=' . urlencode( $tiktok_url );
+        
+        $this->log_import_activity( "Fetching TikTok oEmbed data from: {$oembed_url}" );
+
+        $response = wp_remote_get( $oembed_url, [
+            'timeout'    => 30,
+            'user-agent' => 'WordPress/' . get_bloginfo( 'version' ) . '; ' . home_url(),
+            'sslverify'  => true
+        ] );
+
+        if ( is_wp_error( $response ) ) {
+            $this->log_import_activity( "ERROR: Failed to fetch TikTok oEmbed: " . $response->get_error_message() );
+            return false;
+        }
+
+        $response_code = wp_remote_retrieve_response_code( $response );
+        if ( $response_code !== 200 ) {
+            $this->log_import_activity( "ERROR: TikTok oEmbed returned HTTP {$response_code}" );
+            return false;
+        }
+
+        $body = wp_remote_retrieve_body( $response );
+        $data = json_decode( $body, true );
+
+        if ( ! $data || ! isset( $data['thumbnail_url'] ) ) {
+            $this->log_import_activity( "ERROR: TikTok oEmbed response missing thumbnail_url. Response keys: " . ( $data ? implode( ', ', array_keys( $data ) ) : 'null' ) );
+            return false;
+        }
+
+        $thumbnail_url = $data['thumbnail_url'];
+        $this->log_import_activity( "SUCCESS: Retrieved TikTok thumbnail URL: {$thumbnail_url}" );
+
+        return $thumbnail_url;
+    }
+
+    /**
      * Log import activity for debugging and monitoring
      */
     private function log_import_activity( $message ) {
@@ -1010,14 +1295,18 @@ class YouTube_Song_Importer {
 
             $this->log_import_activity( "Starting bulk thumbnail update for all songs..." );
 
-            // Get all song posts that have video URLs but no featured image
+            // Get all song posts that have video URLs (YouTube or TikTok) but no featured image
             $posts = get_posts( [
                 'post_type'      => 'song',
                 'posts_per_page' => -1, // Get all posts
                 'meta_query'     => [
-                    'relation' => 'AND',
+                    'relation' => 'OR',
                     [
-                        'key'     => 'field_68cb1e19f3fe2', // ACF field key for 'video' field
+                        'key'     => 'field_68cb1e19f3fe2', // ACF field key for 'video' field (YouTube)
+                        'compare' => 'EXISTS'
+                    ],
+                    [
+                        'key'     => 'field_68ee7c26f2346', // ACF field key for 'tiktok_video' field
                         'compare' => 'EXISTS'
                     ]
                 ]
@@ -1026,40 +1315,134 @@ class YouTube_Song_Importer {
             $processed_count = 0;
             $thumbnail_added_count = 0;
             $skipped_count = 0;
+            $image_tag_added_count = 0;
+            $video_id_added_count = 0;
+            $no_video_count = 0;
+            $errors = [];
 
             foreach ( $posts as $post ) {
                 $post_title = get_the_title( $post->ID );
                 $processed_count++;
                 
-                // Skip if already has featured image
-                if ( has_post_thumbnail( $post->ID ) ) {
+                // Check for featured image and add 'needs-image' tag if missing
+                if ( ! has_post_thumbnail( $post->ID ) ) {
+                    // Get existing tags
+                    $existing_tags = wp_get_post_terms( $post->ID, 'post_tag', array( 'fields' => 'slugs' ) );
+                    
+                    // Add 'needs-image' tag if not already present
+                    if ( ! in_array( 'needs-image', $existing_tags ) ) {
+                        if ( empty( $existing_tags ) ) {
+                            $existing_tags = array();
+                        }
+                        $existing_tags[] = 'needs-image';
+                        wp_set_post_terms( $post->ID, $existing_tags, 'post_tag' );
+                        $this->log_import_activity( "SUCCESS: Added 'needs-image' tag to '{$post_title}' (ID: {$post->ID})" );
+                        $image_tag_added_count++;
+                    }
+                } else {
+                    // Remove 'needs-image' tag if featured image exists
+                    $existing_tags = wp_get_post_terms( $post->ID, 'post_tag', array( 'fields' => 'slugs' ) );
+                    if ( in_array( 'needs-image', $existing_tags ) ) {
+                        $existing_tags = array_diff( $existing_tags, array( 'needs-image' ) );
+                        wp_set_post_terms( $post->ID, $existing_tags, 'post_tag' );
+                        $this->log_import_activity( "SUCCESS: Removed 'needs-image' tag from '{$post_title}' (ID: {$post->ID}) - featured image exists" );
+                    }
                     $this->log_import_activity( "SKIP: Post '{$post_title}' (ID: {$post->ID}) already has featured image" );
                     $skipped_count++;
                     continue;
                 }
 
+                $thumbnail_result = false;
                 $video_url = get_field( 'video', $post->ID );
-                if ( ! $video_url ) {
-                    $this->log_import_activity( "SKIP: Post '{$post_title}' (ID: {$post->ID}) has no video URL" );
-                    $skipped_count++;
-                    continue;
+                $tiktok_url = get_field( 'tiktok_video', $post->ID );
+
+                // Try YouTube first if available
+                if ( $video_url ) {
+                    // Extract video ID and add it if missing
+                    $video_id = $this->extract_video_id_from_url( $video_url );
+                    if ( ! $video_id ) {
+                        $this->log_import_activity( "SKIP: Post '{$post_title}' (ID: {$post->ID}) - could not extract video ID from URL: {$video_url}" );
+                        // Continue to try TikTok if available
+                    } else {
+                        // Add video_id meta if missing
+                        $existing_video_id = get_post_meta( $post->ID, 'video_id', true );
+                        if ( ! $existing_video_id ) {
+                            update_post_meta( $post->ID, 'video_id', $video_id );
+                            $this->log_import_activity( "SUCCESS: Added missing video_id meta for '{$post_title}' (ID: {$post->ID}, video ID: {$video_id})" );
+                            $video_id_added_count++;
+                        }
+
+                        $this->log_import_activity( "PROCESSING: Adding YouTube thumbnail to '{$post_title}' (ID: {$post->ID}, video ID: {$video_id})" );
+
+                        // Try to add thumbnail
+                        $thumbnail_result = $this->set_featured_image_from_youtube( $post->ID, $video_url, $post_title );
+                        if ( $thumbnail_result ) {
+                            // Remove 'needs-image' tag if thumbnail was successfully added
+                            $existing_tags = wp_get_post_terms( $post->ID, 'post_tag', array( 'fields' => 'slugs' ) );
+                            if ( in_array( 'needs-image', $existing_tags ) ) {
+                                $existing_tags = array_diff( $existing_tags, array( 'needs-image' ) );
+                                wp_set_post_terms( $post->ID, $existing_tags, 'post_tag' );
+                                $this->log_import_activity( "SUCCESS: Removed 'needs-image' tag from '{$post_title}' (ID: {$post->ID}) - thumbnail added" );
+                            }
+                            $this->log_import_activity( "SUCCESS: Added YouTube thumbnail to '{$post_title}' (ID: {$post->ID})" );
+                            $thumbnail_added_count++;
+                        } else {
+                            $error_msg = "Failed to add YouTube thumbnail to '{$post_title}' (ID: {$post->ID})";
+                            $this->log_import_activity( "WARNING: {$error_msg}" );
+                            $errors[] = $error_msg;
+                        }
+                    }
                 }
 
-                $video_id = $this->extract_video_id_from_url( $video_url );
-                $this->log_import_activity( "PROCESSING: Adding thumbnail to '{$post_title}' (ID: {$post->ID}, video ID: {$video_id})" );
+                // If YouTube didn't work or wasn't available, try TikTok
+                if ( ! $thumbnail_result && $tiktok_url ) {
+                    // Extract TikTok URL from oembed field if needed (get raw value to avoid HTML)
+                    $tiktok_url_raw = get_field( 'tiktok_video', $post->ID, false );
+                    if ( empty( $tiktok_url_raw ) ) {
+                        $tiktok_url_raw = $tiktok_url;
+                    }
+                    
+                    // If the URL is wrapped in HTML, extract it
+                    if ( is_string( $tiktok_url_raw ) && strpos( $tiktok_url_raw, '<' ) !== false ) {
+                        if ( preg_match( '/href=["\']([^"\']+)["\']/', $tiktok_url_raw, $matches ) ) {
+                            $tiktok_url_raw = $matches[1];
+                        } elseif ( preg_match( '/https?:\/\/[^\s<>"\']+/', $tiktok_url_raw, $matches ) ) {
+                            $tiktok_url_raw = $matches[0];
+                        }
+                    }
+                    
+                    $this->log_import_activity( "PROCESSING: Adding TikTok thumbnail to '{$post_title}' (ID: {$post->ID}, TikTok URL: {$tiktok_url_raw})" );
+                    
+                    // Try to add thumbnail from TikTok
+                    $thumbnail_result = $this->set_featured_image_from_tiktok( $post->ID, $tiktok_url_raw, $post_title );
+                    if ( $thumbnail_result ) {
+                        // Remove 'needs-image' tag if thumbnail was successfully added
+                        $existing_tags = wp_get_post_terms( $post->ID, 'post_tag', array( 'fields' => 'slugs' ) );
+                        if ( in_array( 'needs-image', $existing_tags ) ) {
+                            $existing_tags = array_diff( $existing_tags, array( 'needs-image' ) );
+                            wp_set_post_terms( $post->ID, $existing_tags, 'post_tag' );
+                            $this->log_import_activity( "SUCCESS: Removed 'needs-image' tag from '{$post_title}' (ID: {$post->ID}) - thumbnail added" );
+                        }
+                        $this->log_import_activity( "SUCCESS: Added TikTok thumbnail to '{$post_title}' (ID: {$post->ID})" );
+                        $thumbnail_added_count++;
+                    } else {
+                        $error_msg = "Failed to add TikTok thumbnail to '{$post_title}' (ID: {$post->ID})";
+                        $this->log_import_activity( "WARNING: {$error_msg}" );
+                        $errors[] = $error_msg;
+                    }
+                }
 
-                // Try to add thumbnail
-                $thumbnail_result = $this->set_featured_image_from_youtube( $post->ID, $video_url, $post_title );
-                if ( $thumbnail_result ) {
-                    $this->log_import_activity( "SUCCESS: Added thumbnail to '{$post_title}' (ID: {$post->ID})" );
-                    $thumbnail_added_count++;
-                } else {
-                    $this->log_import_activity( "WARNING: Failed to add thumbnail to '{$post_title}' (ID: {$post->ID})" );
+                // If neither YouTube nor TikTok worked, log it
+                if ( ! $video_url && ! $tiktok_url ) {
+                    $this->log_import_activity( "SKIP: Post '{$post_title}' (ID: {$post->ID}) has no video URL (YouTube or TikTok)" );
+                    $no_video_count++;
+                } elseif ( ! $thumbnail_result ) {
+                    $skipped_count++;
                 }
             }
 
-            $this->log_import_activity( "Bulk thumbnail update completed. Processed: {$processed_count}, Added: {$thumbnail_added_count}, Skipped: {$skipped_count}" );
-            wp_die( "Bulk thumbnail update completed! Processed: {$processed_count}, Added: {$thumbnail_added_count}, Skipped: {$skipped_count}" );
+            $this->log_import_activity( "Bulk thumbnail update completed. Processed: {$processed_count}, Added: {$thumbnail_added_count}, Image tags added: {$image_tag_added_count}, Skipped: {$skipped_count}" );
+            wp_die( "Bulk thumbnail update completed! Processed: {$processed_count}, Added: {$thumbnail_added_count}, Image tags added: {$image_tag_added_count}, Skipped: {$skipped_count}" );
         }
     }
 
@@ -1175,6 +1558,7 @@ class YouTube_Song_Importer {
                             message += 'Thumbnails added: ' + data.thumbnails_added + '\\n';
                             message += 'Video IDs added: ' + data.video_ids_added + '\\n';
                             message += 'Lyrics tags added: ' + data.lyrics_tags_added + '\\n';
+                            message += 'Image tags added: ' + data.image_tags_added + '\\n';
                             message += 'Skipped: ' + data.skipped + ' (already had thumbnails)\\n';
                             message += 'No video URL: ' + data.no_video + '\\n';
                             
@@ -1308,6 +1692,7 @@ class YouTube_Song_Importer {
         $video_id_added_count = 0;
         $no_video_count = 0;
         $lyrics_tag_added_count = 0;
+        $image_tag_added_count = 0;
         $errors = [];
 
         foreach ( $posts as $post ) {
@@ -1344,53 +1729,127 @@ class YouTube_Song_Importer {
                 }
             }
 
-            // Get video URL
-            $video_url = get_field( 'video', $post->ID );
-            if ( ! $video_url ) {
-                $this->log_import_activity( "SKIP: Post '{$post_title}' (ID: {$post->ID}) has no video URL" );
-                $no_video_count++;
-                continue;
-            }
-
-            // Extract video ID and add it if missing
-            $video_id = $this->extract_video_id_from_url( $video_url );
-            if ( ! $video_id ) {
-                $this->log_import_activity( "SKIP: Post '{$post_title}' (ID: {$post->ID}) - could not extract video ID from URL: {$video_url}" );
-                $skipped_count++;
-                continue;
-            }
-
-            // Add video_id meta if missing
-            $existing_video_id = get_post_meta( $post->ID, 'video_id', true );
-            if ( ! $existing_video_id ) {
-                update_post_meta( $post->ID, 'video_id', $video_id );
-                $this->log_import_activity( "SUCCESS: Added missing video_id meta for '{$post_title}' (ID: {$post->ID}, video ID: {$video_id})" );
-                $video_id_added_count++;
-            }
-
-            // Skip if already has featured image
-            if ( has_post_thumbnail( $post->ID ) ) {
+            // Check for featured image and add 'needs-image' tag if missing
+            if ( ! has_post_thumbnail( $post->ID ) ) {
+                // Get existing tags
+                $existing_tags = wp_get_post_terms( $post->ID, 'post_tag', array( 'fields' => 'slugs' ) );
+                
+                // Add 'needs-image' tag if not already present
+                if ( ! in_array( 'needs-image', $existing_tags ) ) {
+                    if ( empty( $existing_tags ) ) {
+                        $existing_tags = array();
+                    }
+                    $existing_tags[] = 'needs-image';
+                    wp_set_post_terms( $post->ID, $existing_tags, 'post_tag' );
+                    $this->log_import_activity( "SUCCESS: Added 'needs-image' tag to '{$post_title}' (ID: {$post->ID})" );
+                    $image_tag_added_count++;
+                } else {
+                    $this->log_import_activity( "SKIP: Post '{$post_title}' (ID: {$post->ID}) already has 'needs-image' tag" );
+                }
+            } else {
+                // Remove 'needs-image' tag if featured image exists
+                $existing_tags = wp_get_post_terms( $post->ID, 'post_tag', array( 'fields' => 'slugs' ) );
+                if ( in_array( 'needs-image', $existing_tags ) ) {
+                    $existing_tags = array_diff( $existing_tags, array( 'needs-image' ) );
+                    wp_set_post_terms( $post->ID, $existing_tags, 'post_tag' );
+                    $this->log_import_activity( "SUCCESS: Removed 'needs-image' tag from '{$post_title}' (ID: {$post->ID}) - featured image exists" );
+                }
                 $this->log_import_activity( "SKIP: Post '{$post_title}' (ID: {$post->ID}) already has featured image" );
                 $skipped_count++;
                 continue;
             }
 
-            $this->log_import_activity( "PROCESSING: Adding thumbnail to '{$post_title}' (ID: {$post->ID}, video ID: {$video_id})" );
+            $thumbnail_result = false;
+            $video_url = get_field( 'video', $post->ID );
+            $tiktok_url = get_field( 'tiktok_video', $post->ID );
 
-            // Try to add thumbnail
-            $thumbnail_result = $this->set_featured_image_from_youtube( $post->ID, $video_url, $post_title );
-            if ( $thumbnail_result ) {
-                $this->log_import_activity( "SUCCESS: Added thumbnail to '{$post_title}' (ID: {$post->ID})" );
-                $thumbnail_added_count++;
-            } else {
-                $error_msg = "Failed to add thumbnail to '{$post_title}' (ID: {$post->ID})";
-                $this->log_import_activity( "WARNING: {$error_msg}" );
-                $errors[] = $error_msg;
+            // Try YouTube first if available
+            if ( $video_url ) {
+                // Extract video ID and add it if missing
+                $video_id = $this->extract_video_id_from_url( $video_url );
+                if ( ! $video_id ) {
+                    $this->log_import_activity( "SKIP: Post '{$post_title}' (ID: {$post->ID}) - could not extract video ID from URL: {$video_url}" );
+                    // Continue to try TikTok if available
+                } else {
+                    // Add video_id meta if missing
+                    $existing_video_id = get_post_meta( $post->ID, 'video_id', true );
+                    if ( ! $existing_video_id ) {
+                        update_post_meta( $post->ID, 'video_id', $video_id );
+                        $this->log_import_activity( "SUCCESS: Added missing video_id meta for '{$post_title}' (ID: {$post->ID}, video ID: {$video_id})" );
+                        $video_id_added_count++;
+                    }
+
+                    $this->log_import_activity( "PROCESSING: Adding YouTube thumbnail to '{$post_title}' (ID: {$post->ID}, video ID: {$video_id})" );
+
+                    // Try to add thumbnail
+                    $thumbnail_result = $this->set_featured_image_from_youtube( $post->ID, $video_url, $post_title );
+                    if ( $thumbnail_result ) {
+                        // Remove 'needs-image' tag if thumbnail was successfully added
+                        $existing_tags = wp_get_post_terms( $post->ID, 'post_tag', array( 'fields' => 'slugs' ) );
+                        if ( in_array( 'needs-image', $existing_tags ) ) {
+                            $existing_tags = array_diff( $existing_tags, array( 'needs-image' ) );
+                            wp_set_post_terms( $post->ID, $existing_tags, 'post_tag' );
+                            $this->log_import_activity( "SUCCESS: Removed 'needs-image' tag from '{$post_title}' (ID: {$post->ID}) - thumbnail added" );
+                        }
+                        $this->log_import_activity( "SUCCESS: Added YouTube thumbnail to '{$post_title}' (ID: {$post->ID})" );
+                        $thumbnail_added_count++;
+                    } else {
+                        $error_msg = "Failed to add YouTube thumbnail to '{$post_title}' (ID: {$post->ID})";
+                        $this->log_import_activity( "WARNING: {$error_msg}" );
+                        $errors[] = $error_msg;
+                    }
+                }
+            }
+
+            // If YouTube didn't work or wasn't available, try TikTok
+            if ( ! $thumbnail_result && $tiktok_url ) {
+                // Extract TikTok URL from oembed field if needed (get raw value to avoid HTML)
+                $tiktok_url_raw = get_field( 'tiktok_video', $post->ID, false );
+                if ( empty( $tiktok_url_raw ) ) {
+                    $tiktok_url_raw = $tiktok_url;
+                }
+                
+                // If the URL is wrapped in HTML, extract it
+                if ( is_string( $tiktok_url_raw ) && strpos( $tiktok_url_raw, '<' ) !== false ) {
+                    if ( preg_match( '/href=["\']([^"\']+)["\']/', $tiktok_url_raw, $matches ) ) {
+                        $tiktok_url_raw = $matches[1];
+                    } elseif ( preg_match( '/https?:\/\/[^\s<>"\']+/', $tiktok_url_raw, $matches ) ) {
+                        $tiktok_url_raw = $matches[0];
+                    }
+                }
+                
+                $this->log_import_activity( "PROCESSING: Adding TikTok thumbnail to '{$post_title}' (ID: {$post->ID}, TikTok URL: {$tiktok_url_raw})" );
+                
+                // Try to add thumbnail from TikTok
+                $thumbnail_result = $this->set_featured_image_from_tiktok( $post->ID, $tiktok_url_raw, $post_title );
+                if ( $thumbnail_result ) {
+                    // Remove 'needs-image' tag if thumbnail was successfully added
+                    $existing_tags = wp_get_post_terms( $post->ID, 'post_tag', array( 'fields' => 'slugs' ) );
+                    if ( in_array( 'needs-image', $existing_tags ) ) {
+                        $existing_tags = array_diff( $existing_tags, array( 'needs-image' ) );
+                        wp_set_post_terms( $post->ID, $existing_tags, 'post_tag' );
+                        $this->log_import_activity( "SUCCESS: Removed 'needs-image' tag from '{$post_title}' (ID: {$post->ID}) - thumbnail added" );
+                    }
+                    $this->log_import_activity( "SUCCESS: Added TikTok thumbnail to '{$post_title}' (ID: {$post->ID})" );
+                    $thumbnail_added_count++;
+                } else {
+                    $error_msg = "Failed to add TikTok thumbnail to '{$post_title}' (ID: {$post->ID})";
+                    $this->log_import_activity( "WARNING: {$error_msg}" );
+                    $errors[] = $error_msg;
+                }
+            }
+
+            // If neither YouTube nor TikTok worked, log it
+            if ( ! $video_url && ! $tiktok_url ) {
+                $this->log_import_activity( "SKIP: Post '{$post_title}' (ID: {$post->ID}) has no video URL (YouTube or TikTok)" );
+                $no_video_count++;
+            } elseif ( ! $thumbnail_result ) {
+                $skipped_count++;
             }
         }
 
         $total_songs = count( $posts );
-        $this->log_import_activity( "Comprehensive bulk update completed. Total songs: {$total_songs}, Processed: {$processed_count}, Thumbnails added: {$thumbnail_added_count}, Video IDs added: {$video_id_added_count}, Lyrics tags added: {$lyrics_tag_added_count}, Skipped: {$skipped_count}, No video: {$no_video_count}" );
+        $this->log_import_activity( "Comprehensive bulk update completed. Total songs: {$total_songs}, Processed: {$processed_count}, Thumbnails added: {$thumbnail_added_count}, Video IDs added: {$video_id_added_count}, Lyrics tags added: {$lyrics_tag_added_count}, Image tags added: {$image_tag_added_count}, Skipped: {$skipped_count}, No video: {$no_video_count}" );
         
         $response_data = [
             'total_songs' => $total_songs,
@@ -1398,6 +1857,7 @@ class YouTube_Song_Importer {
             'thumbnails_added' => $thumbnail_added_count,
             'video_ids_added' => $video_id_added_count,
             'lyrics_tags_added' => $lyrics_tag_added_count,
+            'image_tags_added' => $image_tag_added_count,
             'skipped' => $skipped_count,
             'no_video' => $no_video_count,
             'errors' => $errors
