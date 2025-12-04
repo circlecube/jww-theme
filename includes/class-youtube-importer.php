@@ -228,6 +228,10 @@ class YouTube_Song_Importer {
 
             $imported_count++;
             $this->log_import_activity( "COMPLETE: Successfully imported '{$video_title}' (post ID: {$post_id}, video ID: {$video_id})" );
+            
+            // Send email notification to admin
+            $this->send_import_notification_email( $post_id, $video_title, $video_url, $video_id );
+            
             $items_processed++;
         }
 
@@ -1037,6 +1041,58 @@ class YouTube_Song_Importer {
         $this->log_import_activity( "SUCCESS: Retrieved TikTok thumbnail URL: {$thumbnail_url}" );
 
         return $thumbnail_url;
+    }
+
+    /**
+     * Send email notification to admin when a new song is imported
+     */
+    private function send_import_notification_email( $post_id, $video_title, $video_url, $video_id ) {
+        // Get admin email
+        $admin_email = get_option( 'admin_email' );
+        
+        if ( ! $admin_email ) {
+            $this->log_import_activity( "WARNING: Admin email not configured, skipping notification" );
+            return;
+        }
+        
+        // Get edit link for the new post
+        $edit_link = admin_url( 'post.php?action=edit&post=' . $post_id );
+        $view_link = get_permalink( $post_id );
+        
+        // Email subject
+        $subject = sprintf( 
+            '[%s] New Song Imported: %s',
+            get_bloginfo( 'name' ),
+            $video_title
+        );
+        
+        // Email body
+        $message = sprintf(
+            "A new song has been imported from YouTube:\n\n" .
+            "Title: %s\n" .
+            "Video ID: %s\n" .
+            "Video URL: %s\n" .
+            "Post ID: %d\n\n" .
+            "Edit Post: %s\n" .
+            "View Post: %s\n\n" .
+            "---\n" .
+            "This is an automated notification from the YouTube Importer.",
+            esc_html( $video_title ),
+            esc_html( $video_id ),
+            esc_url( $video_url ),
+            $post_id,
+            esc_url( $edit_link ),
+            esc_url( $view_link )
+        );
+        
+        // Send email
+        $sent = wp_mail( $admin_email, $subject, $message );
+        
+        if ( $sent ) {
+            $this->log_import_activity( "SUCCESS: Email notification sent to {$admin_email} for '{$video_title}'" );
+        } else {
+            $this->log_import_activity( "WARNING: Failed to send email notification for '{$video_title}'" );
+        }
     }
 
     /**

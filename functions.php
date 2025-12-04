@@ -107,15 +107,19 @@ add_action( 'after_setup_theme', 'jww_theme_support' );
 
 /**
  * Add ACF Options Page for YouTube Import Settings
+ * Must be called on acf/init hook to avoid translation loading issues
  */
-if( function_exists('acf_add_options_page') ) {
-	acf_add_options_page(array(
-		'page_title'    => 'YouTube Import Settings',
-		'menu_title'    => 'YouTube Import',
-		'menu_slug'     => 'youtube-import-settings',
-		'capability'    => 'manage_options',
-	));
+function jww_add_acf_options_page() {
+	if( function_exists('acf_add_options_page') ) {
+		acf_add_options_page(array(
+			'page_title'    => 'YouTube Import Settings',
+			'menu_title'    => 'YouTube Import',
+			'menu_slug'     => 'youtube-import-settings',
+			'capability'    => 'manage_options',
+		));
+	}
 }
+add_action( 'acf/init', 'jww_add_acf_options_page' );
 
 /**
  * Include block registration files
@@ -1117,4 +1121,151 @@ function jww_header_navigation_shortcode() {
 	return $output;
 }
 add_shortcode('header_navigation', 'jww_header_navigation_shortcode');
+
+/**
+ * Add custom columns to the Songs admin table
+ */
+function jww_add_song_admin_columns( $columns ) {
+	// Insert Artist column after title
+	$new_columns = array();
+	foreach ( $columns as $key => $value ) {
+		$new_columns[ $key ] = $value;
+		if ( $key === 'title' ) {
+			$new_columns['artist'] = 'Artist';
+			$new_columns['album'] = 'Album';
+		}
+	}
+	return $new_columns;
+}
+add_filter( 'manage_song_posts_columns', 'jww_add_song_admin_columns' );
+
+/**
+ * Populate custom columns in the Songs admin table
+ */
+function jww_populate_song_admin_columns( $column, $post_id ) {
+	switch ( $column ) {
+		case 'artist':
+			$artist = get_field( 'artist', $post_id );
+			if ( $artist ) {
+				// Artist field returns object(s), handle both single and array
+				if ( is_array( $artist ) ) {
+					$artist_names = array();
+					foreach ( $artist as $artist_obj ) {
+						if ( is_object( $artist_obj ) && isset( $artist_obj->ID ) ) {
+							$artist_names[] = '<a href="' . esc_url( get_edit_post_link( $artist_obj->ID ) ) . '">' . esc_html( get_the_title( $artist_obj->ID ) ) . '</a>';
+						} elseif ( is_numeric( $artist_obj ) ) {
+							$artist_names[] = '<a href="' . esc_url( get_edit_post_link( $artist_obj ) ) . '">' . esc_html( get_the_title( $artist_obj ) ) . '</a>';
+						}
+					}
+					echo implode( ', ', $artist_names );
+				} elseif ( is_object( $artist ) && isset( $artist->ID ) ) {
+					echo '<a href="' . esc_url( get_edit_post_link( $artist->ID ) ) . '">' . esc_html( get_the_title( $artist->ID ) ) . '</a>';
+				} elseif ( is_numeric( $artist ) ) {
+					echo '<a href="' . esc_url( get_edit_post_link( $artist ) ) . '">' . esc_html( get_the_title( $artist ) ) . '</a>';
+				}
+			} else {
+				echo '<span style="color: #999;">—</span>';
+			}
+			break;
+
+		case 'album':
+			$album_id = get_field( 'album', $post_id );
+			if ( $album_id ) {
+				// Album field returns ID(s), handle both single and array
+				if ( is_array( $album_id ) ) {
+					$album_names = array();
+					foreach ( $album_id as $album ) {
+						$album_post_id = is_numeric( $album ) ? $album : ( is_object( $album ) && isset( $album->ID ) ? $album->ID : null );
+						if ( $album_post_id ) {
+							$album_names[] = '<a href="' . esc_url( get_edit_post_link( $album_post_id ) ) . '">' . esc_html( get_the_title( $album_post_id ) ) . '</a>';
+						}
+					}
+					echo implode( ', ', $album_names );
+				} else {
+					$album_post_id = is_numeric( $album_id ) ? $album_id : ( is_object( $album_id ) && isset( $album_id->ID ) ? $album_id->ID : null );
+					if ( $album_post_id ) {
+						echo '<a href="' . esc_url( get_edit_post_link( $album_post_id ) ) . '">' . esc_html( get_the_title( $album_post_id ) ) . '</a>';
+					}
+				}
+			} else {
+				echo '<span style="color: #999;">—</span>';
+			}
+			break;
+	}
+}
+add_action( 'manage_song_posts_custom_column', 'jww_populate_song_admin_columns', 10, 2 );
+
+/**
+ * Make Artist and Album columns sortable
+ */
+function jww_make_song_columns_sortable( $columns ) {
+	$columns['artist'] = 'artist';
+	$columns['album'] = 'album';
+	return $columns;
+}
+add_filter( 'manage_edit-song_sortable_columns', 'jww_make_song_columns_sortable' );
+
+/**
+ * Handle sorting for Artist and Album columns
+ */
+function jww_sort_songs_by_artist_album( $query ) {
+	global $pagenow, $wpdb;
+	
+	// Only apply on admin edit screen for song post type
+	if ( ! is_admin() || $pagenow !== 'edit.php' || ! isset( $_GET['post_type'] ) || $_GET['post_type'] !== 'song' ) {
+		return;
+	}
+	
+	// Check if we're sorting by artist or album
+	$orderby = isset( $_GET['orderby'] ) ? $_GET['orderby'] : '';
+	
+	if ( $orderby === 'artist' || $orderby === 'album' ) {
+		// Use posts_clauses to add custom JOIN and ORDER BY
+		add_filter( 'posts_clauses', 'jww_sort_songs_by_related_title', 10, 2 );
+	}
+}
+add_action( 'pre_get_posts', 'jww_sort_songs_by_artist_album' );
+
+/**
+ * Custom sorting by related post title using SQL JOIN
+ */
+function jww_sort_songs_by_related_title( $clauses, $query ) {
+	global $wpdb;
+	
+	$orderby = isset( $_GET['orderby'] ) ? $_GET['orderby'] : '';
+	$order = isset( $_GET['order'] ) ? strtoupper( $_GET['order'] ) : 'ASC';
+	
+	if ( $orderby === 'artist' ) {
+		// Join postmeta to get artist field, then join posts to get artist title
+		// ACF stores relationship fields as serialized arrays, so we search for the ID in quotes
+		$field_key = 'field_6900d8748ad9f';
+		$clauses['join'] .= " LEFT JOIN {$wpdb->postmeta} AS artist_meta ON (
+			artist_meta.post_id = {$wpdb->posts}.ID 
+			AND artist_meta.meta_key = '{$field_key}'
+		)";
+		$clauses['join'] .= " LEFT JOIN {$wpdb->posts} AS artist_posts ON (
+			artist_meta.meta_value LIKE CONCAT('\"', artist_posts.ID, '\"')
+		)";
+		$clauses['orderby'] = "COALESCE(artist_posts.post_title, '') " . $order;
+		$clauses['groupby'] = "{$wpdb->posts}.ID";
+	} elseif ( $orderby === 'album' ) {
+		// Join postmeta to get album field, then join posts to get album title
+		$field_key = 'field_68cace791977a';
+		$clauses['join'] .= " LEFT JOIN {$wpdb->postmeta} AS album_meta ON (
+			album_meta.post_id = {$wpdb->posts}.ID 
+			AND album_meta.meta_key = '{$field_key}'
+		)";
+		$clauses['join'] .= " LEFT JOIN {$wpdb->posts} AS album_posts ON (
+			album_meta.meta_value LIKE CONCAT('\"', album_posts.ID, '\"')
+		)";
+		$clauses['orderby'] = "COALESCE(album_posts.post_title, '') " . $order;
+		$clauses['groupby'] = "{$wpdb->posts}.ID";
+	}
+	
+	// Remove this filter after use to avoid affecting other queries
+	remove_filter( 'posts_clauses', 'jww_sort_songs_by_related_title', 10 );
+	
+	return $clauses;
+}
+
 
