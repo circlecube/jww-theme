@@ -15,6 +15,25 @@ require_once( get_stylesheet_directory() . '/includes/link-functions.php' );
 require_once( get_stylesheet_directory() . '/includes/template-tags.php' );
 
 /**
+ * Ensure WordPress Interactivity API modules are properly loaded
+ * 
+ * Fixes conflict with third-party embeds (TikTok, etc.) that can cause
+ * "Failed to resolve module specifier '@wordpress/interactivity'" errors.
+ */
+function jww_ensure_interactivity_api() {
+	// Only needed on frontend
+	if ( is_admin() ) {
+		return;
+	}
+	
+	// Ensure the interactivity API module is registered for pages using interactive blocks
+	if ( function_exists( 'wp_register_script_module' ) ) {
+		wp_enqueue_script_module( '@wordpress/interactivity' );
+	}
+}
+add_action( 'wp_enqueue_scripts', 'jww_ensure_interactivity_api', 1 );
+
+/**
  * Enqueue styles - get parent theme styles first.
  */
 function jww_enqueue() {
@@ -60,6 +79,9 @@ add_action( 'wp_enqueue_scripts', 'jww_enqueue' );
  * Add theme support for block styles
  */
 function jww_theme_support() {
+	// Add support for title tag (required for Yoast SEO and WordPress to output <title>)
+	add_theme_support( 'title-tag' );
+	
 	// Add support for block styles
 	add_theme_support( 'wp-block-styles' );
 	
@@ -199,6 +221,195 @@ function jww_rest_song_collection_params( $query_params ) {
 	return $query_params;
 }
 add_filter( 'rest_song_collection_params', 'jww_rest_song_collection_params', 10, 1 );
+
+/**
+ * Fallback meta description for SEO
+ * 
+ * Outputs a meta description tag based on post type and content.
+ */
+function jww_fallback_meta_description() {
+	// Skip if Yoast SEO has already set a meta description
+	if ( class_exists( 'WPSEO_Meta' ) && is_singular() ) {
+		$yoast_desc = WPSEO_Meta::get_value( 'metadesc', get_the_ID() );
+		if ( ! empty( $yoast_desc ) ) {
+			return; // Yoast has a custom description set
+		}
+		// Also check if Yoast has a default template that would generate a description
+		if ( function_exists( 'YoastSEO' ) ) {
+			return; // Let Yoast handle it with its templates
+		}
+	}
+	
+	// Generate fallback description based on context
+	$description = '';
+	
+	if ( is_singular() ) {
+		global $post;
+		$post_type = get_post_type();
+		
+		switch ( $post_type ) {
+			case 'song':
+				// Get artist name(s)
+				$artist_ids = get_field( 'artist', $post->ID );
+				$artist_string = 'Jesse Welles';
+				
+				if ( ! empty( $artist_ids ) ) {
+					if ( ! is_array( $artist_ids ) ) {
+						$artist_ids = array( $artist_ids );
+					}
+					$artist_names = array();
+					foreach ( $artist_ids as $artist ) {
+						$artist_id = is_object( $artist ) ? $artist->ID : $artist;
+						$artist_names[] = get_the_title( $artist_id );
+					}
+					if ( ! empty( $artist_names ) ) {
+						$artist_string = implode( ', ', $artist_names );
+					}
+				}
+				
+				// Try to get a snippet from lyrics
+				$lyrics = get_field( 'lyrics', $post->ID );
+				if ( ! empty( $lyrics ) ) {
+					$lyrics_text = wp_strip_all_tags( $lyrics );
+					$lyrics_snippet = wp_trim_words( $lyrics_text, 15, '...' );
+					$description = sprintf(
+						'"%s" by %s. %s',
+						get_the_title(),
+						$artist_string,
+						$lyrics_snippet
+					);
+				} else {
+					$description = sprintf(
+						'Listen to "%s" by %s on Jesse Welles World.',
+						get_the_title(),
+						$artist_string
+					);
+				}
+				break;
+				
+			case 'album':
+				$artist_ids = get_field( 'artist', $post->ID );
+				$artist_string = 'Jesse Welles';
+				
+				if ( ! empty( $artist_ids ) ) {
+					if ( ! is_array( $artist_ids ) ) {
+						$artist_ids = array( $artist_ids );
+					}
+					$artist_names = array();
+					foreach ( $artist_ids as $artist ) {
+						$artist_id = is_object( $artist ) ? $artist->ID : $artist;
+						$artist_names[] = get_the_title( $artist_id );
+					}
+					if ( ! empty( $artist_names ) ) {
+						$artist_string = implode( ', ', $artist_names );
+					}
+				}
+				
+				$description = sprintf(
+					'%s - Album by %s. Explore tracks, lyrics, and more.',
+					get_the_title(),
+					$artist_string
+				);
+				break;
+				
+			case 'band':
+				$description = sprintf(
+					'%s - Artist profile, discography, songs, and more on Jesse Welles World.',
+					get_the_title()
+				);
+				break;
+				
+			default:
+				// Posts and pages - use excerpt or content
+				if ( has_excerpt( $post->ID ) ) {
+					$description = wp_strip_all_tags( get_the_excerpt( $post->ID ) );
+				} else {
+					$content = get_the_content( null, false, $post->ID );
+					$content = wp_strip_all_tags( strip_shortcodes( $content ) );
+					$description = wp_trim_words( $content, 25, '...' );
+				}
+				break;
+		}
+	} elseif ( is_home() || is_front_page() ) {
+		$description = get_bloginfo( 'description' );
+	} elseif ( is_archive() ) {
+		if ( is_post_type_archive( 'song' ) ) {
+			$description = 'Browse all songs, lyrics, and music from Jesse Welles World.';
+		} elseif ( is_post_type_archive( 'album' ) ) {
+			$description = 'Explore albums and discography from Jesse Welles World.';
+		} elseif ( is_post_type_archive( 'band' ) ) {
+			$description = 'Discover artists and bands on Jesse Welles World.';
+		} elseif ( is_category() || is_tag() || is_tax() ) {
+			$term = get_queried_object();
+			if ( $term && ! empty( $term->description ) ) {
+				$description = wp_strip_all_tags( $term->description );
+			} else {
+				$description = sprintf( 'Browse content in %s on Jesse Welles World.', single_term_title( '', false ) );
+			}
+		}
+	} elseif ( is_search() ) {
+		$description = sprintf( 'Search results for "%s" on Jesse Welles World.', get_search_query() );
+	}
+	
+	// Output the meta description if we have one
+	if ( ! empty( $description ) ) {
+		// Trim to recommended length (150-160 characters)
+		if ( strlen( $description ) > 160 ) {
+			$description = wp_trim_words( $description, 25, '...' );
+			// If still too long, hard truncate
+			if ( strlen( $description ) > 160 ) {
+				$description = substr( $description, 0, 157 ) . '...';
+			}
+		}
+		
+		echo '<meta name="description" content="' . esc_attr( $description ) . '" />' . "\n";
+	}
+}
+add_action( 'wp_head', 'jww_fallback_meta_description', 1 );
+
+/**
+ * Customize document title for song post type
+ * 
+ * Modifies the title tag format for songs to include artist name.
+ * Works with Yoast SEO - this filter runs before Yoast's processing.
+ * 
+ * @param array $title_parts The document title parts.
+ * @return array Modified title parts.
+ */
+function jww_song_document_title( $title_parts ) {
+	// Only modify on singular song posts
+	if ( ! is_singular( 'song' ) ) {
+		return $title_parts;
+	}
+	
+	global $post;
+	
+	// Get the artist(s) from ACF field
+	$artist_ids = get_field( 'artist', $post->ID );
+	
+	if ( ! empty( $artist_ids ) ) {
+		// Handle both single and array of artists
+		if ( ! is_array( $artist_ids ) ) {
+			$artist_ids = array( $artist_ids );
+		}
+		
+		// Get artist names
+		$artist_names = array();
+		foreach ( $artist_ids as $artist ) {
+			$artist_id = is_object( $artist ) ? $artist->ID : $artist;
+			$artist_names[] = get_the_title( $artist_id );
+		}
+		
+		if ( ! empty( $artist_names ) ) {
+			$artist_string = implode( ', ', $artist_names );
+			// Format: "Song Title by Artist Name"
+			$title_parts['title'] = get_the_title( $post->ID ) . ' by ' . $artist_string;
+		}
+	}
+	
+	return $title_parts;
+}
+add_filter( 'document_title_parts', 'jww_song_document_title', 5 );
 
 /**
  * Add Open Graph meta tags for all posts

@@ -87,7 +87,7 @@
 							"fontFamily": "Danfo",
 							"fontStyle": "normal",
 							"fontWeight": "400",
-							"src": "http://jww.test/wp-content/uploads/fonts/snf3s0u_98t16THfK1Csj3N41ZqbYDe5Tr1ToPrNKQ.woff2"
+							"src": "file:./assets/fonts/danfo-regular.woff2"
 						}
 					],
 					"fontFamily": "Danfo, serif",
@@ -100,7 +100,7 @@
 							"fontFamily": "\"Roboto Slab\"",
 							"fontStyle": "normal",
 							"fontWeight": "400",
-							"src": "http://jww.test/wp-content/uploads/fonts/BngbUXZYTXPIvIBgJJSb6s3BzlRRfKOFbvjojISWbW5iddG-1A.woff2"
+							"src": "file:./assets/fonts/roboto-slab-regular.woff2"
 						}
 					],
 					"fontFamily": "\"Roboto Slab\", serif",
