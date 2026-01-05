@@ -25,16 +25,21 @@ class YouTube_Song_Importer {
         add_action( 'wp_ajax_youtube_get_logs', [ $this, 'ajax_get_logs' ] );
         add_action( 'wp_ajax_youtube_clear_logs', [ $this, 'ajax_clear_logs' ] );
         add_action( 'wp_ajax_youtube_bulk_update_thumbnails', [ $this, 'ajax_bulk_update_thumbnails' ] );
+        add_action( 'wp_ajax_youtube_check_now', [ $this, 'ajax_check_now' ] );
+        add_action( 'wp_ajax_youtube_get_cron_status', [ $this, 'ajax_get_cron_status' ] );
         
         // Add admin scripts for the options page
         add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_admin_scripts' ] );
+        
+        // Add custom HTML to the options page
+        add_action( 'admin_footer', [ $this, 'add_options_page_buttons' ] );
     }
 
     /**
      * Schedule the cron job based on ACF options page setting
      */
     public function maybe_schedule_cron() {
-        $enabled = get_field( 'youtube_import_enabled', 'option' );
+        $enabled = $this->get_option_with_fallback( 'youtube_import_enabled' );
         
         // If disabled, clear any existing schedule and return
         if ( ! $enabled ) {
@@ -46,7 +51,7 @@ class YouTube_Song_Importer {
             return;
         }
 
-        $interval = get_field( 'youtube_import_interval', 'option' ) ?: 'hourly'; // hourly, twicedaily, daily
+        $interval = $this->get_option_with_fallback( 'youtube_import_interval' ) ?: 'hourly'; // hourly, twicedaily, daily
 
         // Clear existing schedule if interval changed
         $timestamp = wp_next_scheduled( 'import_youtube_songs_event' );
@@ -58,6 +63,28 @@ class YouTube_Song_Importer {
             wp_schedule_event( time(), $interval, 'import_youtube_songs_event' );
             $this->log_import_activity( 'YouTube import cron enabled - scheduled for ' . $interval );
         }
+    }
+    
+    /**
+     * Get ACF option with fallback to raw option value
+     * This ensures options work even if ACF isn't fully loaded (e.g., during cron)
+     */
+    private function get_option_with_fallback( $field_name ) {
+        // Try ACF first
+        if ( function_exists( 'get_field' ) ) {
+            $value = get_field( $field_name, 'option' );
+            if ( $value !== null && $value !== false ) {
+                return $value;
+            }
+        }
+        
+        // Fallback to raw WordPress option (ACF stores options with 'options_' prefix)
+        $raw_value = get_option( 'options_' . $field_name );
+        if ( $raw_value !== false ) {
+            return $raw_value;
+        }
+        
+        return false;
     }
 
     /**
@@ -85,10 +112,10 @@ class YouTube_Song_Importer {
      * Fetch and import the YouTube feed
      */
     public function import_feed() {
-        // Check if import is enabled
-        $enabled = get_field( 'youtube_import_enabled', 'option' );
+        // Check if import is enabled (with fallback for cron context)
+        $enabled = $this->get_option_with_fallback( 'youtube_import_enabled' );
         if ( ! $enabled ) {
-            $this->log_import_activity( 'YouTube import is disabled - skipping import' );
+            $this->log_import_activity( '⊘ Import disabled' );
             return;
         }
 
@@ -97,47 +124,42 @@ class YouTube_Song_Importer {
 
         include_once ABSPATH . WPINC . '/feed.php';
         
-        $feed_url = get_field( 'youtube_feed_url', 'option' );
+        $feed_url = $this->get_option_with_fallback( 'youtube_feed_url' );
         if ( empty( $feed_url ) ) {
-            $this->log_import_activity( 'No YouTube feed URL configured - skipping import' );
+            $this->log_import_activity( '✗ No feed URL configured' );
             return;
         }
         
         if ( strpos( $feed_url, 'feeds/videos.xml' ) === false ) {
-            // If user entered a channel handle like @xyz, try to convert it
             $feed_url = $this->resolve_channel_feed( $feed_url );
         }
 
-        $this->log_import_activity( 'Starting YouTube feed import from: ' . $feed_url );
+        $this->log_import_activity( '▶ Starting feed check...' );
 
-        // Check if SimplePie is available
         if ( ! function_exists( 'fetch_feed' ) ) {
-            $this->log_import_activity( 'ERROR: fetch_feed function not available - SimplePie may not be loaded' );
+            $this->log_import_activity( '✗ Feed error: SimplePie not available' );
             return;
         }
 
         $feed = fetch_feed( $feed_url );
         if ( is_wp_error( $feed ) ) {
-            $this->log_import_activity( 'ERROR: YouTube feed error: ' . $feed->get_error_message() );
+            $this->log_import_activity( '✗ Feed error: ' . $feed->get_error_message() );
             return;
         }
 
-        // Check if feed has items
         $item_count = $feed->get_item_quantity();
         if ( $item_count === 0 ) {
-            $this->log_import_activity( 'WARNING: YouTube feed contains no items' );
+            $this->log_import_activity( '⊘ Feed empty - no videos found' );
             return;
         }
 
-        $this->log_import_activity( "YouTube feed loaded successfully with {$item_count} items" );
-
         $items_processed = 0;
-        $max_items       = 10; // Process max 10 items per run to prevent timeouts
+        $max_items       = 10;
         $imported_count  = 0;
+        $skipped_count   = 0;
 
         foreach ( $feed->get_items() as $item ) {
             if ( $items_processed >= $max_items ) {
-                $this->log_import_activity( 'Reached maximum items limit (' . $max_items . '), stopping import' );
                 break;
             }
 
@@ -145,36 +167,21 @@ class YouTube_Song_Importer {
             $video_desc  = $this->get_video_description( $item );
             $video_title = sanitize_text_field( $item->get_title() );
             $video_id    = $this->extract_video_id_from_url( $video_url );
-            $item_number = $items_processed + 1;
-            $this->log_import_activity( "Processing feed item #{$item_number}: '{$video_title}' (ID: {$video_id})" );
 
             // Check if video already imported
             if ( $this->is_video_already_imported( $video_url ) ) {
-                // Before skipping, check if the existing post needs a thumbnail
                 $existing_post_id = $this->get_existing_post_id_by_video_url( $video_url );
-                if ( $existing_post_id ) {
-                    $this->log_import_activity( "EXISTING: Video already exists - '{$video_title}' (ID: {$video_id}, Post ID: {$existing_post_id})" );
-                    
-                    // Check if it needs a thumbnail
-                    if ( ! has_post_thumbnail( $existing_post_id ) ) {
-                        $this->log_import_activity( "MISSING THUMBNAIL: Adding thumbnail to existing post '{$video_title}' (Post ID: {$existing_post_id})" );
-                        $thumbnail_result = $this->set_featured_image_from_youtube( $existing_post_id, $video_url, $video_title );
-                        if ( $thumbnail_result ) {
-                            $this->log_import_activity( "SUCCESS: Added thumbnail to existing post '{$video_title}' (Post ID: {$existing_post_id})" );
-                        } else {
-                            $this->log_import_activity( "WARNING: Failed to add thumbnail to existing post '{$video_title}' (Post ID: {$existing_post_id})" );
-                        }
-                    } else {
-                        $this->log_import_activity( "SKIP: Video already exists with thumbnail - '{$video_title}' (ID: {$video_id}, Post ID: {$existing_post_id})" );
+                if ( $existing_post_id && ! has_post_thumbnail( $existing_post_id ) ) {
+                    $thumbnail_result = $this->set_featured_image_from_youtube( $existing_post_id, $video_url, $video_title );
+                    if ( $thumbnail_result ) {
+                        $this->log_import_activity( '+ THUMB: "' . $video_title . '"' );
                     }
                 } else {
-                    $this->log_import_activity( "SKIP: Video already exists but post ID not found - '{$video_title}' (ID: {$video_id})" );
+                    $skipped_count++;
                 }
                 $items_processed++;
                 continue;
             }
-
-            $this->log_import_activity( "NEW: Creating new song post for '{$video_title}' (ID: {$video_id})" );
 
             // Create the new song post
             $post_id = wp_insert_post( [
@@ -184,62 +191,35 @@ class YouTube_Song_Importer {
             ] );
 
             if ( ! $post_id || is_wp_error( $post_id ) ) {
-                $error_msg = is_wp_error( $post_id ) ? $post_id->get_error_message() : 'Unknown error';
-                $this->log_import_activity( "ERROR: Failed to create song post for '{$video_title}': {$error_msg}" );
+                $this->log_import_activity( '✗ ERROR: "' . $video_title . '" - failed to create post' );
                 $items_processed++;
                 continue;
             }
 
-            $this->log_import_activity( "SUCCESS: Created song post ID {$post_id} for '{$video_title}'" );
-
-            // Save video URL into ACF field
-            if ( ! update_field( 'video', $video_url, $post_id ) ) {
-                $this->log_import_activity( "WARNING: Failed to update video field for post ID: {$post_id}" );
-            } else {
-                $this->log_import_activity( "SUCCESS: Updated video field for post ID: {$post_id}" );
-            }
-
-            // Save video description into ACF lyrics field
-            if ( ! update_field( 'lyrics', $video_desc, $post_id ) ) {
-                $this->log_import_activity( "WARNING: Failed to update lyrics field for post ID: {$post_id}" );
-            } else {
-                $this->log_import_activity( "SUCCESS: Updated lyrics field for post ID: {$post_id}, lyrics: {$video_desc}" );
-            }
-
-            // Also save video ID as separate meta for reliable duplicate detection
+            // Save fields silently
+            update_field( 'video', $video_url, $post_id );
+            update_field( 'lyrics', $video_desc, $post_id );
             if ( $video_id ) {
                 update_post_meta( $post_id, 'video_id', $video_id );
-                $this->log_import_activity( "SUCCESS: Saved video ID meta for post ID: {$post_id}" );
-            } else {
-                $this->log_import_activity( "WARNING: Could not extract video ID for post ID: {$post_id}" );
             }
 
-            // Try setting thumbnail as featured image
-            $this->log_import_activity( "Starting thumbnail process for post ID: {$post_id}" );
-            $thumbnail_result = $this->set_featured_image_from_youtube( $post_id, $video_url, $video_title );
-            if ( $thumbnail_result ) {
-                $this->log_import_activity( "SUCCESS: Featured image set for '{$video_title}' (post ID: {$post_id})" );
-            } else {
-                $this->log_import_activity( "WARNING: Featured image failed for '{$video_title}' (post ID: {$post_id}) - post created without thumbnail" );
-            }
+            // Set thumbnail
+            $this->set_featured_image_from_youtube( $post_id, $video_url, $video_title );
 
             // Mark as imported
             update_post_meta( $post_id, 'imported', '1' );
 
             $imported_count++;
-            $this->log_import_activity( "COMPLETE: Successfully imported '{$video_title}' (post ID: {$post_id}, video ID: {$video_id})" );
+            $this->log_import_activity( '✓ NEW: "' . $video_title . '"' );
             
-            // Send email notification to admin
+            // Send email notification
             $this->send_import_notification_email( $post_id, $video_title, $video_url, $video_id );
             
             $items_processed++;
         }
 
-        // Log final statistics
-        $this->log_import_activity( 'Import completed. Processed: ' . $items_processed . ', Imported: ' . $imported_count );
-        
-        // Log system status for debugging
-        $this->log_system_status();
+        // Summary line
+        $this->log_import_activity( "▣ Done: {$imported_count} new, {$skipped_count} existing, {$item_count} in feed" );
     }
 
     /**
@@ -429,17 +409,13 @@ class YouTube_Song_Importer {
      * Checks both video and music_video ACF fields
      */
     private function is_video_already_imported( $video_url ) {
-        // Extract video ID from URL for more reliable comparison
         $video_id = $this->extract_video_id_from_url( $video_url );
         
-        $this->log_import_activity( "Checking if video is already imported - URL: {$video_url}, Video ID: " . ( $video_id ? $video_id : 'NOT FOUND' ) );
-        
         if ( ! $video_id ) {
-            $this->log_import_activity( "WARNING: Could not extract video ID from URL: {$video_url}" );
             return false;
         }
 
-        // Method 1: Check by video ID in post meta (most reliable - finds videos imported as main video)
+        // Method 1: Check by video ID in post meta
         $posts_by_id = get_posts( [
             'post_type'   => 'song',
             'meta_query'  => [
@@ -450,16 +426,14 @@ class YouTube_Song_Importer {
                 ]
             ],
             'post_status' => array('publish', 'pending', 'draft'),
-            'fields'       => 'ids',
+            'fields'      => 'ids',
         ] );
 
         if ( ! empty( $posts_by_id ) ) {
-            $this->log_import_activity( "Found existing video by video_id meta: {$video_id} (Post IDs: " . implode( ', ', $posts_by_id ) . ")" );
             return true;
         }
 
         // Method 2: Check by extracting video IDs from stored URLs in ACF fields
-        // Get ALL song posts to check (not filtering by meta_query to ensure we catch all posts)
         $all_songs = get_posts( [
             'post_type'      => 'song',
             'post_status'    => array('publish', 'pending', 'draft', 'private'),
@@ -467,37 +441,24 @@ class YouTube_Song_Importer {
             'fields'         => 'ids',
         ] );
 
-        $this->log_import_activity( "Checking " . count( $all_songs ) . " song posts for video ID: {$video_id}" );
-
-        // Check each post's video and music_video fields
         foreach ( $all_songs as $post_id ) {
-            // Check video field
             $stored_video_url = get_field( 'video', $post_id );
             if ( $stored_video_url && ! empty( trim( $stored_video_url ) ) ) {
                 $stored_video_id = $this->extract_video_id_from_url( $stored_video_url );
                 if ( $stored_video_id && $stored_video_id === $video_id ) {
-                    $this->log_import_activity( "Found existing video in 'video' field: {$video_id} (Post ID: {$post_id}, URL: {$stored_video_url})" );
                     return true;
                 }
             }
 
-            // Check music_video field
             $stored_music_video_url = get_field( 'music_video', $post_id );
             if ( $stored_music_video_url && ! empty( trim( $stored_music_video_url ) ) ) {
                 $stored_music_video_id = $this->extract_video_id_from_url( $stored_music_video_url );
                 if ( $stored_music_video_id && $stored_music_video_id === $video_id ) {
-                    $this->log_import_activity( "Found existing video in 'music_video' field: {$video_id} (Post ID: {$post_id}, URL: {$stored_music_video_url})" );
                     return true;
                 }
             }
-            
-            // Debug logging for post 359 specifically
-            if ( $post_id == 359 ) {
-                $this->log_import_activity( "DEBUG Post 359 - video field: " . ( $stored_video_url ? $stored_video_url : 'empty' ) . ", music_video field: " . ( $stored_music_video_url ? $stored_music_video_url : 'empty' ) );
-            }
         }
 
-        $this->log_import_activity( "Video ID {$video_id} not found in any existing posts - will import as new" );
         return false;
     }
 
@@ -507,50 +468,32 @@ class YouTube_Song_Importer {
      */
     private function get_video_description( $item ) {
         // Method 1: Try to get media:description from Media RSS namespace
-        // YouTube feeds use http://search.yahoo.com/mrss/ namespace
         $media_tags = $item->get_item_tags( 'http://search.yahoo.com/mrss/', 'description' );
-        if ( ! empty( $media_tags ) && isset( $media_tags[0]['data'] ) ) {
-            $description = $media_tags[0]['data'];
-            if ( ! empty( $description ) ) {
-                $this->log_import_activity( "Found description via Media RSS namespace: " . substr( $description, 0, 100 ) );
-                return sanitize_textarea_field( $description );
-            }
+        if ( ! empty( $media_tags ) && isset( $media_tags[0]['data'] ) && ! empty( $media_tags[0]['data'] ) ) {
+            return sanitize_textarea_field( $media_tags[0]['data'] );
         }
         
-        // Method 2: Try alternative namespace (some feeds use different URIs)
+        // Method 2: Try alternative namespace
         $media_tags = $item->get_item_tags( 'http://video.search.yahoo.com/mrss/', 'description' );
-        if ( ! empty( $media_tags ) && isset( $media_tags[0]['data'] ) ) {
-            $description = $media_tags[0]['data'];
-            if ( ! empty( $description ) ) {
-                $this->log_import_activity( "Found description via alternative Media RSS namespace: " . substr( $description, 0, 100 ) );
-                return sanitize_textarea_field( $description );
-            }
+        if ( ! empty( $media_tags ) && isset( $media_tags[0]['data'] ) && ! empty( $media_tags[0]['data'] ) ) {
+            return sanitize_textarea_field( $media_tags[0]['data'] );
         }
         
         // Method 3: Try accessing media:group>media:description directly
         $media_group = $item->get_item_tags( 'http://search.yahoo.com/mrss/', 'group' );
-        if ( ! empty( $media_group ) && isset( $media_group[0]['child'] ) ) {
-            $children = $media_group[0]['child'];
-            if ( isset( $children['http://search.yahoo.com/mrss/']['description'] ) ) {
-                $description_tag = $children['http://search.yahoo.com/mrss/']['description'][0];
-                if ( isset( $description_tag['data'] ) ) {
-                    $description = $description_tag['data'];
-                    if ( ! empty( $description ) ) {
-                        $this->log_import_activity( "Found description via media:group structure: " . substr( $description, 0, 100 ) );
-                        return sanitize_textarea_field( $description );
-                    }
-                }
+        if ( ! empty( $media_group ) && isset( $media_group[0]['child']['http://search.yahoo.com/mrss/']['description'][0]['data'] ) ) {
+            $description = $media_group[0]['child']['http://search.yahoo.com/mrss/']['description'][0]['data'];
+            if ( ! empty( $description ) ) {
+                return sanitize_textarea_field( $description );
             }
         }
         
         // Method 4: Fallback to standard description
         $description = $item->get_description();
         if ( ! empty( $description ) ) {
-            $this->log_import_activity( "Using fallback description: " . substr( $description, 0, 100 ) );
             return sanitize_textarea_field( $description );
         }
         
-        $this->log_import_activity( "WARNING: No description found for video item" );
         return '';
     }
 
@@ -1513,39 +1456,150 @@ class YouTube_Song_Importer {
 
         wp_enqueue_script( 'jquery' );
         
-        // Add inline script for logs functionality
-        wp_add_inline_script( 'jquery', $this->get_logs_script() );
-        
         // Add inline styles
         wp_add_inline_style( 'wp-admin', $this->get_logs_styles() );
     }
 
     /**
-     * Get the JavaScript for logs functionality
+     * Add custom buttons and status display to the options page
      */
-    private function get_logs_script() {
-        return "
+    public function add_options_page_buttons() {
+        $screen = get_current_screen();
+        if ( ! $screen || $screen->id !== 'toplevel_page_youtube-import-settings' ) {
+            return;
+        }
+        
+        $nonce = wp_create_nonce( 'youtube_logs_nonce' );
+        ?>
+        <script type="text/javascript">
         jQuery(document).ready(function($) {
-            // Load logs on page load
-            loadLogs();
+            var nonce = '<?php echo esc_js( $nonce ); ?>';
             
-            // Refresh logs button
+            var controlsHtml = '<div class="postbox youtube-importer-controls">' +
+                '<div class="postbox-header"><h2 class="hndle">Status & Tools</h2></div>' +
+                '<div class="inside">' +
+                    '<h3>Cron Status</h3>' +
+                    '<div id="cron-status">Loading...</div>' +
+                    
+                    '<h3>Quick Actions</h3>' +
+                    '<p>' +
+                        '<button type="button" id="check-now" class="button button-primary">Check Now</button> ' +
+                        '<span class="description">Manually trigger an import check for new videos</span>' +
+                    '</p>' +
+                    '<p>' +
+                        '<button type="button" id="bulk-update-thumbnails" class="button">Bulk Update Thumbnails</button> ' +
+                        '<span class="description">Check all songs for thumbnails and add them if they are missing</span>' +
+                    '</p>' +
+                    
+                    '<h3>Import Logs</h3>' +
+                    '<p>' +
+                        '<button type="button" id="refresh-logs" class="button">Refresh Logs</button> ' +
+                        '<button type="button" id="clear-logs" class="button">Clear Logs</button>' +
+                    '</p>' +
+                    '<div id="youtube-logs-content">Loading logs...</div>' +
+                '</div>' +
+            '</div>';
+            
+            // Insert after the ACF postbox in the main content area
+            var $acfPostbox = $('#poststuff .postbox').last();
+            if ($acfPostbox.length) {
+                $acfPostbox.after(controlsHtml);
+            } else {
+                // Fallback: append to poststuff
+                $('#poststuff').append(controlsHtml);
+            }
+            
+            // Now bind event handlers (elements exist now)
+            $('#check-now').on('click', function() {
+                var $btn = $(this);
+                $btn.prop('disabled', true).text('Checking...');
+                $('#youtube-logs-content').html('Running import check...');
+                
+                $.ajax({
+                    url: ajaxurl,
+                    type: 'POST',
+                    data: { action: 'youtube_check_now', nonce: nonce },
+                    success: function(response) {
+                        if (response.success) {
+                            alert('Import check completed! Check the logs for details.');
+                            loadLogs();
+                        } else {
+                            alert('Error: ' + response.data);
+                        }
+                    },
+                    error: function() {
+                        alert('Error running import check. Please try again.');
+                    },
+                    complete: function() {
+                        $btn.prop('disabled', false).text('Check Now');
+                    }
+                });
+            });
+            
+            $('#bulk-update-thumbnails').on('click', function() {
+                if (!confirm('Are you sure you want to bulk update thumbnails for all songs? This may take a while.')) {
+                    return;
+                }
+                
+                var $btn = $(this);
+                $btn.prop('disabled', true).text('Processing...');
+                $('#youtube-logs-content').html('Starting bulk thumbnail update... This may take a while.');
+                
+                $.ajax({
+                    url: ajaxurl,
+                    type: 'POST',
+                    data: { action: 'youtube_bulk_update_thumbnails', nonce: nonce },
+                    success: function(response) {
+                        if (response.success) {
+                            var data = response.data;
+                            var message = 'Bulk update completed!\n\n';
+                            message += 'Total songs: ' + data.total_songs + '\n';
+                            message += 'Processed: ' + data.processed + '\n';
+                            message += 'Thumbnails added: ' + data.thumbnails_added + '\n';
+                            message += 'Video IDs added: ' + data.video_ids_added + '\n';
+                            message += 'Skipped: ' + data.skipped + '\n';
+                            alert(message);
+                            loadLogs();
+                        } else {
+                            alert('Error: ' + response.data);
+                        }
+                    },
+                    error: function() {
+                        alert('Error updating thumbnails. Please try again.');
+                    },
+                    complete: function() {
+                        $btn.prop('disabled', false).text('Bulk Update Thumbnails');
+                    }
+                });
+            });
+            
             $('#refresh-logs').on('click', function() {
                 loadLogs();
+                loadCronStatus();
             });
             
-            // Clear logs button
             $('#clear-logs').on('click', function() {
-                if (confirm('Are you sure you want to clear all YouTube import logs?')) {
-                    clearLogs();
+                if (!confirm('Are you sure you want to clear all YouTube import logs?')) {
+                    return;
                 }
-            });
-            
-            // Bulk update thumbnails button
-            $('#bulk-update-thumbnails').on('click', function() {
-                if (confirm('Are you sure you want to bulk update thumbnails for all songs? This may take a while.')) {
-                    bulkUpdateThumbnails();
-                }
+                
+                $('#youtube-logs-content').html('Clearing logs...');
+                
+                $.ajax({
+                    url: ajaxurl,
+                    type: 'POST',
+                    data: { action: 'youtube_clear_logs', nonce: nonce },
+                    success: function(response) {
+                        if (response.success) {
+                            $('#youtube-logs-content').html('<p style="color: #68de7c;">Logs cleared successfully!</p>');
+                        } else {
+                            $('#youtube-logs-content').html('<p style="color: #f86368;">Error clearing logs</p>');
+                        }
+                    },
+                    error: function() {
+                        $('#youtube-logs-content').html('<p style="color: #f86368;">Error clearing logs</p>');
+                    }
+                });
             });
             
             function loadLogs() {
@@ -1554,91 +1608,55 @@ class YouTube_Song_Importer {
                 $.ajax({
                     url: ajaxurl,
                     type: 'POST',
-                    data: {
-                        action: 'youtube_get_logs',
-                        nonce: '" . wp_create_nonce( 'youtube_logs_nonce' ) . "'
-                    },
+                    data: { action: 'youtube_get_logs', nonce: nonce },
                     success: function(response) {
                         if (response.success) {
                             $('#youtube-logs-content').html(response.data);
                         } else {
-                            $('#youtube-logs-content').html('<p style=\"color: red;\">Error loading logs: ' + response.data + '</p>');
+                            $('#youtube-logs-content').html('<p style="color: #f86368;">Error loading logs</p>');
                         }
                     },
                     error: function() {
-                        $('#youtube-logs-content').html('<p style=\"color: red;\">Error loading logs. Please try again.</p>');
+                        $('#youtube-logs-content').html('<p style="color: #f86368;">Error loading logs</p>');
                     }
                 });
             }
             
-            function clearLogs() {
-                $('#youtube-logs-content').html('Clearing logs...');
+            function loadCronStatus() {
+                $('#cron-status').html('Loading...');
                 
                 $.ajax({
                     url: ajaxurl,
                     type: 'POST',
-                    data: {
-                        action: 'youtube_clear_logs',
-                        nonce: '" . wp_create_nonce( 'youtube_logs_nonce' ) . "'
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            $('#youtube-logs-content').html('<p style=\"color: green;\">Logs cleared successfully!</p>');
-                        } else {
-                            $('#youtube-logs-content').html('<p style=\"color: red;\">Error clearing logs: ' + response.data + '</p>');
-                        }
-                    },
-                    error: function() {
-                        $('#youtube-logs-content').html('<p style=\"color: red;\">Error clearing logs. Please try again.</p>');
-                    }
-                });
-            }
-            
-            function bulkUpdateThumbnails() {
-                $('#youtube-logs-content').html('Starting bulk thumbnail update... This may take a while.');
-                $('#bulk-update-thumbnails').prop('disabled', true).text('Processing...');
-                
-                $.ajax({
-                    url: ajaxurl,
-                    type: 'POST',
-                    data: {
-                        action: 'youtube_bulk_update_thumbnails',
-                        nonce: '" . wp_create_nonce( 'youtube_logs_nonce' ) . "'
-                    },
+                    data: { action: 'youtube_get_cron_status', nonce: nonce },
                     success: function(response) {
                         if (response.success) {
                             var data = response.data;
-                            var message = 'Comprehensive bulk update completed!\\n\\n';
-                            message += 'Total songs: ' + data.total_songs + '\\n';
-                            message += 'Processed: ' + data.processed + ' songs\\n';
-                            message += 'Thumbnails added: ' + data.thumbnails_added + '\\n';
-                            message += 'Video IDs added: ' + data.video_ids_added + '\\n';
-                            message += 'Lyrics tags added: ' + data.lyrics_tags_added + '\\n';
-                            message += 'Image tags added: ' + data.image_tags_added + '\\n';
-                            message += 'Skipped: ' + data.skipped + ' (already had thumbnails)\\n';
-                            message += 'No video URL: ' + data.no_video + '\\n';
-                            
-                            if (data.errors && data.errors.length > 0) {
-                                message += 'Errors: ' + data.errors.length + '\\n';
-                                message += 'Error details: ' + data.errors.join(', ');
-                            }
-                            
-                            alert(message);
-                            loadLogs(); // Refresh logs to show the new activity
+                            var html = '<table class="cron-status-table">';
+                            html += '<tr><td>Import Enabled:</td><td>' + (data.enabled ? '<span style="color:green">Yes</span>' : '<span style="color:red">No</span>') + '</td></tr>';
+                            html += '<tr><td>Feed URL:</td><td>' + data.feed_url + '</td></tr>';
+                            html += '<tr><td>Check Interval:</td><td>' + data.interval + '</td></tr>';
+                            html += '<tr><td>Current Schedule:</td><td>' + data.current_schedule + '</td></tr>';
+                            html += '<tr><td>Next Run:</td><td>' + data.next_run + (data.next_run_relative !== 'N/A' ? ' (' + data.next_run_relative + ')' : '') + '</td></tr>';
+                            html += '<tr><td>Cron Health:</td><td>' + (data.cron_healthy ? '<span style="color:green">✓ Healthy</span>' : '<span style="color:orange">⚠ Check settings</span>') + '</td></tr>';
+                            html += '</table>';
+                            $('#cron-status').html(html);
                         } else {
-                            $('#youtube-logs-content').html('<p style=\"color: red;\">Error updating thumbnails: ' + response.data + '</p>');
+                            $('#cron-status').html('<p style="color: red;">Error loading status</p>');
                         }
                     },
                     error: function() {
-                        $('#youtube-logs-content').html('<p style=\"color: red;\">Error updating thumbnails. Please try again.</p>');
-                    },
-                    complete: function() {
-                        $('#bulk-update-thumbnails').prop('disabled', false).text('Bulk Update Thumbnails');
+                        $('#cron-status').html('<p style="color: red;">Error loading status</p>');
                     }
                 });
             }
+            
+            // Load initial data
+            loadLogs();
+            loadCronStatus();
         });
-        ";
+        </script>
+        <?php
     }
 
     /**
@@ -1646,35 +1664,81 @@ class YouTube_Song_Importer {
      */
     private function get_logs_styles() {
         return "
-        #youtube-logs-content {
-            background: #f1f1f1;
-            border: 1px solid #ddd;
+        .youtube-importer-controls.postbox {
+            margin-top: 20px;
+        }
+        .youtube-importer-controls .inside {
+            padding: 12px;
+        }
+        .youtube-importer-controls .inside h3 {
+            margin: 20px 0 10px 0;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #ddd;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .youtube-importer-controls .inside h3:first-child {
+            margin-top: 0;
+        }
+        .youtube-importer-controls .inside p {
+            margin: 10px 0;
+        }
+        .youtube-importer-controls .inside .description {
+            color: #646970;
+            font-style: italic;
+            margin-left: 8px;
+        }
+        .cron-status-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        .cron-status-table td {
+            padding: 6px 10px;
+            border-bottom: 1px solid #eee;
+            word-break: break-word;
+            font-size: 13px;
+        }
+        .cron-status-table td:first-child {
+            width: 150px;
+            color: #50575e;
+            font-weight: 500;
+        }
+        #cron-status {
+            background: #f6f7f7;
+            border: 1px solid #dcdcde;
             border-radius: 4px;
-            padding: 15px;
-            max-height: 400px;
+            padding: 12px;
+        }
+        #youtube-logs-content {
+            background: #1d2327;
+            color: #f0f0f1;
+            border: 1px solid #2c3338;
+            border-radius: 4px;
+            padding: 12px;
+            max-height: 250px;
             overflow-y: auto;
-            font-family: monospace;
-            font-size: 12px;
-            line-height: 1.4;
+            font-family: Consolas, Monaco, monospace;
+            font-size: 11px;
+            line-height: 1.5;
             white-space: pre-wrap;
             word-wrap: break-word;
         }
         #youtube-logs-content .log-entry {
-            margin-bottom: 5px;
-            padding: 2px 0;
+            margin-bottom: 3px;
+            padding: 1px 0;
         }
         #youtube-logs-content .log-entry.error {
-            color: #d63638;
+            color: #f86368;
         }
         #youtube-logs-content .log-entry.success {
-            color: #00a32a;
+            color: #68de7c;
         }
         #youtube-logs-content .log-entry.info {
-            color: #0073aa;
+            color: #72aee6;
         }
         #youtube-logs-content .log-timestamp {
-            color: #666;
-            font-weight: bold;
+            color: #a7aaad;
         }
         ";
     }
@@ -1920,6 +1984,159 @@ class YouTube_Song_Importer {
         ];
 
         wp_send_json_success( $response_data );
+    }
+
+    /**
+     * AJAX handler to trigger import check now
+     */
+    public function ajax_check_now() {
+        // Check nonce
+        if ( ! wp_verify_nonce( $_POST['nonce'], 'youtube_logs_nonce' ) ) {
+            wp_send_json_error( 'Security check failed' );
+        }
+
+        // Check permissions
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Insufficient permissions' );
+        }
+
+        $this->log_import_activity( "Manual import triggered via 'Check Now' button" );
+
+        // Run the import directly (bypass the enabled check for manual trigger)
+        $this->run_manual_import();
+
+        wp_send_json_success( 'Import check completed. Check the logs for details.' );
+    }
+
+    /**
+     * Run manual import (bypasses the enabled check)
+     */
+    private function run_manual_import() {
+        $this->process_existing_posts_for_thumbnails();
+
+        include_once ABSPATH . WPINC . '/feed.php';
+        
+        $feed_url = $this->get_option_with_fallback( 'youtube_feed_url' );
+        if ( empty( $feed_url ) ) {
+            $this->log_import_activity( '✗ No feed URL configured' );
+            return;
+        }
+        
+        if ( strpos( $feed_url, 'feeds/videos.xml' ) === false ) {
+            $feed_url = $this->resolve_channel_feed( $feed_url );
+        }
+
+        $this->log_import_activity( '▶ Manual check started...' );
+
+        if ( ! function_exists( 'fetch_feed' ) ) {
+            $this->log_import_activity( '✗ Feed error: SimplePie not available' );
+            return;
+        }
+
+        $feed = fetch_feed( $feed_url );
+        if ( is_wp_error( $feed ) ) {
+            $this->log_import_activity( '✗ Feed error: ' . $feed->get_error_message() );
+            return;
+        }
+
+        $item_count = $feed->get_item_quantity();
+        if ( $item_count === 0 ) {
+            $this->log_import_activity( '⊘ Feed empty - no videos found' );
+            return;
+        }
+
+        $items_processed = 0;
+        $max_items       = 10;
+        $imported_count  = 0;
+        $skipped_count   = 0;
+
+        foreach ( $feed->get_items() as $item ) {
+            if ( $items_processed >= $max_items ) {
+                break;
+            }
+
+            $video_url   = esc_url( $item->get_link() );
+            $video_desc  = $this->get_video_description( $item );
+            $video_title = sanitize_text_field( $item->get_title() );
+            $video_id    = $this->extract_video_id_from_url( $video_url );
+
+            if ( $this->is_video_already_imported( $video_url ) ) {
+                $existing_post_id = $this->get_existing_post_id_by_video_url( $video_url );
+                if ( $existing_post_id && ! has_post_thumbnail( $existing_post_id ) ) {
+                    $thumbnail_result = $this->set_featured_image_from_youtube( $existing_post_id, $video_url, $video_title );
+                    if ( $thumbnail_result ) {
+                        $this->log_import_activity( '+ THUMB: "' . $video_title . '"' );
+                    }
+                } else {
+                    $skipped_count++;
+                }
+                $items_processed++;
+                continue;
+            }
+
+            $post_id = wp_insert_post( [
+                'post_type'   => 'song',
+                'post_status' => 'publish',
+                'post_title'  => $video_title,
+            ] );
+
+            if ( ! $post_id || is_wp_error( $post_id ) ) {
+                $this->log_import_activity( '✗ ERROR: "' . $video_title . '" - failed to create post' );
+                $items_processed++;
+                continue;
+            }
+
+            update_field( 'video', $video_url, $post_id );
+            update_field( 'lyrics', $video_desc, $post_id );
+            if ( $video_id ) {
+                update_post_meta( $post_id, 'video_id', $video_id );
+            }
+
+            $this->set_featured_image_from_youtube( $post_id, $video_url, $video_title );
+            update_post_meta( $post_id, 'imported', '1' );
+
+            $imported_count++;
+            $this->log_import_activity( '✓ NEW: "' . $video_title . '"' );
+            
+            $this->send_import_notification_email( $post_id, $video_title, $video_url, $video_id );
+            
+            $items_processed++;
+        }
+
+        $this->log_import_activity( "▣ Done: {$imported_count} new, {$skipped_count} existing, {$item_count} in feed" );
+    }
+
+    /**
+     * AJAX handler to get cron status
+     */
+    public function ajax_get_cron_status() {
+        // Check nonce
+        if ( ! wp_verify_nonce( $_POST['nonce'], 'youtube_logs_nonce' ) ) {
+            wp_send_json_error( 'Security check failed' );
+        }
+
+        // Check permissions
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Insufficient permissions' );
+        }
+
+        $enabled = $this->get_option_with_fallback( 'youtube_import_enabled' );
+        $interval = $this->get_option_with_fallback( 'youtube_import_interval' ) ?: 'hourly';
+        $feed_url = $this->get_option_with_fallback( 'youtube_feed_url' );
+        $next_scheduled = wp_next_scheduled( 'import_youtube_songs_event' );
+        $current_schedule = wp_get_schedule( 'import_youtube_songs_event' );
+
+        $status = [
+            'enabled' => (bool) $enabled,
+            'interval' => $interval,
+            'feed_url' => $feed_url ?: 'Not configured',
+            'next_run' => $next_scheduled ? date( 'Y-m-d H:i:s', $next_scheduled ) : 'Not scheduled',
+            'next_run_relative' => $next_scheduled ? human_time_diff( time(), $next_scheduled ) : 'N/A',
+            'current_schedule' => $current_schedule ?: 'None',
+            'cron_healthy' => (bool) ( $next_scheduled && $enabled ),
+        ];
+
+        wp_send_json_success( $status );
     }
 
     /**
