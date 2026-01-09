@@ -110,6 +110,7 @@ class YouTube_Song_Importer {
 
     /**
      * Fetch and import the YouTube feed
+     * Checks for new videos in the feed and creates song posts for them
      */
     public function import_feed() {
         // Check if import is enabled (with fallback for cron context)
@@ -118,9 +119,6 @@ class YouTube_Song_Importer {
             $this->log_import_activity( '⊘ Import disabled' );
             return;
         }
-
-        // First, process existing posts that need thumbnails
-        $this->process_existing_posts_for_thumbnails();
 
         include_once ABSPATH . WPINC . '/feed.php';
         
@@ -134,7 +132,7 @@ class YouTube_Song_Importer {
             $feed_url = $this->resolve_channel_feed( $feed_url );
         }
 
-        $this->log_import_activity( '▶ Starting feed check...' );
+        $this->log_import_activity( '▶ Checking feed for new videos...' );
 
         if ( ! function_exists( 'fetch_feed' ) ) {
             $this->log_import_activity( '✗ Feed error: SimplePie not available' );
@@ -168,17 +166,9 @@ class YouTube_Song_Importer {
             $video_title = sanitize_text_field( $item->get_title() );
             $video_id    = $this->extract_video_id_from_url( $video_url );
 
-            // Check if video already imported
+            // Skip if video already has a song post
             if ( $this->is_video_already_imported( $video_url ) ) {
-                $existing_post_id = $this->get_existing_post_id_by_video_url( $video_url );
-                if ( $existing_post_id && ! has_post_thumbnail( $existing_post_id ) ) {
-                    $thumbnail_result = $this->set_featured_image_from_youtube( $existing_post_id, $video_url, $video_title );
-                    if ( $thumbnail_result ) {
-                        $this->log_import_activity( '+ THUMB: "' . $video_title . '"' );
-                    }
-                } else {
-                    $skipped_count++;
-                }
+                $skipped_count++;
                 $items_processed++;
                 continue;
             }
@@ -196,18 +186,21 @@ class YouTube_Song_Importer {
                 continue;
             }
 
-            // Save fields silently
+            // Save video URL and description
             update_field( 'video', $video_url, $post_id );
             update_field( 'lyrics', $video_desc, $post_id );
             if ( $video_id ) {
                 update_post_meta( $post_id, 'video_id', $video_id );
             }
 
-            // Set thumbnail
+            // Set thumbnail from YouTube
             $this->set_featured_image_from_youtube( $post_id, $video_url, $video_title );
 
             // Mark as imported
             update_post_meta( $post_id, 'imported', '1' );
+
+            // Add 'needs-notes' tag since new imports won't have lyric_annotations
+            wp_set_post_terms( $post_id, array( 'needs-notes' ), 'post_tag', true );
 
             $imported_count++;
             $this->log_import_activity( '✓ NEW: "' . $video_title . '"' );
@@ -659,8 +652,6 @@ class YouTube_Song_Importer {
             return false;
         }
 
-        $this->log_import_activity( "Thumbnail downloaded successfully to: {$tmp}" );
-
         // Verify the downloaded file exists and has content
         $file_size = filesize( $tmp );
         if ( $file_size === false || $file_size === 0 ) {
@@ -676,8 +667,6 @@ class YouTube_Song_Importer {
             @unlink( $tmp );
             return false;
         }
-
-        $this->log_import_activity( "File validation passed: {$file_size} bytes" );
 
         // Use video title from feed, fallback to post title if not provided
         if ( ! $video_title ) {
@@ -701,11 +690,6 @@ class YouTube_Song_Importer {
             'size'     => $file_size,
             'error'    => 0, // Add error field (0 = no error)
         ];
-
-        $this->log_import_activity( "Attempting to sideload image with size: {$file_size} bytes" );
-
-
-        $this->log_import_activity( "Calling media_handle_sideload with file array: " . print_r( $file, true ) );
 
         $attachment_id = media_handle_sideload( $file, $post_id );
         if ( is_wp_error( $attachment_id ) ) {
@@ -1812,6 +1796,7 @@ class YouTube_Song_Importer {
         $video_id_added_count = 0;
         $no_video_count = 0;
         $lyrics_tag_added_count = 0;
+        $notes_tag_added_count = 0;
         $image_tag_added_count = 0;
         $errors = [];
 
@@ -1846,6 +1831,32 @@ class YouTube_Song_Importer {
                     $existing_tags = array_diff( $existing_tags, array( 'needs-lyrics' ) );
                     wp_set_post_terms( $post->ID, $existing_tags, 'post_tag' );
                     $this->log_import_activity( "SUCCESS: Removed 'needs-lyrics' tag from '{$post_title}' (ID: {$post->ID}) - lyrics found" );
+                }
+            }
+
+            // Check for lyric_annotations and add 'needs-notes' tag if missing
+            $lyric_annotations = get_field( 'lyric_annotations', $post->ID );
+            if ( empty( $lyric_annotations ) || trim( wp_strip_all_tags( $lyric_annotations ) ) === '' ) {
+                // Get existing tags
+                $existing_tags = wp_get_post_terms( $post->ID, 'post_tag', array( 'fields' => 'slugs' ) );
+                
+                // Add 'needs-notes' tag if not already present
+                if ( ! in_array( 'needs-notes', $existing_tags ) ) {
+                    if ( empty( $existing_tags ) ) {
+                        $existing_tags = array();
+                    }
+                    $existing_tags[] = 'needs-notes';
+                    wp_set_post_terms( $post->ID, $existing_tags, 'post_tag' );
+                    $this->log_import_activity( "SUCCESS: Added 'needs-notes' tag to '{$post_title}' (ID: {$post->ID})" );
+                    $notes_tag_added_count++;
+                }
+            } else {
+                // Remove 'needs-notes' tag if lyric_annotations exist
+                $existing_tags = wp_get_post_terms( $post->ID, 'post_tag', array( 'fields' => 'slugs' ) );
+                if ( in_array( 'needs-notes', $existing_tags ) ) {
+                    $existing_tags = array_diff( $existing_tags, array( 'needs-notes' ) );
+                    wp_set_post_terms( $post->ID, $existing_tags, 'post_tag' );
+                    $this->log_import_activity( "SUCCESS: Removed 'needs-notes' tag from '{$post_title}' (ID: {$post->ID}) - annotations found" );
                 }
             }
 
@@ -1969,7 +1980,7 @@ class YouTube_Song_Importer {
         }
 
         $total_songs = count( $posts );
-        $this->log_import_activity( "Comprehensive bulk update completed. Total songs: {$total_songs}, Processed: {$processed_count}, Thumbnails added: {$thumbnail_added_count}, Video IDs added: {$video_id_added_count}, Lyrics tags added: {$lyrics_tag_added_count}, Image tags added: {$image_tag_added_count}, Skipped: {$skipped_count}, No video: {$no_video_count}" );
+        $this->log_import_activity( "Comprehensive bulk update completed. Total songs: {$total_songs}, Processed: {$processed_count}, Thumbnails added: {$thumbnail_added_count}, Video IDs added: {$video_id_added_count}, Lyrics tags added: {$lyrics_tag_added_count}, Notes tags added: {$notes_tag_added_count}, Image tags added: {$image_tag_added_count}, Skipped: {$skipped_count}, No video: {$no_video_count}" );
         
         $response_data = [
             'total_songs' => $total_songs,
@@ -1977,6 +1988,7 @@ class YouTube_Song_Importer {
             'thumbnails_added' => $thumbnail_added_count,
             'video_ids_added' => $video_id_added_count,
             'lyrics_tags_added' => $lyrics_tag_added_count,
+            'notes_tags_added' => $notes_tag_added_count,
             'image_tags_added' => $image_tag_added_count,
             'skipped' => $skipped_count,
             'no_video' => $no_video_count,
@@ -2010,10 +2022,10 @@ class YouTube_Song_Importer {
 
     /**
      * Run manual import (bypasses the enabled check)
+     * Checks the feed for new videos and creates song posts for them
+     * Uses fresh feed data (bypasses cache) for manual checks
      */
     private function run_manual_import() {
-        $this->process_existing_posts_for_thumbnails();
-
         include_once ABSPATH . WPINC . '/feed.php';
         
         $feed_url = $this->get_option_with_fallback( 'youtube_feed_url' );
@@ -2026,14 +2038,22 @@ class YouTube_Song_Importer {
             $feed_url = $this->resolve_channel_feed( $feed_url );
         }
 
-        $this->log_import_activity( '▶ Manual check started...' );
+        $this->log_import_activity( '▶ Manual check started (bypassing cache)...' );
+        $this->log_import_activity( '  Feed URL: ' . $feed_url );
 
         if ( ! function_exists( 'fetch_feed' ) ) {
             $this->log_import_activity( '✗ Feed error: SimplePie not available' );
             return;
         }
 
+        // Bypass cache for manual checks - set cache lifetime to 0
+        add_filter( 'wp_feed_cache_transient_lifetime', [ $this, 'disable_feed_cache' ] );
+        
         $feed = fetch_feed( $feed_url );
+        
+        // Remove the filter after fetching
+        remove_filter( 'wp_feed_cache_transient_lifetime', [ $this, 'disable_feed_cache' ] );
+        
         if ( is_wp_error( $feed ) ) {
             $this->log_import_activity( '✗ Feed error: ' . $feed->get_error_message() );
             return;
@@ -2045,8 +2065,10 @@ class YouTube_Song_Importer {
             return;
         }
 
+        $this->log_import_activity( "  Found {$item_count} videos in feed" );
+
         $items_processed = 0;
-        $max_items       = 10;
+        $max_items       = 15; // Check more items to ensure we don't miss any
         $imported_count  = 0;
         $skipped_count   = 0;
 
@@ -2056,24 +2078,20 @@ class YouTube_Song_Importer {
             }
 
             $video_url   = esc_url( $item->get_link() );
-            $video_desc  = $this->get_video_description( $item );
             $video_title = sanitize_text_field( $item->get_title() );
             $video_id    = $this->extract_video_id_from_url( $video_url );
 
+            // Skip if video already has a song post
             if ( $this->is_video_already_imported( $video_url ) ) {
-                $existing_post_id = $this->get_existing_post_id_by_video_url( $video_url );
-                if ( $existing_post_id && ! has_post_thumbnail( $existing_post_id ) ) {
-                    $thumbnail_result = $this->set_featured_image_from_youtube( $existing_post_id, $video_url, $video_title );
-                    if ( $thumbnail_result ) {
-                        $this->log_import_activity( '+ THUMB: "' . $video_title . '"' );
-                    }
-                } else {
-                    $skipped_count++;
-                }
+                $skipped_count++;
                 $items_processed++;
                 continue;
             }
 
+            // Get description after we know we're importing
+            $video_desc = $this->get_video_description( $item );
+
+            // Create the new song post
             $post_id = wp_insert_post( [
                 'post_type'   => 'song',
                 'post_status' => 'publish',
@@ -2086,17 +2104,22 @@ class YouTube_Song_Importer {
                 continue;
             }
 
+            // Save video URL and description
             update_field( 'video', $video_url, $post_id );
             update_field( 'lyrics', $video_desc, $post_id );
             if ( $video_id ) {
                 update_post_meta( $post_id, 'video_id', $video_id );
             }
 
+            // Set thumbnail from YouTube
             $this->set_featured_image_from_youtube( $post_id, $video_url, $video_title );
             update_post_meta( $post_id, 'imported', '1' );
 
+            // Add 'needs-notes' tag since new imports won't have lyric_annotations
+            wp_set_post_terms( $post_id, array( 'needs-notes' ), 'post_tag', true );
+
             $imported_count++;
-            $this->log_import_activity( '✓ NEW: "' . $video_title . '"' );
+            $this->log_import_activity( '✓ SUCCESS: New Song Imported:"' . $video_title . '" (ID: ' . $video_id . ')' );
             
             $this->send_import_notification_email( $post_id, $video_title, $video_url, $video_id );
             
@@ -2104,6 +2127,14 @@ class YouTube_Song_Importer {
         }
 
         $this->log_import_activity( "▣ Done: {$imported_count} new, {$skipped_count} existing, {$item_count} in feed" );
+    }
+
+    /**
+     * Disable feed cache for manual import checks
+     * Returns 0 to bypass SimplePie's cache
+     */
+    public function disable_feed_cache( $lifetime ) {
+        return 0;
     }
 
     /**
