@@ -1504,15 +1504,10 @@ class YouTube_Song_Importer {
                     type: 'POST',
                     data: { action: 'youtube_check_now', nonce: nonce },
                     success: function(response) {
-                        if (response.success) {
-                            alert('Import check completed! Check the logs for details.');
-                            loadLogs();
-                        } else {
-                            alert('Error: ' + response.data);
-                        }
+                        loadLogs();
                     },
                     error: function() {
-                        alert('Error running import check. Please try again.');
+                        loadLogs();
                     },
                     complete: function() {
                         $btn.prop('disabled', false).text('Check Now');
@@ -1521,10 +1516,6 @@ class YouTube_Song_Importer {
             });
             
             $('#bulk-update-thumbnails').on('click', function() {
-                if (!confirm('Are you sure you want to bulk update thumbnails for all songs? This may take a while.')) {
-                    return;
-                }
-                
                 var $btn = $(this);
                 $btn.prop('disabled', true).text('Processing...');
                 $('#youtube-logs-content').html('Starting bulk thumbnail update... This may take a while.');
@@ -1534,22 +1525,10 @@ class YouTube_Song_Importer {
                     type: 'POST',
                     data: { action: 'youtube_bulk_update_thumbnails', nonce: nonce },
                     success: function(response) {
-                        if (response.success) {
-                            var data = response.data;
-                            var message = 'Bulk update completed!\n\n';
-                            message += 'Total songs: ' + data.total_songs + '\n';
-                            message += 'Processed: ' + data.processed + '\n';
-                            message += 'Thumbnails added: ' + data.thumbnails_added + '\n';
-                            message += 'Video IDs added: ' + data.video_ids_added + '\n';
-                            message += 'Skipped: ' + data.skipped + '\n';
-                            alert(message);
-                            loadLogs();
-                        } else {
-                            alert('Error: ' + response.data);
-                        }
+                        loadLogs();
                     },
                     error: function() {
-                        alert('Error updating thumbnails. Please try again.');
+                        loadLogs();
                     },
                     complete: function() {
                         $btn.prop('disabled', false).text('Bulk Update Thumbnails');
@@ -1563,10 +1542,6 @@ class YouTube_Song_Importer {
             });
             
             $('#clear-logs').on('click', function() {
-                if (!confirm('Are you sure you want to clear all YouTube import logs?')) {
-                    return;
-                }
-                
                 $('#youtube-logs-content').html('Clearing logs...');
                 
                 $.ajax({
