@@ -306,9 +306,19 @@ function jww_open_graph_tags() {
 
 	switch ($post_type) {
 		case 'song':
+			$album_name = '';
+			$album = get_field( 'album', $post->ID );
+			if ( $album ) {
+				$album_id = is_array( $album ) ? ( $album[0] ?? 0 ) : $album;
+				if ( $album_id ) {
+					$album_name = get_the_title( $album_id );
+				}
+			}
 			echo '<meta property="og:type" content="music.song" />' . "\n";
 			echo '<meta property="og:music:musician" content="' . esc_attr( $artist_name ) . '" />' . "\n";
-			echo '<meta property="og:music:album" content="' . esc_attr( $album_name ) . '" />' . "\n";
+			if ( $album_name !== '' ) {
+				echo '<meta property="og:music:album" content="' . esc_attr( $album_name ) . '" />' . "\n";
+			}
 			echo '<meta property="og:description" content="' . esc_attr( $og_title ) . ' by ' . esc_attr( $artist_name ) . '" />' . "\n";
 			echo '<meta property="og:image:alt" content="' . esc_attr( $artist_name ) . ' playing ' . esc_attr( $og_title ) . '" />' . "\n";
 			break;

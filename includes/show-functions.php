@@ -135,8 +135,10 @@ function jww_get_all_show_setlists( $use_cache = true ) {
 	
 	$show_ids = get_posts( $args );
 	
-	// Prime meta cache for all shows at once
-	update_post_meta_cache( $show_ids );
+	// Prime meta cache for all shows at once (when available)
+	if ( ! empty( $show_ids ) && function_exists( 'update_post_meta_cache' ) ) {
+		update_post_meta_cache( $show_ids );
+	}
 	
 	// Build data structure
 	$all_data = array();

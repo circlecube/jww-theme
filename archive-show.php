@@ -481,9 +481,11 @@ function jww_count_setlist_songs( $setlist ) {
 				</thead>
 				<tbody>
 					<?php 
-					// Prime meta cache for all shows at once
+					// Prime meta cache for all shows at once (when available)
 					$upcoming_show_ids = wp_list_pluck( $upcoming_shows, 'ID' );
-					update_post_meta_cache( $upcoming_show_ids );
+					if ( ! empty( $upcoming_show_ids ) && function_exists( 'update_post_meta_cache' ) ) {
+						update_post_meta_cache( $upcoming_show_ids );
+					}
 					
 					foreach ( $upcoming_shows as $show ): 
 						$show_title = get_the_title( $show->ID );
@@ -589,9 +591,11 @@ function jww_count_setlist_songs( $setlist ) {
 				</thead>
 				<tbody>
 					<?php 
-					// Prime meta cache for all shows at once
+					// Prime meta cache for all shows at once (when available)
 					$past_show_ids = wp_list_pluck( $past_shows, 'ID' );
-					update_post_meta_cache( $past_show_ids );
+					if ( ! empty( $past_show_ids ) && function_exists( 'update_post_meta_cache' ) ) {
+						update_post_meta_cache( $past_show_ids );
+					}
 					
 					foreach ( $past_shows as $show ): 
 						$show_title = get_the_title( $show->ID );
