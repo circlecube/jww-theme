@@ -28,9 +28,9 @@ class Setlist_Importer {
 	}
 
 	/**
-	 * Get API key from .env file or ACF options
+	 * Get API key from .env file, WordPress options, or ACF options
 	 *
-	 * Priority: .env file > ACF options
+	 * Priority: .env file > WordPress options > ACF options
 	 *
 	 * @return string|false API key or false if not set
 	 */
@@ -41,9 +41,18 @@ class Setlist_Importer {
 			return $env_key;
 		}
 
-		// Fallback to ACF options
+		// Try WordPress options (new storage location)
+		$option_key = get_option( 'jww_setlist_fm_api_key', false );
+		if ( $option_key ) {
+			return $option_key;
+		}
+
+		// Fallback to ACF options (for backward compatibility)
 		if ( function_exists( 'get_field' ) ) {
-			return get_field( 'setlist_fm_api_key', 'option' );
+			$acf_key = get_field( 'setlist_fm_api_key', 'option' );
+			if ( $acf_key ) {
+				return $acf_key;
+			}
 		}
 		// Fallback to raw option
 		return get_option( 'options_setlist_fm_api_key', false );

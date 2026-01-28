@@ -189,4 +189,200 @@ jQuery(document).ready(function($) {
             }
         });
     });
+
+    // Load setlist sync status
+    function loadSetlistSyncStatus() {
+        $('#setlist-sync-status').html('Loading...');
+        
+        $.ajax({
+            url: jwwShowImporter.ajaxUrl,
+            type: 'POST',
+            data: {
+                action: 'jww_get_setlist_sync_status',
+                nonce: jwwShowImporter.nonce
+            },
+            success: function(response) {
+                if (response.success) {
+                    var data = response.data;
+                    var html = '<table class="setlist-sync-status-table" style="width:100%;border-collapse:collapse;">';
+                    html += '<tr><td style="padding:8px;font-weight:bold;width:40%;">Schedule:</td><td style="padding:8px;">' + data.current_schedule + '</td></tr>';
+                    html += '<tr><td style="padding:8px;font-weight:bold;">Next Run:</td><td style="padding:8px;">' + data.next_run + ' (' + data.next_run_relative + ')</td></tr>';
+                    html += '<tr><td style="padding:8px;font-weight:bold;">Last Check:</td><td style="padding:8px;">' + data.last_sync + ' (' + data.last_sync_relative + ')</td></tr>';
+                    html += '<tr><td style="padding:8px;font-weight:bold;">Cron Health:</td><td style="padding:8px;">' + 
+                        (data.cron_healthy ? '<span style="color:green">✓ Healthy</span>' : '<span style="color:orange">⚠ Not scheduled</span>') + 
+                        '</td></tr>';
+                    html += '</table>';
+                    $('#setlist-sync-status').html(html);
+                } else {
+                    $('#setlist-sync-status').html('<p style="color: red;">Error loading status</p>');
+                }
+            },
+            error: function() {
+                $('#setlist-sync-status').html('<p style="color: red;">Error loading status</p>');
+            }
+        });
+    }
+
+    // Load status on page load
+    loadSetlistSyncStatus();
+
+    // Run sync now
+    $('#run-sync-now-btn').on('click', function() {
+        var $btn = $(this);
+        var $spinner = $('#sync-now-spinner');
+        var $result = $('#sync-now-result');
+        var originalText = $btn.text();
+
+        $btn.prop('disabled', true).text('Running...');
+        $spinner.addClass('is-active');
+        $result.html('').removeClass('error success');
+
+        $.ajax({
+            url: jwwShowImporter.ajaxUrl,
+            type: 'POST',
+            data: {
+                action: 'jww_run_sync_now',
+                nonce: jwwShowImporter.nonce
+            },
+            success: function(response) {
+                $spinner.removeClass('is-active');
+                $btn.prop('disabled', false).text(originalText);
+                
+                if (response.success) {
+                    var html = '<div class="notice notice-success"><p><strong>' + response.data.message + '</strong></p>';
+                    if (response.data.results) {
+                        html += '<p style="margin-top: 10px; font-size: 0.9em; color: #646970;">';
+                        html += 'Last check: ' + response.data.last_sync + ' (' + response.data.last_sync_relative + ')';
+                        html += '</p>';
+                    }
+                    html += '</div>';
+                    $result.html(html).addClass('success').removeClass('error');
+                    
+                    // Reload status
+                    loadSetlistSyncStatus();
+                } else {
+                    $result.html(
+                        '<div class="notice notice-error"><p>' + response.data.message + '</p></div>'
+                    ).addClass('error').removeClass('success');
+                }
+            },
+            error: function() {
+                $spinner.removeClass('is-active');
+                $btn.prop('disabled', false).text(originalText);
+                $result.html(
+                    '<div class="notice notice-error"><p>An error occurred. Please try again.</p></div>'
+                ).addClass('error').removeClass('success');
+            }
+        });
+    });
+
+    // Save API key
+    $('#api-key-form').on('submit', function(e) {
+        e.preventDefault();
+        var $form = $(this);
+        var $spinner = $form.find('.spinner');
+        var $result = $form.find('.api-key-result');
+        var $input = $('#api-key-input');
+        var apiKey = $input.val();
+
+        if (!apiKey) {
+            $result.html(
+                '<div class="notice notice-error"><p>API key cannot be empty.</p></div>'
+            ).addClass('error').removeClass('success');
+            return;
+        }
+
+        $spinner.addClass('is-active');
+        $result.html('').removeClass('error success');
+
+        $.ajax({
+            url: jwwShowImporter.ajaxUrl,
+            type: 'POST',
+            data: {
+                action: 'jww_save_api_key',
+                nonce: jwwShowImporter.nonce,
+                api_key: apiKey,
+                action_type: 'save'
+            },
+            success: function(response) {
+                $spinner.removeClass('is-active');
+                if (response.success) {
+                    $result.html(
+                        '<div class="notice notice-success"><p>' + response.data.message + '</p></div>'
+                    ).addClass('success').removeClass('error');
+                    
+                    // Update the display
+                    if (response.data.key_preview) {
+                        $('.api-key-status code').text(response.data.key_preview);
+                    }
+                    
+                    // Clear input
+                    $input.val('');
+                    
+                    // Reload page after 1 second to refresh API status
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    $result.html(
+                        '<div class="notice notice-error"><p>' + response.data.message + '</p></div>'
+                    ).addClass('error').removeClass('success');
+                }
+            },
+            error: function() {
+                $spinner.removeClass('is-active');
+                $result.html(
+                    '<div class="notice notice-error"><p>An error occurred. Please try again.</p></div>'
+                ).addClass('error').removeClass('success');
+            }
+        });
+    });
+
+    // Clear API key
+    $('#clear-api-key-btn').on('click', function() {
+        if (!confirm('Are you sure you want to clear the API key?')) {
+            return;
+        }
+
+        var $btn = $(this);
+        var $form = $('#api-key-form');
+        var $spinner = $form.find('.spinner');
+        var $result = $form.find('.api-key-result');
+
+        $spinner.addClass('is-active');
+        $result.html('').removeClass('error success');
+
+        $.ajax({
+            url: jwwShowImporter.ajaxUrl,
+            type: 'POST',
+            data: {
+                action: 'jww_save_api_key',
+                nonce: jwwShowImporter.nonce,
+                action_type: 'clear'
+            },
+            success: function(response) {
+                $spinner.removeClass('is-active');
+                if (response.success) {
+                    $result.html(
+                        '<div class="notice notice-success"><p>' + response.data.message + '</p></div>'
+                    ).addClass('success').removeClass('error');
+                    
+                    // Reload page after 1 second to refresh status
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    $result.html(
+                        '<div class="notice notice-error"><p>' + response.data.message + '</p></div>'
+                    ).addClass('error').removeClass('success');
+                }
+            },
+            error: function() {
+                $spinner.removeClass('is-active');
+                $result.html(
+                    '<div class="notice notice-error"><p>An error occurred. Please try again.</p></div>'
+                ).addClass('error').removeClass('success');
+            }
+        });
+    });
 });

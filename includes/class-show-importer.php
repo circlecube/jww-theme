@@ -25,6 +25,13 @@ class Show_Importer {
 		add_action( 'wp_ajax_jww_import_json', array( $this, 'ajax_import_json' ) );
 		add_action( 'wp_ajax_jww_export_shows', array( $this, 'ajax_export_shows' ) );
 		add_action( 'wp_ajax_jww_test_api', array( $this, 'ajax_test_api' ) );
+		add_action( 'wp_ajax_jww_get_setlist_sync_status', array( $this, 'ajax_get_setlist_sync_status' ) );
+		add_action( 'wp_ajax_jww_save_api_key', array( $this, 'ajax_save_api_key' ) );
+		add_action( 'wp_ajax_jww_run_sync_now', array( $this, 'ajax_run_sync_now' ) );
+		
+		// Schedule cron for automatic setlist sync
+		add_action( 'wp_loaded', array( $this, 'maybe_schedule_cron' ) );
+		add_action( 'sync_recent_shows_setlist', array( $this, 'sync_recent_shows_setlist' ) );
 	}
 
 	/**
@@ -86,37 +93,83 @@ class Show_Importer {
 			<p>Import shows from setlist.fm or JSON files. Export shows to JSON format.</p>
 
 			<div class="jww-importer-container">
-				<!-- API Status -->
+				<!-- API Key Management -->
 				<div class="jww-importer-section">
-					<h2>API Status</h2>
-					<div class="api-status">
-						<?php if ( $api_key ): ?>
-							<p class="api-key-status">
-								<span class="status-indicator status-ok"></span>
-								API Key: <code><?php echo esc_html( substr( $api_key, 0, 8 ) ); ?>...</code>
+					<h2>setlist.fm API Key</h2>
+					<div class="api-key-management">
+						<?php 
+						// Check if key is from .env file (read-only)
+						$env_key = $this->get_api_key_from_env();
+						$is_env_key = (bool) $env_key;
+						$display_key = $api_key ? $api_key : '';
+						?>
+						
+						<?php if ( $is_env_key ): ?>
+							<p class="note" style="background: #fff3cd; padding: 10px; border-left: 4px solid #ffc107; margin-bottom: 15px;">
+								<strong>Note:</strong> API key is currently loaded from <code>.env</code> file. To manage it here, remove it from the .env file first.
 							</p>
-							<?php if ( $api_status['working'] ): ?>
-								<p class="api-connection status-ok">
-									<span class="status-indicator status-ok"></span>
-									API Connection: Working
-								</p>
-							<?php else: ?>
-								<p class="api-connection status-error">
-									<span class="status-indicator status-error"></span>
-									API Connection: <?php echo esc_html( $api_status['message'] ); ?>
-								</p>
-							<?php endif; ?>
-							<button type="button" class="button" id="test-api-btn">Test API Connection</button>
 						<?php else: ?>
-							<p class="api-key-status status-error">
-								<span class="status-indicator status-error"></span>
-								No API key set. <a href="<?php echo esc_url( admin_url( 'admin.php?page=acf-options-youtube-import-settings' ) ); ?>">Set API key in Song settings</a>
+						
+						<form id="api-key-form" class="jww-api-key-form">
+							<p>
+								<label for="api-key-input">API Key:</label><br>
+								<input type="password" id="api-key-input" name="api_key" class="regular-text" 
+									value="" 
+									placeholder="<?php echo $is_env_key ? 'Set in .env file' : ( $api_key ? 'Enter new API key (leave blank to keep current)' : 'Enter setlist.fm API key' ); ?>"
+									<?php echo $is_env_key ? 'disabled' : ''; ?>>
+								<?php if ( $is_env_key ): ?>
+									<p class="description">Key loaded from .env file (masked for security)</p>
+								<?php elseif ( $api_key ): ?>
+									<p class="description">Current key is set. Enter a new key to update it, or leave blank to keep current. Get your API key from <a href="https://www.setlist.fm/settings/api" target="_blank">setlist.fm API settings</a></p>
+								<?php else: ?>
+									<p class="description">Get your API key from <a href="https://www.setlist.fm/settings/api" target="_blank">setlist.fm API settings</a></p>
+								<?php endif; ?>
 							</p>
-							<p class="note">You can still import from JSON files without an API key.</p>
+							<p>
+								<button type="submit" class="button button-primary" <?php echo $is_env_key ? 'disabled' : ''; ?>>
+									<?php echo $api_key ? 'Update API Key' : 'Save API Key'; ?>
+								</button>
+								<?php if ( $api_key && ! $is_env_key ): ?>
+									<button type="button" class="button" id="clear-api-key-btn">Clear API Key</button>
+								<?php endif; ?>
+								<span class="spinner"></span>
+							</p>
+							<div class="api-key-result"></div>
+						</form>
 						<?php endif; ?>
+
+						<div class="api-status" style="margin-top: 20px;">
+							<?php if ( $api_key ): ?>
+								<p class="api-key-status">
+									<span class="status-indicator status-ok"></span>
+									API Key: <code><?php echo esc_html( substr( $display_key, 0, 8 ) ); ?>...</code>
+									<?php if ( $is_env_key ): ?>
+										<span style="color: #646970; font-size: 0.9em;">(from .env file)</span>
+									<?php endif; ?>
+								</p>
+								<?php if ( $api_status['working'] ): ?>
+									<p class="api-connection status-ok">
+										<span class="status-indicator status-ok"></span>
+										API Connection: Working
+									</p>
+								<?php else: ?>
+									<p class="api-connection status-error">
+										<span class="status-indicator status-error"></span>
+										API Connection: <?php echo esc_html( $api_status['message'] ); ?>
+									</p>
+								<?php endif; ?>
+								<button type="button" class="button" id="test-api-btn">Test API Connection</button>
+							<?php else: ?>
+								<p class="api-key-status status-error">
+									<span class="status-indicator status-error"></span>
+									No API key set.
+								</p>
+								<p class="note">You can still import from JSON files without an API key.</p>
+							<?php endif; ?>
+						</div>
 					</div>
 				</div>
-
+				
 				<!-- Import from setlist.fm URL -->
 				<div class="jww-importer-section">
 					<h2>Import from setlist.fm</h2>
@@ -124,7 +177,7 @@ class Show_Importer {
 						<p>
 							<label for="setlist-url">setlist.fm URL:</label><br>
 							<input type="url" id="setlist-url" name="setlist_url" class="regular-text" 
-								placeholder="https://www.setlist.fm/setlist/jesse-welles/2026/..." required>
+							placeholder="https://www.setlist.fm/setlist/jesse-welles/2026/..." required>
 						</p>
 						<p>
 							<button type="submit" class="button button-primary">Import Show</button>
@@ -132,6 +185,22 @@ class Show_Importer {
 						</p>
 						<div class="import-result"></div>
 					</form>
+				</div>
+
+				<!-- Setlist Sync Cron Status -->
+				<div class="jww-importer-section">
+					<h2>Automatic Setlist Sync</h2>
+					<p class="description">Shows are automatically synced with setlist.fm twice daily when they are published. The cron checks for shows published since the last check and syncs them if they have a setlist.fm URL.</p>
+					<div id="setlist-sync-status">
+						<p>Loading status...</p>
+					</div>
+					<div style="margin-top: 15px; display: flex; gap: 10px;">
+						<p>
+							<button type="button" class="button" id="run-sync-now-btn">Run Sync Now</button>
+							<span class="spinner" id="sync-now-spinner"></span>
+						</p>
+						<div id="sync-now-result"></div>
+					</div>
 				</div>
 
 				<!-- Import from JSON File -->
@@ -186,9 +255,9 @@ class Show_Importer {
 	}
 
 	/**
-	 * Get API key from .env file or ACF options
+	 * Get API key from .env file, WordPress options, or ACF options
 	 *
-	 * Priority: .env file > ACF options
+	 * Priority: .env file > WordPress options > ACF options
 	 *
 	 * @return string|false API key or false if not set
 	 */
@@ -199,9 +268,20 @@ class Show_Importer {
 			return $env_key;
 		}
 
-		// Fallback to ACF options
+		// Try WordPress options (new storage location)
+		$option_key = get_option( 'jww_setlist_fm_api_key', false );
+		if ( $option_key ) {
+			return $option_key;
+		}
+
+		// Fallback to ACF options (for backward compatibility)
 		if ( function_exists( 'get_field' ) ) {
-			return get_field( 'setlist_fm_api_key', 'option' );
+			$acf_key = get_field( 'setlist_fm_api_key', 'option' );
+			if ( $acf_key ) {
+				// Migrate to WordPress options for consistency
+				update_option( 'jww_setlist_fm_api_key', $acf_key );
+				return $acf_key;
+			}
 		}
 		return get_option( 'options_setlist_fm_api_key', false );
 	}
@@ -665,6 +745,226 @@ class Show_Importer {
 			'info' => $show_notes ?: '',
 			'url' => $setlist_fm_url ?: get_permalink( $show_id ),
 		);
+	}
+
+	/**
+	 * Schedule cron job for automatic setlist sync
+	 * Runs twice daily to check for recently published shows
+	 */
+	public function maybe_schedule_cron() {
+		$hook = 'sync_recent_shows_setlist';
+		
+		// Check if already scheduled
+		if ( ! wp_next_scheduled( $hook ) ) {
+			// Schedule to run twice daily (every 12 hours)
+			wp_schedule_event( time(), 'twicedaily', $hook );
+		}
+	}
+	
+	/**
+	 * Sync recently published shows with setlist.fm
+	 * Called by cron hook or manually via AJAX
+	 * 
+	 * @return array Results array with synced_count, error_count, checked_count
+	 */
+	public function sync_recent_shows_setlist() {
+		// Get last sync timestamp (stored as option)
+		$last_sync = get_option( 'jww_setlist_sync_last_check', 0 );
+		$current_time = current_time( 'timestamp' );
+		
+		// If first run (last_sync is 0), only check shows from last 7 days to avoid syncing everything
+		$check_since = $last_sync;
+		if ( $last_sync === 0 ) {
+			$check_since = $current_time - ( 7 * DAY_IN_SECONDS );
+		}
+		
+		// Find shows published since last check
+		$args = array(
+			'post_type'      => 'show',
+			'post_status'    => 'publish',
+			'posts_per_page' => -1,
+			'date_query'     => array(
+				array(
+					'after' => date( 'Y-m-d H:i:s', $check_since ),
+				),
+			),
+			'meta_query'     => array(
+				array(
+					'key'     => 'setlist_fm_url',
+					'compare' => 'EXISTS',
+				),
+			),
+		);
+		
+		$shows = get_posts( $args );
+		$checked_count = count( $shows );
+		
+		if ( empty( $shows ) ) {
+			// No new shows, update last check time and exit
+			update_option( 'jww_setlist_sync_last_check', $current_time );
+			return array(
+				'synced_count' => 0,
+				'error_count'  => 0,
+				'checked_count' => 0,
+			);
+		}
+		
+		$importer = new Setlist_Importer();
+		$synced_count = 0;
+		$error_count = 0;
+		
+		foreach ( $shows as $show ) {
+			$setlist_fm_url = get_field( 'setlist_fm_url', $show->ID );
+			
+			if ( empty( $setlist_fm_url ) ) {
+				continue; // Skip shows without setlist.fm URL
+			}
+			
+			// Sync this show
+			$result = $importer->import_from_url( $setlist_fm_url );
+			
+			if ( is_wp_error( $result ) ) {
+				$error_count++;
+				error_log( 'Setlist sync cron error for show ' . $show->ID . ': ' . $result->get_error_message() );
+			} else {
+				$synced_count++;
+			}
+		}
+		
+		// Update last check time
+		update_option( 'jww_setlist_sync_last_check', $current_time );
+		
+		// Clear song stats cache if any shows were synced
+		if ( $synced_count > 0 ) {
+			if ( function_exists( 'jww_clear_song_stats_caches' ) ) {
+				jww_clear_song_stats_caches();
+			}
+		}
+		
+		// Log results
+		if ( $synced_count > 0 || $error_count > 0 ) {
+			error_log( sprintf( 
+				'Setlist sync cron: %d shows synced, %d errors',
+				$synced_count,
+				$error_count
+			) );
+		}
+		
+		return array(
+			'synced_count' => $synced_count,
+			'error_count'  => $error_count,
+			'checked_count' => $checked_count,
+		);
+	}
+	
+	/**
+	 * AJAX: Get setlist sync cron status
+	 */
+	public function ajax_get_setlist_sync_status() {
+		check_ajax_referer( 'jww_show_importer', 'nonce' );
+		
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Insufficient permissions' ) );
+		}
+		
+		$hook = 'sync_recent_shows_setlist';
+		$next_scheduled = wp_next_scheduled( $hook );
+		$current_schedule = wp_get_schedule( $hook );
+		$last_sync = get_option( 'jww_setlist_sync_last_check', 0 );
+		
+		wp_send_json_success( array(
+			'next_run' => $next_scheduled ? date( 'Y-m-d H:i:s', $next_scheduled ) : 'Not scheduled',
+			'next_run_relative' => $next_scheduled ? human_time_diff( time(), $next_scheduled ) : 'N/A',
+			'current_schedule' => $current_schedule ?: 'None',
+			'last_sync' => $last_sync ? date( 'Y-m-d H:i:s', $last_sync ) : 'Never',
+			'last_sync_relative' => $last_sync ? human_time_diff( $last_sync, time() ) . ' ago' : 'Never',
+			'cron_healthy' => (bool) $next_scheduled,
+		) );
+	}
+	
+	/**
+	 * AJAX: Run setlist sync now (manual trigger)
+	 */
+	public function ajax_run_sync_now() {
+		check_ajax_referer( 'jww_show_importer', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Insufficient permissions' ) );
+		}
+
+		// Run the sync function
+		$results = $this->sync_recent_shows_setlist();
+		
+		// Get updated status
+		$last_sync = get_option( 'jww_setlist_sync_last_check', 0 );
+		
+		// Build message
+		$message = 'Sync completed. ';
+		if ( $results['checked_count'] === 0 ) {
+			$message .= 'No shows found to sync.';
+		} else {
+			$message .= sprintf( 
+				'Checked %d show(s), %d synced successfully',
+				$results['checked_count'],
+				$results['synced_count']
+			);
+			if ( $results['error_count'] > 0 ) {
+				$message .= sprintf( ', %d error(s)', $results['error_count'] );
+			}
+		}
+		
+		wp_send_json_success( array(
+			'message' => $message,
+			'last_sync' => $last_sync ? date( 'Y-m-d H:i:s', $last_sync ) : 'Never',
+			'last_sync_relative' => $last_sync ? human_time_diff( $last_sync, time() ) . ' ago' : 'Never',
+			'results' => $results,
+		) );
+	}
+	
+	/**
+	 * AJAX: Save API key
+	 */
+	public function ajax_save_api_key() {
+		check_ajax_referer( 'jww_show_importer', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Insufficient permissions' ) );
+		}
+
+		$api_key = isset( $_POST['api_key'] ) ? trim( $_POST['api_key'] ) : '';
+		$action = isset( $_POST['action_type'] ) ? $_POST['action_type'] : 'save';
+
+		// Handle clear action
+		if ( $action === 'clear' ) {
+			delete_option( 'jww_setlist_fm_api_key' );
+			if ( function_exists( 'update_field' ) ) {
+				update_field( 'setlist_fm_api_key', '', 'option' );
+			} else {
+				delete_option( 'options_setlist_fm_api_key' );
+			}
+			wp_send_json_success( array( 
+				'message' => 'API key cleared successfully',
+			) );
+		}
+
+		if ( empty( $api_key ) ) {
+			wp_send_json_error( array( 'message' => 'API key cannot be empty' ) );
+		}
+
+		// Save to WordPress options
+		update_option( 'jww_setlist_fm_api_key', $api_key );
+
+		// Also update ACF option for backward compatibility
+		if ( function_exists( 'update_field' ) ) {
+			update_field( 'setlist_fm_api_key', $api_key, 'option' );
+		} else {
+			update_option( 'options_setlist_fm_api_key', $api_key );
+		}
+
+		wp_send_json_success( array( 
+			'message' => 'API key saved successfully',
+			'key_preview' => substr( $api_key, 0, 8 ) . '...',
+		) );
 	}
 
 	/**
