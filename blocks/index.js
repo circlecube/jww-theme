@@ -16,3 +16,12 @@ import './band-list';
 
 // Import song-list block
 import './song-list';
+
+// Import show-list block
+import './show-list';
+
+// Import show-stats block
+import './show-stats';
+import './song-live-stats';
+import './tour-timeline';
+import './song-history-chart';

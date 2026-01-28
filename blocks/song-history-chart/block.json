@@ -1,0 +1,50 @@
+{
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "jww/song-history-chart",
+    "version": "1.0.0",
+    "title": "Song History Chart",
+    "category": "media",
+    "icon": "chart-area",
+    "description": "Display a chart showing when a song was played over time.",
+    "keywords": [
+        "song",
+        "history",
+        "chart",
+        "timeline",
+        "plays"
+    ],
+    "textdomain": "jww-theme",
+    "editorScript": "file:../../build/index.js",
+    "editorStyle": "file:../../build/index.css",
+    "style": "file:../../build/style-index.css",
+    "render": "file:./render.php",
+    "supports": {
+        "align": [
+            "wide",
+            "full"
+        ],
+        "spacing": {
+            "padding": true,
+            "margin": true
+        }
+    },
+    "attributes": {
+        "songId": {
+            "type": "number",
+            "default": 0
+        },
+        "limit": {
+            "type": "number",
+            "default": 50
+        },
+        "chartType": {
+            "type": "string",
+            "default": "list",
+            "enum": [
+                "list",
+                "timeline"
+            ]
+        }
+    }
+}

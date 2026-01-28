@@ -3,7 +3,7 @@
  * Class YouTube_Song_Importer
  *
  * Auto-imports videos from a YouTube channel RSS feed as 'song' posts.
- * Requires ACF and a custom field 'video' (type: URL or text).
+ * Uses the 'embeds' repeater field (with embed_type='youtube' and youtube_video sub-field).
  */
 
 class YouTube_Song_Importer {
@@ -186,8 +186,19 @@ class YouTube_Song_Importer {
                 continue;
             }
 
-            // Save video URL and description
-            update_field( 'video', $video_url, $post_id );
+            // Clean YouTube URL (remove ?feature=oembed parameter if present)
+            $video_url = $this->clean_youtube_url( $video_url );
+            
+            // Save video URL to new embeds repeater field
+            $embeds = array(
+                array(
+                    'embed_type' => 'youtube',
+                    'youtube_video' => $video_url,
+                ),
+            );
+            update_field( 'embeds', $embeds, $post_id );
+            
+            // Save description
             update_field( 'lyrics', $video_desc, $post_id );
             if ( $video_id ) {
                 update_post_meta( $post_id, 'video_id', $video_id );
@@ -265,7 +276,7 @@ class YouTube_Song_Importer {
             }
 
             $thumbnail_result = false;
-            $video_url = get_field( 'video', $post->ID );
+            $video_url = $this->get_youtube_video_url( $post->ID );
             $tiktok_url = get_field( 'tiktok_video', $post->ID );
 
             // Try YouTube first if available
@@ -372,23 +383,26 @@ class YouTube_Song_Importer {
             'fields'         => 'ids',
         ] );
 
-        // Check each post's video and music_video fields
+        // Check each post's embeds repeater field
         foreach ( $all_songs as $post_id ) {
-            // Check video field
-            $stored_video_url = get_field( 'video', $post_id );
-            if ( $stored_video_url && ! empty( trim( $stored_video_url ) ) ) {
-                $stored_video_id = $this->extract_video_id_from_url( $stored_video_url );
-                if ( $stored_video_id && $stored_video_id === $video_id ) {
-                    return $post_id;
-                }
-            }
-
-            // Check music_video field
-            $stored_music_video_url = get_field( 'music_video', $post_id );
-            if ( $stored_music_video_url && ! empty( trim( $stored_music_video_url ) ) ) {
-                $stored_music_video_id = $this->extract_video_id_from_url( $stored_music_video_url );
-                if ( $stored_music_video_id && $stored_music_video_id === $video_id ) {
-                    return $post_id;
+            $embeds = get_field( 'embeds', $post_id );
+            if ( $embeds && is_array( $embeds ) ) {
+                foreach ( $embeds as $embed ) {
+                    if ( isset( $embed['embed_type'] ) && $embed['embed_type'] === 'youtube' && ! empty( $embed['youtube_video'] ) ) {
+                        $stored_video_url = $embed['youtube_video'];
+                        // Handle ACF oembed field - can return array or string
+                        if ( is_array( $stored_video_url ) ) {
+                            $stored_video_url = $stored_video_url['url'] ?? $stored_video_url['html'] ?? '';
+                        }
+                        if ( $stored_video_url ) {
+                            // Clean YouTube URL (remove ?feature=oembed parameter)
+                            $stored_video_url = $this->clean_youtube_url( $stored_video_url );
+                            $stored_video_id = $this->extract_video_id_from_url( $stored_video_url );
+                            if ( $stored_video_id && $stored_video_id === $video_id ) {
+                                return $post_id;
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -435,19 +449,24 @@ class YouTube_Song_Importer {
         ] );
 
         foreach ( $all_songs as $post_id ) {
-            $stored_video_url = get_field( 'video', $post_id );
-            if ( $stored_video_url && ! empty( trim( $stored_video_url ) ) ) {
-                $stored_video_id = $this->extract_video_id_from_url( $stored_video_url );
-                if ( $stored_video_id && $stored_video_id === $video_id ) {
-                    return true;
-                }
-            }
-
-            $stored_music_video_url = get_field( 'music_video', $post_id );
-            if ( $stored_music_video_url && ! empty( trim( $stored_music_video_url ) ) ) {
-                $stored_music_video_id = $this->extract_video_id_from_url( $stored_music_video_url );
-                if ( $stored_music_video_id && $stored_music_video_id === $video_id ) {
-                    return true;
+            $embeds = get_field( 'embeds', $post_id );
+            if ( $embeds && is_array( $embeds ) ) {
+                foreach ( $embeds as $embed ) {
+                    if ( isset( $embed['embed_type'] ) && $embed['embed_type'] === 'youtube' && ! empty( $embed['youtube_video'] ) ) {
+                        $stored_video_url = $embed['youtube_video'];
+                        // Handle ACF oembed field - can return array or string
+                        if ( is_array( $stored_video_url ) ) {
+                            $stored_video_url = $stored_video_url['url'] ?? $stored_video_url['html'] ?? '';
+                        }
+                        if ( $stored_video_url ) {
+                            // Clean YouTube URL (remove ?feature=oembed parameter)
+                            $stored_video_url = $this->clean_youtube_url( $stored_video_url );
+                            $stored_video_id = $this->extract_video_id_from_url( $stored_video_url );
+                            if ( $stored_video_id && $stored_video_id === $video_id ) {
+                                return true;
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -488,6 +507,52 @@ class YouTube_Song_Importer {
         }
         
         return '';
+    }
+
+    /**
+     * Get YouTube video URL from a post (checks embeds repeater field)
+     *
+     * @param int $post_id Post ID
+     * @return string|false Video URL or false if not found
+     */
+    private function get_youtube_video_url( $post_id ) {
+        // Check embeds repeater field
+        $embeds = get_field( 'embeds', $post_id );
+        if ( $embeds && is_array( $embeds ) ) {
+            foreach ( $embeds as $embed ) {
+                if ( isset( $embed['embed_type'] ) && $embed['embed_type'] === 'youtube' && ! empty( $embed['youtube_video'] ) ) {
+                    $video_url = $embed['youtube_video'];
+                    // Handle ACF oembed field - can return array or string
+                    if ( is_array( $video_url ) ) {
+                        $video_url = $video_url['url'] ?? $video_url['html'] ?? '';
+                    }
+                    if ( $video_url ) {
+                        // Clean YouTube URL (remove ?feature=oembed parameter)
+                        return $this->clean_youtube_url( $video_url );
+                    }
+                }
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * Clean YouTube URL by removing unwanted parameters
+     *
+     * @param string $url YouTube URL
+     * @return string Cleaned URL
+     */
+    private function clean_youtube_url( $url ) {
+        if ( empty( $url ) ) {
+            return $url;
+        }
+        
+        // Remove ?feature=oembed and other unwanted parameters from YouTube URLs
+        $url = preg_replace( '/\?feature=oembed(&.*)?$/', '', $url );
+        $url = preg_replace( '/\?feature=oembed&/', '?', $url );
+        
+        return $url;
     }
 
     /**
@@ -1070,7 +1135,7 @@ class YouTube_Song_Importer {
 
             $updated = 0;
             foreach ( $posts as $post ) {
-                $video_url = get_field( 'video', $post->ID );
+                $video_url = $this->get_youtube_video_url( $post->ID );
                 if ( $video_url ) {
                     $video_id = $this->extract_video_id_from_url( $video_url );
                     if ( $video_id ) {
@@ -1156,7 +1221,7 @@ class YouTube_Song_Importer {
                         $this->log_import_activity( "Fixed featured image for post {$post->ID} using existing attachment {$attachment[0]->ID}" );
                     } else {
                         // No existing attachment, try to download new one
-                        $video_url = get_field( 'video', $post->ID );
+                        $video_url = $this->get_youtube_video_url( $post->ID );
                         if ( $video_url ) {
                             $this->set_featured_image_from_youtube( $post->ID, $video_url, $video_title );
                             $fixed++;
@@ -1336,7 +1401,7 @@ class YouTube_Song_Importer {
                 }
 
                 $thumbnail_result = false;
-                $video_url = get_field( 'video', $post->ID );
+                $video_url = $this->get_youtube_video_url( $post->ID );
                 $tiktok_url = get_field( 'tiktok_video', $post->ID );
 
                 // Try YouTube first if available
@@ -1866,7 +1931,7 @@ class YouTube_Song_Importer {
             }
 
             $thumbnail_result = false;
-            $video_url = get_field( 'video', $post->ID );
+            $video_url = $this->get_youtube_video_url( $post->ID );
             $tiktok_url = get_field( 'tiktok_video', $post->ID );
 
             // Try YouTube first if available
@@ -2079,8 +2144,19 @@ class YouTube_Song_Importer {
                 continue;
             }
 
-            // Save video URL and description
-            update_field( 'video', $video_url, $post_id );
+            // Clean YouTube URL (remove ?feature=oembed parameter if present)
+            $video_url = $this->clean_youtube_url( $video_url );
+            
+            // Save video URL to new embeds repeater field
+            $embeds = array(
+                array(
+                    'embed_type' => 'youtube',
+                    'youtube_video' => $video_url,
+                ),
+            );
+            update_field( 'embeds', $embeds, $post_id );
+            
+            // Save description
             update_field( 'lyrics', $video_desc, $post_id );
             if ( $video_id ) {
                 update_post_meta( $post_id, 'video_id', $video_id );

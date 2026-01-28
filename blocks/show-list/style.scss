@@ -1,0 +1,59 @@
+// Show List Block Styles
+
+.wp-block-jww-show-list {
+	.show-list-block {
+		display: flex;
+		flex-direction: column;
+		gap: var(--wp--preset--spacing--30);
+	}
+
+	.show-list-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+		gap: var(--wp--preset--spacing--30);
+	}
+
+	.show-list-item {
+		padding: var(--wp--preset--spacing--30);
+		border: 1px solid var(--wp--preset--color--contrast-2);
+		border-radius: 4px;
+		background: var(--wp--preset--color--base);
+
+		.show-date {
+			margin-bottom: var(--wp--preset--spacing--10);
+			
+			.show-upcoming-badge {
+				margin-left: var(--wp--preset--spacing--10);
+				padding: 2px 8px;
+				background: green;
+				color: white;
+				border-radius: 3px;
+				font-size: 0.8em;
+			}
+		}
+
+		.show-location {
+			margin-bottom: var(--wp--preset--spacing--10);
+			font-weight: 500;
+		}
+
+		.show-tour {
+			margin-bottom: var(--wp--preset--spacing--10);
+			color: var(--wp--preset--color--contrast-3);
+		}
+
+		.show-song-count {
+			margin-bottom: var(--wp--preset--spacing--10);
+			font-size: 0.9em;
+			color: var(--wp--preset--color--contrast-3);
+		}
+
+		.show-links {
+			margin-top: var(--wp--preset--spacing--20);
+			
+			a {
+				margin-right: var(--wp--preset--spacing--20);
+			}
+		}
+	}
+}

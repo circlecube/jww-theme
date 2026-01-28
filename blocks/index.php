@@ -21,4 +21,9 @@ require_once __DIR__ . '/day-counter/register.php';
 require_once __DIR__ . '/random-lyrics/register.php';
 require_once __DIR__ . '/band-list/register.php';
 require_once __DIR__ . '/song-list/register.php';
+require_once __DIR__ . '/show-list/register.php';
+require_once __DIR__ . '/show-stats/register.php';
+require_once __DIR__ . '/song-live-stats/register.php';
+require_once __DIR__ . '/tour-timeline/register.php';
+require_once __DIR__ . '/song-history-chart/register.php';
 

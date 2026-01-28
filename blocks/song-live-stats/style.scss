@@ -1,0 +1,259 @@
+.song-stats-grid-container {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+	gap: 1.5rem;
+	margin: 2rem 0;
+
+	.song-live-stats-block.stat-span-2 {
+		grid-column: span 2;
+	}
+
+	@media (min-width: 768px) {
+		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+		gap: 2rem;
+	}
+
+	@media (max-width: 767px) {
+		.song-live-stats-block.stat-span-2 {
+			grid-column: span 1;
+		}
+	}
+}
+
+.song-live-stats-block {
+	margin: 0;
+	padding: 0;
+	background-color: transparent;
+
+	h2 {
+		margin-top: 0;
+		margin-bottom: 1.5rem;
+		font-size: 1.75rem;
+		font-weight: 600;
+	}
+
+	.no-plays {
+		color: #666;
+		font-style: italic;
+		margin: 1rem 0;
+		padding: 1.5rem;
+		background-color: #f8f9fa;
+		border-radius: 8px;
+		border: 1px solid #e0e0e0;
+		text-align: center;
+	}
+
+	.stat-item {
+		background-color: #fff;
+		padding: 1.5rem 1.25rem;
+		border-radius: 12px;
+		border: 1px solid #e0e0e0;
+		text-align: center;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+		transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+		position: relative;
+		overflow: hidden;
+
+		&::before {
+			content: '';
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			height: 4px;
+			background: linear-gradient(90deg, #0066cc, #004499);
+			opacity: 0;
+			transition: opacity 0.2s;
+		}
+
+		&:hover {
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+			border-color: #0066cc;
+
+			&::before {
+				opacity: 1;
+			}
+		}
+
+		.stat-label {
+			font-size: 0.8rem;
+			color: #666;
+			text-transform: uppercase;
+			letter-spacing: 0.8px;
+			margin-bottom: 0.75rem;
+			font-weight: 500;
+		}
+
+		.stat-value {
+			font-size: 1.75rem;
+			font-weight: 700;
+			color: #333;
+			line-height: 1.2;
+			margin: 0;
+
+			a {
+				color: #0066cc;
+				text-decoration: none;
+				transition: color 0.2s;
+				display: inline-block;
+
+				&:hover {
+					color: #004499;
+					text-decoration: underline;
+				}
+			}
+		}
+
+		// Special styling for different stat types
+		&.stat-play-count {
+			.stat-value {
+				color: #0066cc;
+				font-size: 2rem;
+			}
+		}
+
+		&.stat-last-played,
+		&.stat-first-played {
+			.stat-value {
+				font-size: 1.25rem;
+				font-weight: 600;
+			}
+		}
+
+		&.stat-days-since {
+			.stat-value {
+				color: #666;
+				font-size: 1.5rem;
+			}
+		}
+	}
+
+	.stat-note {
+		margin-top: 0.75rem;
+		font-size: 0.9rem;
+		color: #666;
+		font-style: italic;
+
+		a {
+			color: #0066cc;
+			text-decoration: none;
+			transition: color 0.2s;
+
+			&:hover {
+				color: #004499;
+				text-decoration: underline;
+			}
+		}
+	}
+
+	.stat-item.stat-recent-shows {
+		text-align: left;
+
+		.stat-label {
+			margin-bottom: 1rem;
+			text-align: center;
+		}
+
+		.recent-shows-card {
+			background-color: transparent;
+			padding: 0;
+			border: none;
+			box-shadow: none;
+		}
+
+		.recent-shows-list {
+			list-style: none;
+			padding: 0;
+			margin: 0;
+			display: flex;
+			flex-direction: column;
+			gap: 0.75rem;
+
+			li {
+				padding: 0.75rem 0;
+				border-bottom: 1px solid #f0f0f0;
+				display: flex;
+				justify-content: space-between;
+				align-items: flex-start;
+				gap: 1rem;
+
+				&:last-child {
+					border-bottom: none;
+				}
+
+				>a {
+					color: #0066cc;
+					text-decoration: none;
+					font-weight: 500;
+					font-size: 0.95rem;
+					transition: color 0.2s;
+					flex: 1;
+					min-width: 200px;
+
+					&:hover {
+						color: #004499;
+						text-decoration: underline;
+					}
+				}
+
+				.show-meta {
+					display: flex;
+					flex-direction: column;
+					align-items: flex-end;
+					gap: 0.25rem;
+					text-align: right;
+					flex-shrink: 0;
+				}
+
+				.show-location,
+				.show-tour {
+					color: #666;
+					font-size: 0.85rem;
+					font-weight: normal;
+					white-space: nowrap;
+				}
+
+				.show-tour {
+					a {
+						color: #0066cc;
+						text-decoration: none;
+						transition: color 0.2s;
+
+						&:hover {
+							color: #004499;
+							text-decoration: underline;
+						}
+					}
+				}
+			}
+		}
+
+		.no-shows {
+			color: #666;
+			font-style: italic;
+			margin: 0;
+		}
+	}
+}
+
+// Responsive
+@media (max-width: 768px) {
+	.song-live-stats-block {
+		.stat-item {
+			padding: 1.25rem 1rem;
+
+			.stat-value {
+				font-size: 1.5rem;
+			}
+
+			&.stat-play-count .stat-value {
+				font-size: 1.75rem;
+			}
+
+			&.stat-last-played .stat-value,
+			&.stat-first-played .stat-value {
+				font-size: 1.1rem;
+			}
+		}
+	}
+}

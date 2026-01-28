@@ -1,0 +1,63 @@
+{
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "jww/show-stats",
+    "version": "1.0.0",
+    "title": "Show Statistics",
+    "category": "media",
+    "icon": "chart-line",
+    "description": "Display various statistics about shows and songs (play counts, venue stats, tour stats, gap analysis).",
+    "keywords": [
+        "show",
+        "statistics",
+        "stats",
+        "song",
+        "plays",
+        "venue",
+        "tour"
+    ],
+    "textdomain": "jww-theme",
+    "editorScript": "file:../../build/index.js",
+    "editorStyle": "file:../../build/index.css",
+    "style": "file:../../build/style-index.css",
+    "render": "file:./render.php",
+    "supports": {
+        "align": [
+            "wide",
+            "full"
+        ],
+        "spacing": {
+            "padding": true,
+            "margin": true
+        },
+        "typography": {
+            "fontSize": true,
+            "lineHeight": true
+        }
+    },
+    "attributes": {
+        "statType": {
+            "type": "string",
+            "default": "song_plays",
+            "enum": [
+                "song_plays",
+                "venue_stats",
+                "tour_stats",
+                "gap_analysis"
+            ]
+        },
+        "limit": {
+            "type": "number",
+            "default": 10
+        },
+        "sortBy": {
+            "type": "string",
+            "default": "count",
+            "enum": [
+                "count",
+                "name",
+                "date"
+            ]
+        }
+    }
+}

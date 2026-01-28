@@ -40,87 +40,136 @@ get_header();
 		<div class="wp-block-post-content alignwide">
 			<?php the_content(); ?>
 		</div>
-
-		<?php
-		// Bandcamp song and album id
-		$bandcamp_song_id  = get_field('bandcamp_song_id') ?? '';
-		$bandcamp_album_id = get_field('bandcamp_album_id') ?? '';
-		$bandcamp_iframe   = get_field('bandcamp_iframe') ?? ''; // default to iframe field
-		// override iframe with custom iframe if song and album are available
-		if ( $bandcamp_song_id && $bandcamp_album_id ) {
-			$bandcamp_iframe = '<iframe ' .
-				'style="border: 0; width: 100%; height: 120px;" ' .
-				'src="https://bandcamp.com/EmbeddedPlayer/' .
-				'/size=large/bgcol=ffffff/linkcol=0687f5/tracklist=false/artwork=small/transparent=true' .
-				'/album=' . $bandcamp_album_id . // album id is optional and adds track nav buttons
-				'/track=' . $bandcamp_song_id . // song id is required
-				'" seamless></iframe>';
-		}
-		?>
-		<?php if ( $bandcamp_iframe ): ?>
-			<div class="wp-block-group bandcamp-section">
-				<div class="bandcamp-container has-text-align-center">
-					<?php echo $bandcamp_iframe; ?>
-				</div>
-			</div>
-		<?php endif; ?>
 		
 		<?php
-		// Video fields
-		$yt_video_embed        = get_field('video');
-		$tiktok_video_embed    = get_field('tiktok_video');
-		$instagram_video_embed = get_field('instagram_video');
-		$music_video_embed     = get_field('music_video');
+		// Video fields - check new repeater field first, fallback to old fields
+		$embeds = get_field('embeds');
 		
-		if ( $yt_video_embed ): ?>
-			<div class="wp-block-group alignwide video-section">
-				<div class="video-container has-text-align-center">
-					<?php echo $yt_video_embed; ?>
+		if ( $embeds && is_array( $embeds ) && ! empty( $embeds ) ) {
+			// New repeater format - loop through ALL embeds
+			foreach ( $embeds as $video ) {
+				$source = $video['embed_type'] ?? 'youtube';
+				
+				// Get the appropriate field based on source
+				$embed = '';
+				$url = '';
+				$section_class = 'video-section alignwide';
+				$container_class = 'video-container';
+				
+				switch ( $source ) {
+					case 'youtube':
+						$embed_raw = $video['youtube_video'] ?? '';
+						// Handle ACF oembed field - can return HTML, array, or URL
+						if ( is_array( $embed_raw ) ) {
+							// If array, get HTML or URL
+							$embed = $embed_raw['html'] ?? $embed_raw['url'] ?? '';
+							$url = $embed_raw['url'] ?? '';
+						} else {
+							$embed = $embed_raw;
+							// Extract URL from embed HTML if needed
+							if ( $embed && preg_match( '/https?:\/\/[^\s<>"\']+/', $embed, $matches ) ) {
+								$url = $matches[0];
+							}
+						}
+						// Clean YouTube URL (remove ?feature=oembed parameter)
+						if ( $url ) {
+							$url = preg_replace( '/\?feature=oembed(&.*)?$/', '', $url );
+							$url = preg_replace( '/\?feature=oembed&/', '?', $url );
+						}
+						if ( $embed && is_string( $embed ) ) {
+							$embed = preg_replace( '/\?feature=oembed(&.*)?["\']/', '"', $embed );
+							$embed = preg_replace( '/\?feature=oembed&/', '?', $embed );
+						}
+						break;
+					case 'tiktok':
+						$embed_raw = $video['tiktok_video'] ?? '';
+						$section_class = 'tiktok-video-section alignwide';
+						$container_class = 'tiktok-video-container';
+						// Handle ACF oembed field
+						if ( is_array( $embed_raw ) ) {
+							$embed = $embed_raw['html'] ?? $embed_raw['url'] ?? '';
+							$url = $embed_raw['url'] ?? '';
+						} else {
+							$embed = $embed_raw;
+							if ( $embed && preg_match( '/https?:\/\/[^\s<>"\']+/', $embed, $matches ) ) {
+								$url = $matches[0];
+							}
+						}
+						break;
+					case 'instagram':
+						$embed_raw = $video['instagram_video'] ?? '';
+						$section_class = 'instagram-video-section alignwide';
+						$container_class = 'instagram-video-container';
+						// Handle ACF oembed field
+						if ( is_array( $embed_raw ) ) {
+							$embed = $embed_raw['html'] ?? '';
+							$url = $embed_raw['url'] ?? '';
+						} else {
+							$embed = $embed_raw;
+							// Extract URL for Instagram embed (needed for blockquote)
+							if ( $embed && preg_match( '/https?:\/\/[^\s<>"\']+/', $embed, $matches ) ) {
+								$url = $matches[0];
+							}
+						}
+						break;
+					case 'bandcamp':
+						$section_class = 'bandcamp-section';
+						$container_class = 'bandcamp-container';
+						// For bandcamp, construct iframe or use existing
+						$bandcamp_song_id = $video['bandcamp_song_id'] ?? '';
+						$bandcamp_album_id = $video['bandcamp_album_id'] ?? '';
+						$bandcamp_iframe = $video['bandcamp_iframe'] ?? '';
+						
+						if ( $bandcamp_song_id && $bandcamp_album_id ) {
+							$embed = '<iframe style="border: 0; width: 100%; height: 120px;" src="https://bandcamp.com/EmbeddedPlayer/size=large/bgcol=ffffff/linkcol=0687f5/tracklist=false/artwork=small/transparent=true/album=' . esc_attr( $bandcamp_album_id ) . '/track=' . esc_attr( $bandcamp_song_id ) . '" seamless></iframe>';
+						} elseif ( $bandcamp_iframe ) {
+							$embed = $bandcamp_iframe;
+						}
+						break;
+				}
+				
+				// Skip if no embed content
+				if ( empty( $embed ) ) {
+					continue;
+				}
+				
+				?>
+				<div class="wp-block-group <?php echo esc_attr( $section_class ); ?>">
+					<div class="<?php echo esc_attr( $container_class ); ?> has-text-align-center">
+						<?php
+						if ( $source === 'instagram' && $url ) {
+							// Instagram embed - use blockquote format
+							?>
+							<blockquote
+								class="instagram-media"
+								data-instgrm-permalink="<?php echo esc_url( $url ); ?>"
+								data-instgrm-version="14"
+								style="
+									background:#FFF;
+									border:0;
+									border-radius:3px;
+									box-shadow:0 0 1px 0 rgba(0,0,0,0.5),0 1px 10px 0 rgba(0,0,0,0.15);
+									margin: 1px;
+									max-width:540px;
+									min-width:326px;
+									padding:0;
+									width:calc(100% - 2px);
+								"
+							>
+							</blockquote>
+							<script async src="//www.instagram.com/embed.js"></script>
+							<?php
+						} else {
+							// YouTube, TikTok, Bandcamp - output embed HTML directly
+							// ACF oembed fields return the full embed HTML (iframe, etc.)
+							echo $embed;
+						}
+						?>
+					</div>
 				</div>
-			</div>
-		<?php endif; ?>
-		<?php if ( $tiktok_video_embed ): ?>
-			<div class="wp-block-group alignwide tiktok-video-section">
-				<div class="tiktok-video-container has-text-align-center">
-					<?php echo $tiktok_video_embed; ?>
-				</div>
-			</div>
-		<?php endif; ?>
-		<?php if ( $instagram_video_embed ): ?>
-			<div class="wp-block-group alignwide instagram-video-section">
-				<div class="instagram-video-container has-text-align-center">
-					<?php
-					// extract url from instagram_video_embed
-					$instagram_video_url = get_field( 'instagram_video', false, false );
-					?>
-					<blockquote
-						class="instagram-media"
-						data-instgrm-permalink="<?php echo $instagram_video_url; ?>"
-						data-instgrm-version="14"
-						style="
-							background:#FFF;
-							border:0;
-							border-radius:3px;
-							box-shadow:0 0 1px 0 rgba(0,0,0,0.5),0 1px 10px 0 rgba(0,0,0,0.15);
-							margin: 1px;
-							max-width:540px;
-							min-width:326px;
-							padding:0;
-							width:calc(100% - 2px);
-						"
-					>
-					</blockquote>
-					<script async src="//www.instagram.com/embed.js"></script>
-				</div>
-			</div>
-		<?php endif; ?>
-		<?php if ( $music_video_embed ): ?>
-			<div class="wp-block-group alignwide video-section music-video-section">
-				<div class="video-container has-text-align-center">
-					<?php echo $music_video_embed; ?>
-				</div>
-			</div>
-		<?php endif; ?>
+				<?php
+			}
+		} ?>
 		
 		<?php
 		// Get song and artist info for music service links
@@ -170,7 +219,7 @@ get_header();
 
 <!-- Appears on Section -->
 <div class="wp-block-group is-style-default has-base-background-color has-background is-layout-constrained has-global-padding" style="margin-top:0;margin-bottom:0">
-	
+
 	<div class="wp-block-post-content">
 		<?php
 			// Get the album field and pass it to the template part
@@ -181,6 +230,43 @@ get_header();
 			}
 		?>
 	</div>
+	
+	<?php 
+		// only for Jesse Welles songs
+		if ( $artist_name === 'Jesse Welles' ) {
+	?>
+	<h3 class="wp-block-heading"><strong>Live Performances</strong></h3>
+	<?php
+		// Display song live statistics blocks (one for each stat type) in a grid
+		$stat_types = array(
+			'play_count' => 'Total Times Played',
+			'last_played' => 'Last Played',
+			'first_played' => 'First Played',
+			'days_since' => 'Days Since Last Played',
+			'recent_shows' => 'Recent Shows',
+		);
+		
+		echo '<div class="song-stats-grid-container">';
+		foreach ( $stat_types as $stat_type => $stat_label ) {
+			$block_attributes = array(
+				'statType' => $stat_type,
+				'songId' => get_the_ID(),
+				'recentShowsLimit' => 10,
+			);
+			$block_content = render_block( array(
+				'blockName' => 'jww/song-live-stats',
+				'attrs'     => $block_attributes,
+			) );
+			if ( $block_content ) {
+				echo $block_content;
+			}
+		}
+		echo '</div>';
+	?>
+	<?php
+		// endif; for Jesse Welles songs only
+		}
+	?>
 </div>
 
 <!-- Navigation -->

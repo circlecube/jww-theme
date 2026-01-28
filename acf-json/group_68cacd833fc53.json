@@ -3,6 +3,233 @@
     "title": "Song Main Data",
     "fields": [
         {
+            "key": "field_69793c62e6f9d",
+            "label": "Embeds",
+            "name": "embeds",
+            "aria-label": "",
+            "type": "repeater",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "layout": "block",
+            "pagination": 0,
+            "min": 0,
+            "max": 0,
+            "collapsed": "",
+            "button_label": "Add Row",
+            "rows_per_page": 20,
+            "sub_fields": [
+                {
+                    "key": "field_69793c79e6f9e",
+                    "label": "Embed type",
+                    "name": "embed_type",
+                    "aria-label": "",
+                    "type": "select",
+                    "instructions": "",
+                    "required": 0,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "choices": {
+                        "youtube": "YouTube",
+                        "instagram": "Instagram",
+                        "tiktok": "TikTok",
+                        "bandcamp": "Bandcamp"
+                    },
+                    "default_value": "youtube",
+                    "return_format": "value",
+                    "multiple": 0,
+                    "allow_null": 0,
+                    "allow_in_bindings": 0,
+                    "ui": 0,
+                    "ajax": 0,
+                    "placeholder": "",
+                    "create_options": 0,
+                    "save_options": 0,
+                    "parent_repeater": "field_69793c62e6f9d"
+                },
+                {
+                    "key": "field_69793cb5e6f9f",
+                    "label": "Youtube video",
+                    "name": "youtube_video",
+                    "aria-label": "",
+                    "type": "oembed",
+                    "instructions": "",
+                    "required": 0,
+                    "conditional_logic": [
+                        [
+                            {
+                                "field": "field_69793c79e6f9e",
+                                "operator": "==",
+                                "value": "youtube"
+                            }
+                        ]
+                    ],
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "width": "",
+                    "height": "",
+                    "allow_in_bindings": 0,
+                    "parent_repeater": "field_69793c62e6f9d"
+                },
+                {
+                    "key": "field_69793cf8e6fa0",
+                    "label": "Instagram video",
+                    "name": "instagram_video",
+                    "aria-label": "",
+                    "type": "oembed",
+                    "instructions": "",
+                    "required": 0,
+                    "conditional_logic": [
+                        [
+                            {
+                                "field": "field_69793c79e6f9e",
+                                "operator": "==",
+                                "value": "instagram"
+                            }
+                        ]
+                    ],
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "width": "",
+                    "height": "",
+                    "allow_in_bindings": 0,
+                    "parent_repeater": "field_69793c62e6f9d"
+                },
+                {
+                    "key": "field_69793d30e6fa1",
+                    "label": "Tiktok video",
+                    "name": "tiktok_video",
+                    "aria-label": "",
+                    "type": "oembed",
+                    "instructions": "",
+                    "required": 0,
+                    "conditional_logic": [
+                        [
+                            {
+                                "field": "field_69793c79e6f9e",
+                                "operator": "==",
+                                "value": "tiktok"
+                            }
+                        ]
+                    ],
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "width": "",
+                    "height": "",
+                    "allow_in_bindings": 0,
+                    "parent_repeater": "field_69793c62e6f9d"
+                },
+                {
+                    "key": "field_69793d51e6fa2",
+                    "label": "Bandcamp iframe",
+                    "name": "bandcamp_iframe",
+                    "aria-label": "",
+                    "type": "textarea",
+                    "instructions": "",
+                    "required": 0,
+                    "conditional_logic": [
+                        [
+                            {
+                                "field": "field_69793c79e6f9e",
+                                "operator": "==",
+                                "value": "bandcamp"
+                            }
+                        ]
+                    ],
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "default_value": "",
+                    "maxlength": "",
+                    "allow_in_bindings": 0,
+                    "rows": "",
+                    "placeholder": "",
+                    "new_lines": "",
+                    "parent_repeater": "field_69793c62e6f9d"
+                },
+                {
+                    "key": "field_69793d7ae6fa3",
+                    "label": "Bandcamp album id",
+                    "name": "bandcamp_album_id",
+                    "aria-label": "",
+                    "type": "text",
+                    "instructions": "",
+                    "required": 0,
+                    "conditional_logic": [
+                        [
+                            {
+                                "field": "field_69793c79e6f9e",
+                                "operator": "==",
+                                "value": "bandcamp"
+                            }
+                        ]
+                    ],
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "default_value": "",
+                    "maxlength": "",
+                    "allow_in_bindings": 0,
+                    "placeholder": "",
+                    "prepend": "",
+                    "append": "",
+                    "parent_repeater": "field_69793c62e6f9d"
+                },
+                {
+                    "key": "field_69793da2e6fa4",
+                    "label": "Bandcamp song id",
+                    "name": "bandcamp_song_id",
+                    "aria-label": "",
+                    "type": "text",
+                    "instructions": "",
+                    "required": 0,
+                    "conditional_logic": [
+                        [
+                            {
+                                "field": "field_69793c79e6f9e",
+                                "operator": "==",
+                                "value": "bandcamp"
+                            }
+                        ]
+                    ],
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "default_value": "",
+                    "maxlength": "",
+                    "allow_in_bindings": 0,
+                    "placeholder": "",
+                    "prepend": "",
+                    "append": "",
+                    "parent_repeater": "field_69793c62e6f9d"
+                }
+            ]
+        },
+        {
             "key": "field_68cacd83ebd2c",
             "label": "Lyrics",
             "name": "lyrics",
@@ -43,141 +270,6 @@
             "toolbar": "full",
             "media_upload": 1,
             "delay": 0
-        },
-        {
-            "key": "field_68cb1e19f3fe2",
-            "label": "YouTube Video",
-            "name": "video",
-            "aria-label": "",
-            "type": "oembed",
-            "instructions": "",
-            "required": 0,
-            "conditional_logic": 0,
-            "wrapper": {
-                "width": "",
-                "class": "",
-                "id": ""
-            },
-            "width": "",
-            "height": "",
-            "allow_in_bindings": 0
-        },
-        {
-            "key": "field_68ee7c26f2346",
-            "label": "Tiktok Video",
-            "name": "tiktok_video",
-            "aria-label": "",
-            "type": "oembed",
-            "instructions": "",
-            "required": 0,
-            "conditional_logic": 0,
-            "wrapper": {
-                "width": "",
-                "class": "",
-                "id": ""
-            },
-            "width": "",
-            "height": "",
-            "allow_in_bindings": 0
-        },
-        {
-            "key": "field_68ee7c37f2347",
-            "label": "Instagram Video",
-            "name": "instagram_video",
-            "aria-label": "",
-            "type": "oembed",
-            "instructions": "",
-            "required": 0,
-            "conditional_logic": 0,
-            "wrapper": {
-                "width": "",
-                "class": "",
-                "id": ""
-            },
-            "width": "",
-            "height": "",
-            "allow_in_bindings": 0
-        },
-        {
-            "key": "field_68cace34ebd2f",
-            "label": "Music Video",
-            "name": "music_video",
-            "aria-label": "",
-            "type": "oembed",
-            "instructions": "",
-            "required": 0,
-            "conditional_logic": 0,
-            "wrapper": {
-                "width": "",
-                "class": "",
-                "id": ""
-            },
-            "width": "",
-            "height": "",
-            "allow_in_bindings": 1
-        },
-        {
-            "key": "field_691394d9330fe",
-            "label": "Bandcamp Iframe",
-            "name": "bandcamp_iframe",
-            "aria-label": "",
-            "type": "textarea",
-            "instructions": "",
-            "required": 0,
-            "conditional_logic": 0,
-            "wrapper": {
-                "width": "",
-                "class": "",
-                "id": ""
-            },
-            "default_value": "",
-            "maxlength": "",
-            "allow_in_bindings": 0,
-            "rows": 3,
-            "placeholder": "",
-            "new_lines": ""
-        },
-        {
-            "key": "field_6913967474707",
-            "label": "Bandcamp Album Id",
-            "name": "bandcamp_album_id",
-            "aria-label": "",
-            "type": "text",
-            "instructions": "",
-            "required": 0,
-            "conditional_logic": 0,
-            "wrapper": {
-                "width": "50",
-                "class": "",
-                "id": ""
-            },
-            "default_value": "",
-            "maxlength": "",
-            "allow_in_bindings": 0,
-            "placeholder": "",
-            "prepend": "",
-            "append": ""
-        },
-        {
-            "key": "field_691396e574708",
-            "label": "Bandcamp Song Id",
-            "name": "bandcamp_song_id",
-            "aria-label": "",
-            "type": "text",
-            "instructions": "",
-            "required": 0,
-            "conditional_logic": 0,
-            "wrapper": {
-                "width": "50",
-                "class": "",
-                "id": ""
-            },
-            "default_value": "",
-            "maxlength": "",
-            "allow_in_bindings": 0,
-            "placeholder": "",
-            "prepend": "",
-            "append": ""
         },
         {
             "key": "field_691de796e037d",
@@ -282,5 +374,5 @@
     "description": "",
     "show_in_rest": 0,
     "display_title": "",
-    "modified": 1763567745
+    "modified": 1769625084
 }

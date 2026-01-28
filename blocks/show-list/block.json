@@ -1,0 +1,80 @@
+{
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "jww/show-list",
+    "version": "1.0.0",
+    "title": "Show List",
+    "category": "media",
+    "icon": "calendar-alt",
+    "description": "Display shows with filtering options (all, upcoming, past) and sorting by date.",
+    "keywords": [
+        "show",
+        "shows",
+        "concert",
+        "tour",
+        "setlist",
+        "live"
+    ],
+    "textdomain": "jww-theme",
+    "editorScript": "file:../../build/index.js",
+    "editorStyle": "file:../../build/index.css",
+    "style": "file:../../build/style-index.css",
+    "render": "file:./render.php",
+    "supports": {
+        "align": [
+            "wide",
+            "full"
+        ],
+        "spacing": {
+            "padding": true,
+            "margin": true
+        },
+        "typography": {
+            "fontSize": true,
+            "lineHeight": true
+        }
+    },
+    "attributes": {
+        "filterType": {
+            "type": "string",
+            "default": "all",
+            "enum": [
+                "all",
+                "upcoming",
+                "past"
+            ]
+        },
+        "tourId": {
+            "type": "string",
+            "default": ""
+        },
+        "locationId": {
+            "type": "string",
+            "default": ""
+        },
+        "showCount": {
+            "type": "number",
+            "default": 10
+        },
+        "showSetlist": {
+            "type": "boolean",
+            "default": false
+        },
+        "showVenue": {
+            "type": "boolean",
+            "default": true
+        },
+        "showDate": {
+            "type": "boolean",
+            "default": true
+        },
+        "layout": {
+            "type": "string",
+            "default": "list",
+            "enum": [
+                "list",
+                "grid"
+            ]
+        }
+    }
+}

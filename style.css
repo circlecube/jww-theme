@@ -7,7 +7,7 @@ Description: Child theme for the Twenty Twenty-Five block theme.
 Requires at least: 6.8
 Tested up to: 6.9
 Requires PHP: 8.0
-Version: 2.2.5
+Version: 3.0.0
 License: GNU General Public License v2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Template: twentytwentyfive
@@ -1298,7 +1298,575 @@ header .wp-block-site-title a[rel="home"] {
   color: var(--wp--preset--color--base);
 }
 
+/* Setlist numbering - only number songs, not notes */
+.setlist-list {
+  counter-reset: setlist-counter;
+  list-style: none;
+  padding-left: 0;
+}
+
+.setlist-list .setlist-song {
+  counter-increment: setlist-counter;
+  position: relative;
+  padding-left: 2em;
+}
+
+.setlist-list .setlist-song::before {
+  content: counter(setlist-counter) ".";
+  position: absolute;
+  left: 0;
+  font-weight: 500;
+}
+
+.setlist-list .setlist-note {
+  list-style: none;
+  padding-left: 0;
+  margin-left: 0;
+}
+
+.setlist-list .setlist-original-artist {
+  color: #666;
+  font-size: 0.9em;
+  font-style: italic;
+  margin-left: 0.5rem;
+}
+
+.setlist-list .setlist-notes {
+  color: #666;
+  font-size: 0.85em;
+  font-style: italic;
+  margin-left: 0.5rem;
+  display: block;
+  margin-top: 0.25rem;
+}
+
 .filter-section.filter-checkbox .filter-label {
   margin: 0;
   cursor: pointer;
+}
+
+/* Statistics Dashboard Styles */
+.stats-dashboard {
+  padding: 2rem 0;
+}
+
+.stats-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.stats-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.stats-header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.stats-subtitle {
+  font-size: 1.1rem;
+  color: #666;
+}
+
+.stats-section {
+  margin-bottom: 4rem;
+}
+
+.stats-section h2 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 2px solid #ddd;
+  padding-bottom: 0.5rem;
+}
+
+.section-description {
+  color: #666;
+  margin-bottom: 1.5rem;
+  font-style: italic;
+}
+
+/* Overall Statistics Grid */
+.overall-stats .stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.stat-card {
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.stat-value {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Stats Lists */
+.stats-list {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.song-play-list,
+.gap-analysis-list,
+.venue-stats-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.song-play-list li,
+.gap-analysis-list li,
+.venue-stats-list li {
+  padding: 1rem;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.song-play-list li:last-child,
+.gap-analysis-list li:last-child,
+.venue-stats-list li:last-child {
+  border-bottom: none;
+}
+
+.song-play-list .rank {
+  font-weight: bold;
+  color: #666;
+  min-width: 2em;
+}
+
+.song-play-list .song-title,
+.gap-analysis-list .song-title {
+  font-weight: 600;
+  font-size: 1.1rem;
+  flex: 1;
+  min-width: 200px;
+}
+
+.song-play-list a,
+.gap-analysis-list a,
+.venue-stats-list a {
+  text-decoration: none;
+  color: #0066cc;
+  transition: color 0.2s;
+}
+
+.song-play-list a:hover,
+.gap-analysis-list a:hover,
+.venue-stats-list a:hover {
+  color: #004499;
+  text-decoration: underline;
+}
+
+.play-count,
+.show-count,
+.song-count,
+.gap-time {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.last-played {
+  color: #999;
+  font-size: 0.85rem;
+  font-style: italic;
+  margin-left: auto;
+}
+
+/* Never Played List */
+.never-played-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 0.75rem;
+}
+
+.never-played-list li {
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+}
+
+.never-played-list a {
+  text-decoration: none;
+  color: #333;
+  transition: color 0.2s;
+}
+
+.never-played-list a:hover {
+  color: #0066cc;
+  text-decoration: underline;
+}
+
+/* Tour Statistics Grid */
+.tour-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-top: 1.5rem;
+}
+
+.tour-stat-card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.tour-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.tour-stat-card h3 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 0.5rem;
+}
+
+.tour-stat-card h3 a {
+  text-decoration: none;
+  color: #333;
+}
+
+.tour-stat-card h3 a:hover {
+  color: #0066cc;
+}
+
+.tour-stats-details {
+  margin-bottom: 1rem;
+}
+
+.tour-stat-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.tour-stat-item:last-child {
+  border-bottom: none;
+}
+
+.tour-stat-item .stat-label {
+  color: #666;
+}
+
+.tour-stat-item .stat-value {
+  font-weight: 600;
+  color: #333;
+}
+
+.tour-most-played {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.tour-most-played h4 {
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+  color: #666;
+}
+
+.tour-most-played ol {
+  list-style: decimal;
+  padding-left: 1.5rem;
+  margin: 0;
+}
+
+.tour-most-played li {
+  padding: 0.25rem 0;
+}
+
+.tour-most-played a {
+  text-decoration: none;
+  color: #0066cc;
+}
+
+.tour-most-played a:hover {
+  text-decoration: underline;
+}
+
+.venue-stats-list .venue-name {
+  font-weight: 600;
+  font-size: 1.1rem;
+  flex: 1;
+  min-width: 200px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .stats-header h1 {
+    font-size: 2rem;
+  }
+
+  .overall-stats .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+  }
+
+  .stat-value {
+    font-size: 2rem;
+  }
+
+  .tour-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .never-played-list {
+    grid-template-columns: 1fr;
+  }
+
+  .song-play-list li,
+  .gap-analysis-list li,
+  .venue-stats-list li {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .last-played {
+    margin-left: 0;
+  }
+}
+
+/* Song Live Stats Grid Container */
+.song-stats-grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.song-stats-grid-container .song-live-stats-block.stat-span-2 {
+  grid-column: span 2;
+}
+
+@media (min-width: 768px) {
+  .song-stats-grid-container {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .song-stats-grid-container .song-live-stats-block.stat-span-2 {
+    grid-column: span 1;
+  }
+}
+
+/* Show Archive Table Styles */
+.shows-table-wrapper {
+  overflow-x: auto;
+  margin-bottom: 2rem;
+}
+
+.shows-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.shows-table thead {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.shows-table th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #495057;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.shows-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  transition: background-color 0.2s;
+}
+
+.shows-table th.sortable:hover {
+  background-color: #e9ecef;
+}
+
+.shows-table th.sortable .sort-indicator {
+  display: inline-block;
+  margin-left: 0.25rem;
+  color: #6c757d;
+  font-weight: normal;
+}
+
+.shows-table tbody tr {
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.2s;
+}
+
+.shows-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.shows-table tbody td {
+  padding: 0.75rem 1rem;
+  vertical-align: middle;
+}
+
+.shows-table tbody td a {
+  color: #0066cc;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.shows-table tbody td a:hover {
+  color: #004499;
+  text-decoration: underline;
+}
+
+.shows-table .empty-cell {
+  color: #999;
+  font-style: italic;
+}
+
+.shows-table .ticket-link {
+  display: inline-block;
+  padding: 0.375rem 0.75rem;
+  background-color: #0066cc;
+  color: #fff !important;
+  border-radius: 4px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.shows-table .ticket-link:hover {
+  background-color: #004499;
+  text-decoration: none;
+}
+
+.show-stats .stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.show-stats .stat-item {
+  text-align: center;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.show-stats .stat-item strong {
+  display: block;
+  font-size: 2rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.show-stats .stat-item div {
+  font-size: 0.9rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.show-filters .filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.show-filters .filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.show-filters .filter-group label {
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #495057;
+}
+
+.show-filters .filter-group select {
+  padding: 0.5rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  background-color: #fff;
+}
+
+.show-filters .filter-group select:focus {
+  outline: none;
+  border-color: #0066cc;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.25);
+}
+
+/* Responsive table styles */
+@media (max-width: 768px) {
+  .shows-table-wrapper {
+    overflow-x: scroll;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .shows-table {
+    min-width: 600px;
+  }
+
+  .show-stats .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .show-filters .filter-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .show-filters .filter-group {
+    width: 100%;
+  }
 }

@@ -1,0 +1,300 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Setlist.fm API Format - Show Import Schema",
+  "description": "Schema for importing show data from setlist.fm API format. Based on https://api.setlist.fm/docs/1.0/json_Setlist.html",
+  "type": "object",
+  "required": ["artist", "venue", "eventDate"],
+  "properties": {
+    "artist": {
+      "type": "object",
+      "description": "Artist/band information",
+      "properties": {
+        "mbid": {
+          "type": "string",
+          "description": "MusicBrainz ID"
+        },
+        "name": {
+          "type": "string",
+          "description": "Artist name",
+          "example": "Jesse Welles"
+        },
+        "sortName": {
+          "type": "string",
+          "description": "Sort name",
+          "example": "Welles, Jesse"
+        },
+        "disambiguation": {
+          "type": "string",
+          "description": "Disambiguation text"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "setlist.fm artist URL"
+        }
+      }
+    },
+    "venue": {
+      "type": "object",
+      "description": "Venue information",
+      "required": ["name"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "setlist.fm venue ID"
+        },
+        "name": {
+          "type": "string",
+          "description": "Venue name",
+          "example": "The Factory Theatre"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "setlist.fm venue URL"
+        },
+        "address": {
+          "type": "string",
+          "description": "Venue address"
+        },
+        "city": {
+          "type": "object",
+          "description": "City information",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "setlist.fm city ID"
+            },
+            "name": {
+              "type": "string",
+              "description": "City name",
+              "example": "Sydney"
+            },
+            "stateCode": {
+              "type": "string",
+              "description": "State/province code",
+              "example": "NSW"
+            },
+            "state": {
+              "type": "string",
+              "description": "State/province name",
+              "example": "New South Wales"
+            },
+            "coords": {
+              "type": "object",
+              "description": "Coordinates",
+              "properties": {
+                "lat": {
+                  "type": "number",
+                  "description": "Latitude"
+                },
+                "long": {
+                  "type": "number",
+                  "description": "Longitude"
+                }
+              }
+            },
+            "country": {
+              "type": "object",
+              "description": "Country information",
+              "properties": {
+                "code": {
+                  "type": "string",
+                  "description": "ISO country code",
+                  "example": "AU"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Country name",
+                  "example": "Australia"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "tour": {
+      "type": "object",
+      "description": "Tour information",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Tour name",
+          "example": "Down Under the Powerlines Tour"
+        }
+      }
+    },
+    "sets": {
+      "type": "object",
+      "description": "Setlist information",
+      "properties": {
+        "set": {
+          "type": "array",
+          "description": "Array of sets (main set, encore, etc.)",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Set name (e.g., 'Encore')"
+              },
+              "encore": {
+                "type": "integer",
+                "description": "Encore number (0 for main set, 1+ for encores)"
+              },
+              "song": {
+                "type": "array",
+                "description": "Array of songs in the set",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "Song name",
+                      "example": "Join Ice"
+                    },
+                    "with": {
+                      "type": "object",
+                      "description": "Guest artist information"
+                    },
+                    "cover": {
+                      "type": "object",
+                      "description": "Cover song information",
+                      "properties": {
+                        "mbid": {
+                          "type": "string",
+                          "description": "Original artist MusicBrainz ID"
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "Original artist name",
+                          "example": "Nirvana"
+                        }
+                      }
+                    },
+                    "info": {
+                      "type": "string",
+                      "description": "Additional song information/notes",
+                      "example": "Solo acoustic"
+                    },
+                    "tape": {
+                      "type": "boolean",
+                      "description": "Whether the song was taped"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "info": {
+      "type": "string",
+      "description": "Additional show information/notes"
+    },
+    "url": {
+      "type": "string",
+      "format": "uri",
+      "description": "setlist.fm show URL"
+    },
+    "id": {
+      "type": "string",
+      "description": "setlist.fm setlist ID"
+    },
+    "versionId": {
+      "type": "string",
+      "description": "Version ID"
+    },
+    "eventDate": {
+      "type": "string",
+      "description": "Event date in DD-MM-YYYY format",
+      "pattern": "^\\d{2}-\\d{2}-\\d{4}$",
+      "example": "25-01-2026"
+    },
+    "lastUpdated": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last update timestamp"
+    }
+  },
+  "mapping": {
+    "description": "Mapping from setlist.fm API format to WordPress structure",
+    "mappings": {
+      "eventDate": "Show date field (post_date)",
+      "venue": "Location taxonomy (hierarchical: Country > City > Venue)",
+      "tour.name": "Tour taxonomy",
+      "sets.set[].song[]": "Setlist repeater field",
+      "song[].name": "Song relationship (if matched) or song_text field",
+      "song[].cover": "is_cover and cover_artist fields (stored in notes)",
+      "song[].info": "Notes field",
+      "set[].name": "Note-only entry (e.g., 'Encore')",
+      "info": "Show notes field"
+    }
+  },
+  "example": {
+    "artist": {
+      "mbid": "",
+      "name": "Jesse Welles",
+      "sortName": "Welles, Jesse",
+      "disambiguation": "",
+      "url": "https://www.setlist.fm/setlists/jesse-welles-63cec667.html"
+    },
+    "venue": {
+      "city": {
+        "id": "",
+        "name": "Sydney",
+        "stateCode": "NSW",
+        "state": "New South Wales",
+        "coords": {
+          "lat": -33.8688,
+          "long": 151.2093
+        },
+        "country": {
+          "code": "AU",
+          "name": "Australia"
+        }
+      },
+      "url": "https://www.setlist.fm/venue/the-factory-theatre-sydney-australia-3341fcd1.html",
+      "id": "3341fcd1",
+      "name": "The Factory Theatre"
+    },
+    "tour": {
+      "name": "Down Under the Powerlines Tour"
+    },
+    "sets": {
+      "set": [
+        {
+          "name": "",
+          "encore": 0,
+          "song": [
+            {
+              "name": "Join Ice",
+              "with": {},
+              "cover": {},
+              "info": "",
+              "tape": false
+            },
+            {
+              "name": "Heart-Shaped Box",
+              "with": {},
+              "cover": {
+                "mbid": "b10bbbfc-cf9e-42e0-be17-e2c3e1d2600d",
+                "name": "Nirvana"
+              },
+              "info": "",
+              "tape": false
+            }
+          ]
+        }
+      ]
+    },
+    "info": "Additional show information",
+    "url": "https://www.setlist.fm/setlist/jesse-welles/2026/the-factory-theatre-sydney-australia-3341fcd1.html",
+    "id": "3341fcd1",
+    "versionId": "7be1aaa0",
+    "eventDate": "25-01-2026",
+    "lastUpdated": "2026-01-27T14:43:00.000+0000"
+  }
+}

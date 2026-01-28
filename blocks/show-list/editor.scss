@@ -1,0 +1,18 @@
+// Show List Block Editor Styles
+
+.wp-block-jww-show-list {
+	.show-list-preview {
+		background: #f9f9f9;
+		border: 1px dashed #ccc;
+		margin: 10px 0;
+		padding: 20px;
+	}
+
+	.preview-info {
+		margin-bottom: 15px;
+		
+		p {
+			margin: 5px 0;
+		}
+	}
+}

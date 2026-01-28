@@ -1,0 +1,47 @@
+{
+    "key": "group_setlist_importer_options",
+    "title": "Setlist.fm Import Settings",
+    "fields": [
+        {
+            "key": "field_setlist_fm_api_key",
+            "label": "setlist.fm API Key",
+            "name": "setlist_fm_api_key",
+            "aria-label": "",
+            "type": "text",
+            "instructions": "Get your API key from https:\/\/api.setlist.fm\/docs\/1.0\/index.html. Leave empty to use JSON file import only.",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "maxlength": "",
+            "allow_in_bindings": 0,
+            "placeholder": "Enter your setlist.fm API key",
+            "prepend": "",
+            "append": ""
+        }
+    ],
+    "location": [
+        [
+            {
+                "param": "options_page",
+                "operator": "==",
+                "value": "youtube-import-settings"
+            }
+        ]
+    ],
+    "menu_order": 0,
+    "position": "normal",
+    "style": "default",
+    "label_placement": "top",
+    "instruction_placement": "label",
+    "hide_on_screen": "",
+    "active": true,
+    "description": "",
+    "show_in_rest": 0,
+    "display_title": "",
+    "modified": 1738022400
+}

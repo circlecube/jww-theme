@@ -1,0 +1,56 @@
+.show-stats-block {
+	margin: 2rem 0;
+
+	h3 {
+		margin-bottom: 1rem;
+		font-size: 1.5rem;
+	}
+
+	ul {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+
+		li {
+			padding: 0.75rem 0;
+			border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+
+			&:last-child {
+				border-bottom: none;
+			}
+
+			a {
+				font-weight: 600;
+				text-decoration: none;
+
+				&:hover {
+					text-decoration: underline;
+				}
+			}
+
+			.play-count,
+			.show-count,
+			.song-count,
+			.gap-time,
+			.last-played {
+				color: #666;
+				font-size: 0.9em;
+				margin-left: 0.5rem;
+			}
+
+			.last-played {
+				font-style: italic;
+			}
+		}
+	}
+
+	&.show-stats-song_plays,
+	&.show-stats-gap_analysis {
+		ul li {
+			display: flex;
+			flex-wrap: wrap;
+			align-items: baseline;
+			gap: 0.5rem;
+		}
+	}
+}
