@@ -308,7 +308,15 @@ class Show_Importer {
 		
 		// Clear statistics cache when show is imported
 		if ( ! is_wp_error( $result ) ) {
-			delete_transient( 'jww_all_time_song_stats' );
+			if ( function_exists( 'jww_clear_song_stats_caches' ) ) {
+				jww_clear_song_stats_caches();
+			} else {
+				if ( function_exists( 'jww_clear_song_stats_caches' ) ) {
+				jww_clear_song_stats_caches();
+			} else {
+				delete_transient( 'jww_all_time_song_stats' );
+			}
+			}
 		}
 
 		if ( is_wp_error( $result ) ) {
@@ -440,7 +448,11 @@ class Show_Importer {
 
 		// Clear statistics cache when shows are imported
 		if ( $results['imported'] > 0 || $results['updated'] > 0 ) {
-			delete_transient( 'jww_all_time_song_stats' );
+			if ( function_exists( 'jww_clear_song_stats_caches' ) ) {
+				jww_clear_song_stats_caches();
+			} else {
+				delete_transient( 'jww_all_time_song_stats' );
+			}
 		}
 
 		// Build summary message

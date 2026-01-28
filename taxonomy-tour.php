@@ -236,13 +236,21 @@ function jww_count_setlist_songs( $setlist ) {
 					</tr>
 				</thead>
 				<tbody>
-					<?php foreach ( $upcoming_shows as $show ): 
+					<?php 
+					// Prime meta cache for all shows at once
+					$upcoming_show_ids = wp_list_pluck( $upcoming_shows, 'ID' );
+					update_post_meta_cache( $upcoming_show_ids );
+					
+					foreach ( $upcoming_shows as $show ): 
 						$show_title = get_the_title( $show->ID );
 						$show_date = get_the_date( 'M j, Y', $show->ID );
 						$show_date_raw = get_the_date( 'Y-m-d', $show->ID );
 						$show_link = get_permalink( $show->ID );
-						$location_id = get_field( 'show_location', $show->ID );
-						$ticket_link = get_field( 'ticket_link', $show->ID );
+						
+						// Use get_fields() to get all ACF fields at once (more efficient)
+						$fields = get_fields( $show->ID );
+						$location_id = isset( $fields['show_location'] ) ? $fields['show_location'] : 0;
+						$ticket_link = isset( $fields['ticket_link'] ) ? $fields['ticket_link'] : '';
 						
 						$location_data = jww_get_location_hierarchy( $location_id );
 					?>
@@ -310,13 +318,21 @@ function jww_count_setlist_songs( $setlist ) {
 					</tr>
 				</thead>
 				<tbody>
-					<?php foreach ( $past_shows as $show ): 
+					<?php 
+					// Prime meta cache for all shows at once
+					$past_show_ids = wp_list_pluck( $past_shows, 'ID' );
+					update_post_meta_cache( $past_show_ids );
+					
+					foreach ( $past_shows as $show ): 
 						$show_title = get_the_title( $show->ID );
 						$show_date = get_the_date( 'M j, Y', $show->ID );
 						$show_date_raw = get_the_date( 'Y-m-d', $show->ID );
 						$show_link = get_permalink( $show->ID );
-						$location_id = get_field( 'show_location', $show->ID );
-						$setlist = get_field( 'setlist', $show->ID );
+						
+						// Use get_fields() to get all ACF fields at once (more efficient)
+						$fields = get_fields( $show->ID );
+						$location_id = isset( $fields['show_location'] ) ? $fields['show_location'] : 0;
+						$setlist = isset( $fields['setlist'] ) ? $fields['setlist'] : array();
 						$song_count = jww_count_setlist_songs( $setlist );
 						
 						$location_data = jww_get_location_hierarchy( $location_id );

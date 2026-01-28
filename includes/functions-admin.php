@@ -209,7 +209,11 @@ function jww_ajax_sync_setlist() {
 	}
 	
 	// Clear statistics cache when show is synced
-	delete_transient( 'jww_all_time_song_stats' );
+	if ( function_exists( 'jww_clear_song_stats_caches' ) ) {
+		jww_clear_song_stats_caches();
+	} else {
+		delete_transient( 'jww_all_time_song_stats' );
+	}
 	
 	wp_send_json_success( array(
 		'message' => $result['updated'] ? 'Show updated successfully' : 'Show synced successfully',

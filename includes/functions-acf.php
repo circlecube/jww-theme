@@ -166,11 +166,37 @@ function jww_auto_generate_show_title( $post_id ) {
 		
 		// Clear statistics cache when show is updated
 		if ( ! is_wp_error( $update_result ) ) {
-			delete_transient( 'jww_all_time_song_stats' );
+			if ( function_exists( 'jww_clear_song_stats_caches' ) ) {
+				jww_clear_song_stats_caches();
+			} else {
+				delete_transient( 'jww_all_time_song_stats' );
+			}
+			
+			// Clear location hierarchy cache if location changed
+			delete_transient( 'jww_archive_locations' );
+			delete_transient( 'jww_archive_tours' );
 		}
 	}
 }
 add_action( 'save_post', 'jww_auto_generate_show_title', 10, 1 );
+
+/**
+ * Clear location/tour term caches when terms are updated
+ */
+function jww_clear_location_tour_caches( $term_id, $tt_id, $taxonomy ) {
+	if ( $taxonomy === 'location' || $taxonomy === 'tour' ) {
+		delete_transient( 'jww_archive_locations' );
+		delete_transient( 'jww_archive_tours' );
+		
+		// Clear location hierarchy cache for this specific location
+		if ( $taxonomy === 'location' ) {
+			delete_transient( 'jww_location_hierarchy_' . $term_id );
+		}
+	}
+}
+add_action( 'edited_term', 'jww_clear_location_tour_caches', 10, 3 );
+add_action( 'created_term', 'jww_clear_location_tour_caches', 10, 3 );
+add_action( 'delete_term', 'jww_clear_location_tour_caches', 10, 3 );
 
 /**
  * Get random lyrics data for reuse across templates

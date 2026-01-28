@@ -109,19 +109,29 @@ if ( $filter_type === 'upcoming' ) {
 	$upcoming_shows = array();
 }
 
-// Get all tours and locations for filters
-$all_tours = get_terms( array(
-	'taxonomy'   => 'tour',
-	'hide_empty' => true,
-) );
+// Get all tours and locations for filters (cached)
+$cache_key_tours = 'jww_archive_tours';
+$all_tours = get_transient( $cache_key_tours );
+if ( $all_tours === false ) {
+	$all_tours = get_terms( array(
+		'taxonomy'   => 'tour',
+		'hide_empty' => true,
+	) );
+	set_transient( $cache_key_tours, $all_tours, 6 * HOUR_IN_SECONDS );
+}
 
-// Get all locations for hierarchical filtering
-$all_locations = get_terms( array(
-	'taxonomy'   => 'location',
-	'hide_empty' => true,
-	'orderby'    => 'name',
-	'hierarchical' => true,
-) );
+// Get all locations for hierarchical filtering (cached)
+$cache_key_locations = 'jww_archive_locations';
+$all_locations = get_transient( $cache_key_locations );
+if ( $all_locations === false ) {
+	$all_locations = get_terms( array(
+		'taxonomy'   => 'location',
+		'hide_empty' => true,
+		'orderby'    => 'name',
+		'hierarchical' => true,
+	) );
+	set_transient( $cache_key_locations, $all_locations, 6 * HOUR_IN_SECONDS );
+}
 
 // Organize locations by hierarchy level (Country > City > Venue)
 $countries = array();
@@ -192,6 +202,7 @@ $past_count = count( $past_shows );
 
 /**
  * Helper function to get location hierarchy (City/Country and Venue)
+ * Cached for performance
  */
 function jww_get_location_hierarchy( $location_id ) {
 	if ( ! $location_id ) {
@@ -202,23 +213,61 @@ function jww_get_location_hierarchy( $location_id ) {
 		);
 	}
 	
+	// Try cache first
+	$cache_key = 'jww_location_hierarchy_' . $location_id;
+	$cached = get_transient( $cache_key );
+	if ( $cached !== false ) {
+		return $cached;
+	}
+	
 	$location_term = get_term( $location_id, 'location' );
 	if ( ! $location_term || is_wp_error( $location_term ) ) {
-		return array(
+		$result = array(
 			'city_country' => '',
 			'venue'        => '',
 			'venue_link'   => '',
 		);
+		set_transient( $cache_key, $result, 6 * HOUR_IN_SECONDS );
+		return $result;
 	}
 	
 	// Build hierarchy path from venue up to country
 	// Using array_unshift, so path[0] = country, path[1] = city, path[2] = venue
 	$path = array();
 	$current_term = $location_term;
+	
+	// Fetch all parent terms in one go if possible
+	$term_ids_to_fetch = array( $location_id );
+	$parent_id = $location_term->parent;
+	while ( $parent_id ) {
+		$term_ids_to_fetch[] = $parent_id;
+		$parent_term = get_term( $parent_id, 'location' );
+		if ( $parent_term && ! is_wp_error( $parent_term ) && $parent_term->parent ) {
+			$parent_id = $parent_term->parent;
+		} else {
+			break;
+		}
+	}
+	
+	// Prime term cache
+	$terms = get_terms( array(
+		'taxonomy' => 'location',
+		'include'  => $term_ids_to_fetch,
+		'hide_empty' => false,
+	) );
+	
+	// Build lookup
+	$terms_by_id = array();
+	foreach ( $terms as $term ) {
+		$terms_by_id[ $term->term_id ] = $term;
+	}
+	
+	// Build path
+	$current_term = $location_term;
 	while ( $current_term ) {
 		array_unshift( $path, $current_term );
-		if ( $current_term->parent ) {
-			$current_term = get_term( $current_term->parent, 'location' );
+		if ( $current_term->parent && isset( $terms_by_id[ $current_term->parent ] ) ) {
+			$current_term = $terms_by_id[ $current_term->parent ];
 		} else {
 			break;
 		}
@@ -273,11 +322,16 @@ function jww_get_location_hierarchy( $location_id ) {
 		}
 	}
 	
-	return array(
+	$result = array(
 		'city_country' => implode( ', ', $city_country_parts ),
 		'venue'        => $venue,
 		'venue_link'   => $venue_link,
 	);
+	
+	// Cache for 6 hours
+	set_transient( $cache_key, $result, 6 * HOUR_IN_SECONDS );
+	
+	return $result;
 }
 
 /**
@@ -426,14 +480,22 @@ function jww_count_setlist_songs( $setlist ) {
 					</tr>
 				</thead>
 				<tbody>
-					<?php foreach ( $upcoming_shows as $show ): 
+					<?php 
+					// Prime meta cache for all shows at once
+					$upcoming_show_ids = wp_list_pluck( $upcoming_shows, 'ID' );
+					update_post_meta_cache( $upcoming_show_ids );
+					
+					foreach ( $upcoming_shows as $show ): 
 						$show_title = get_the_title( $show->ID );
 						$show_date = get_the_date( 'M j, Y', $show->ID );
 						$show_date_raw = get_the_date( 'Y-m-d', $show->ID );
 						$show_link = get_permalink( $show->ID );
-						$location_id = get_field( 'show_location', $show->ID );
-						$tour_id = get_field( 'show_tour', $show->ID );
-						$ticket_link = get_field( 'ticket_link', $show->ID );
+						
+						// Use get_fields() to get all ACF fields at once (more efficient)
+						$fields = get_fields( $show->ID );
+						$location_id = isset( $fields['show_location'] ) ? $fields['show_location'] : 0;
+						$tour_id = isset( $fields['show_tour'] ) ? $fields['show_tour'] : 0;
+						$ticket_link = isset( $fields['ticket_link'] ) ? $fields['ticket_link'] : '';
 						
 						$location_data = jww_get_location_hierarchy( $location_id );
 						
@@ -526,14 +588,22 @@ function jww_count_setlist_songs( $setlist ) {
 					</tr>
 				</thead>
 				<tbody>
-					<?php foreach ( $past_shows as $show ): 
+					<?php 
+					// Prime meta cache for all shows at once
+					$past_show_ids = wp_list_pluck( $past_shows, 'ID' );
+					update_post_meta_cache( $past_show_ids );
+					
+					foreach ( $past_shows as $show ): 
 						$show_title = get_the_title( $show->ID );
 						$show_date = get_the_date( 'M j, Y', $show->ID );
 						$show_date_raw = get_the_date( 'Y-m-d', $show->ID );
 						$show_link = get_permalink( $show->ID );
-						$location_id = get_field( 'show_location', $show->ID );
-						$tour_id = get_field( 'show_tour', $show->ID );
-						$setlist = get_field( 'setlist', $show->ID );
+						
+						// Use get_fields() to get all ACF fields at once (more efficient)
+						$fields = get_fields( $show->ID );
+						$location_id = isset( $fields['show_location'] ) ? $fields['show_location'] : 0;
+						$tour_id = isset( $fields['show_tour'] ) ? $fields['show_tour'] : 0;
+						$setlist = isset( $fields['setlist'] ) ? $fields['setlist'] : array();
 						$song_count = jww_count_setlist_songs( $setlist );
 						
 						$location_data = jww_get_location_hierarchy( $location_id );
