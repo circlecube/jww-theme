@@ -10,8 +10,18 @@ import './style.scss';
 
 registerBlockType('jww/album-covers', {
     edit: ({ attributes, setAttributes }) => {
-        const { releases, postsPerPage, orderBy, order, showTitle, title, titleLevel, artist } = attributes;
+        const { selectedAlbumId, releases, postsPerPage, orderBy, order, showTitle, title, titleLevel, artist } = attributes;
         const blockProps = useBlockProps();
+        const singleAlbumMode = selectedAlbumId && selectedAlbumId !== 0;
+
+        // Get available albums for single-album select
+        const allAlbums = useSelect((select) => {
+            return select('core').getEntityRecords('postType', 'album', {
+                per_page: -1,
+                orderby: 'title',
+                order: 'asc'
+            });
+        }, []);
 
         // Get available release taxonomy terms
         const availableReleases = useSelect((select) => {
@@ -31,22 +41,23 @@ registerBlockType('jww/album-covers', {
             });
         }, []);
 
-        // Get albums for preview
+        // Get albums for preview (single album or filtered list)
         const albums = useSelect((select) => {
+            if (singleAlbumMode && selectedAlbumId) {
+                const album = select('core').getEntityRecord('postType', 'album', selectedAlbumId);
+                return album ? [album] : [];
+            }
             const queryArgs = {
                 per_page: postsPerPage === -1 ? 10 : postsPerPage,
                 orderby: orderBy,
                 order: order.toLowerCase(),
                 post_type: 'album'
             };
-
-            // Add release filter if releases are selected
             if (releases && releases.length > 0) {
                 queryArgs.release = releases.join(',');
             }
-
             return select('core').getEntityRecords('postType', 'album', queryArgs);
-        }, [releases, postsPerPage, orderBy, order, artist]);
+        }, [singleAlbumMode, selectedAlbumId, releases, postsPerPage, orderBy, order, artist]);
 
         return (
             <div {...blockProps}>
@@ -79,7 +90,27 @@ registerBlockType('jww/album-covers', {
                     </PanelBody>
 
                     <PanelBody title={__('Filter Options', 'jww-theme')} initialOpen={false}>
-                        <p>{__('Select release types to filter albums. Leave empty to show all albums.', 'jww-theme')}</p>
+                        <SelectControl
+                            label={__('Choose a single album', 'jww-theme')}
+                            value={selectedAlbumId ? selectedAlbumId.toString() : '0'}
+                            options={[
+                                { label: __('Use filters below', 'jww-theme'), value: '0' },
+                                ...(allAlbums ? allAlbums.map((album) => ({
+                                    label: album.title?.rendered || __('(Untitled)', 'jww-theme'),
+                                    value: album.id.toString()
+                                })) : [])
+                            ]}
+                            onChange={(value) => setAttributes({ selectedAlbumId: value ? parseInt(value, 10) : 0 })}
+                            help={__('Pick one album to display only that album. When set, release and artist filters are ignored.', 'jww-theme')}
+                        />
+
+                        {singleAlbumMode && (
+                            <p className="album-covers-single-album-notice" style={{ fontStyle: 'italic', marginTop: 8 }}>
+                                {__('Single album selected — filtering and display options below are disabled.', 'jww-theme')}
+                            </p>
+                        )}
+
+                        <p style={{ opacity: singleAlbumMode ? 0.6 : 1 }}>{__('Select release types to filter albums. Leave empty to show all albums.', 'jww-theme')}</p>
                         {availableReleases && availableReleases.map((release) => (
                             <CheckboxControl
                                 key={release.id}
@@ -88,15 +119,14 @@ registerBlockType('jww/album-covers', {
                                 onChange={(checked) => {
                                     const currentReleases = releases || [];
                                     let newReleases;
-
                                     if (checked) {
                                         newReleases = [...currentReleases, release.id.toString()];
                                     } else {
                                         newReleases = currentReleases.filter(id => id !== release.id.toString());
                                     }
-
                                     setAttributes({ releases: newReleases });
                                 }}
+                                disabled={singleAlbumMode}
                             />
                         ))}
 
@@ -112,6 +142,7 @@ registerBlockType('jww/album-covers', {
                             ]}
                             onChange={(value) => setAttributes({ artist: value })}
                             help={__('Filter albums by a specific artist/band. Leave empty to show all artists.', 'jww-theme')}
+                            disabled={singleAlbumMode}
                         />
                     </PanelBody>
 
@@ -123,6 +154,7 @@ registerBlockType('jww/album-covers', {
                             min={-1}
                             max={50}
                             help={__('Set to -1 to show all albums', 'jww-theme')}
+                            disabled={singleAlbumMode}
                         />
 
                         <SelectControl
@@ -135,6 +167,7 @@ registerBlockType('jww/album-covers', {
                                 { label: __('Random', 'jww-theme'), value: 'rand' }
                             ]}
                             onChange={(value) => setAttributes({ orderBy: value })}
+                            disabled={singleAlbumMode}
                         />
 
                         <SelectControl
@@ -145,6 +178,7 @@ registerBlockType('jww/album-covers', {
                                 { label: __('Ascending', 'jww-theme'), value: 'ASC' }
                             ]}
                             onChange={(value) => setAttributes({ order: value })}
+                            disabled={singleAlbumMode}
                         />
                     </PanelBody>
                 </InspectorControls>
@@ -161,8 +195,18 @@ registerBlockType('jww/album-covers', {
                         </div>
                     )}
 
-                    {/* Show selected releases */}
-                    {releases && releases.length > 0 && (
+                    {/* Show single album selection */}
+                    {singleAlbumMode && selectedAlbumId && (
+                        <div className="preview-single-album">
+                            <strong>{__('Showing single album:', 'jww-theme')} </strong>
+                            {allAlbums && allAlbums.find(a => a.id === selectedAlbumId)
+                                ? allAlbums.find(a => a.id === selectedAlbumId).title?.rendered
+                                : `ID ${selectedAlbumId}`}
+                        </div>
+                    )}
+
+                    {/* Show selected releases (when not single album mode) */}
+                    {!singleAlbumMode && releases && releases.length > 0 && (
                         <div className="preview-releases">
                             <strong>{__('Filtering by releases:', 'jww-theme')} </strong>
                             {availableReleases &&
@@ -174,8 +218,8 @@ registerBlockType('jww/album-covers', {
                         </div>
                     )}
 
-                    {/* Show selected artist */}
-                    {artist && (
+                    {/* Show selected artist (when not single album mode) */}
+                    {!singleAlbumMode && artist && (
                         <div className="preview-artist">
                             <strong>{__('Filtering by artist:', 'jww-theme')} </strong>
                             {availableArtists && availableArtists.find(b => b.id.toString() === artist)

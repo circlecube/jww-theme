@@ -17,7 +17,7 @@ if ( file_exists( $header_template ) ) {
     $header_content = file_get_contents( $header_template );
     // Process block markup first, then shortcodes
     $header_blocks = do_blocks( $header_content );
-    // Process shortcodes (needed for shortcodes inside HTML blocks)
+    // Shortcode blocks are rendered without p wrappers via render_block filter in functions-shortcodes.php.
     echo do_shortcode( $header_blocks );
 }
 ?>

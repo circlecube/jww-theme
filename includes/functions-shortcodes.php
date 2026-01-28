@@ -12,6 +12,26 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Render core/shortcode blocks without wpautop wrapper.
+ * Core wraps shortcode content in <p> via wpautop(); we strip that and run the shortcode
+ * so output is never wrapped in empty or redundant p tags.
+ *
+ * @param string $block_content The block content.
+ * @param array  $block         The full block, including name and attributes.
+ * @return string Filtered block content.
+ */
+function jww_render_shortcode_block_without_autop( $block_content, $block ) {
+	if ( isset( $block['blockName'] ) && $block['blockName'] === 'core/shortcode' ) {
+		// Block content at this point is wpautop( shortcode text ), e.g. "<p>[header_site_title]</p>".
+		$text = preg_replace( '#^<p[^>]*>\s*#i', '', $block_content );
+		$text = preg_replace( '#\s*</p>\s*$#i', '', $text );
+		return do_shortcode( $text );
+	}
+	return $block_content;
+}
+add_filter( 'render_block', 'jww_render_shortcode_block_without_autop', 10, 2 );
+
+/**
  * Shortcode for displaying random lyrics inline (minimal format)
  * Usage: [random_lyrics_inline]
  * 

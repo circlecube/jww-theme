@@ -4,6 +4,7 @@
  */
 
 // Get block attributes with defaults
+$selected_album_id = isset( $attributes['selectedAlbumId'] ) ? (int) $attributes['selectedAlbumId'] : 0;
 $selected_releases = $attributes['releases'] ?? [];
 $posts_per_page = $attributes['postsPerPage'] ?? -1;
 $order_by = $attributes['orderBy'] ?? 'date';
@@ -22,34 +23,39 @@ $query_args = [
     'order'          => $order,
 ];
 
-// Add release taxonomy filter if releases are selected
-if (!empty($selected_releases)) {
-    $query_args['tax_query'] = [
-        [
-            'taxonomy' => 'release',
-            'field'    => 'term_id',
-            'terms'    => array_map('intval', $selected_releases),
-            'operator' => 'IN'
-        ]
-    ];
-}
+// Single album selection overrides all other filters
+if ( $selected_album_id > 0 ) {
+    $query_args['post__in'] = [ $selected_album_id ];
+    $query_args['posts_per_page'] = 1;
+    $query_args['orderby'] = 'post__in';
+} else {
+    // Add release taxonomy filter if releases are selected
+    if ( ! empty( $selected_releases ) ) {
+        $query_args['tax_query'] = [
+            [
+                'taxonomy' => 'release',
+                'field'    => 'term_id',
+                'terms'    => array_map( 'intval', $selected_releases ),
+                'operator' => 'IN'
+            ]
+        ];
+    }
 
-// Add artist filter if artist ID is specified
-if (!empty($artist_id)) {
-    $artist_id = intval($artist_id);
-    // ACF relationship fields store data as serialized arrays or comma-separated IDs
-    // Use meta_query with LIKE to find the artist ID within the stored value
-    $query_args['meta_query'] = [
-        [
-            'key'     => 'artist',
-            'value'   => '"' . $artist_id . '"', // Search for serialized format
-            'compare' => 'LIKE'
-        ]
-    ];
+    // Add artist filter if artist ID is specified
+    if ( ! empty( $artist_id ) ) {
+        $artist_id = intval( $artist_id );
+        $query_args['meta_query'] = [
+            [
+                'key'     => 'artist',
+                'value'   => '"' . $artist_id . '"',
+                'compare' => 'LIKE'
+            ]
+        ];
+    }
 }
 
 // Get albums
-$albums_query = new WP_Query($query_args);
+$albums_query = new WP_Query( $query_args );
 $albums = $albums_query->posts;
 
 // Set the albums and title info in query vars for the template part

@@ -33,6 +33,10 @@
         }
     },
     "attributes": {
+        "selectedAlbumId": {
+            "type": "number",
+            "default": 0
+        },
         "releases": {
             "type": "array",
             "default": []

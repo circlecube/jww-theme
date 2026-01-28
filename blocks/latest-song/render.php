@@ -32,8 +32,32 @@ if (empty($latest_song)) {
 
 $song = $latest_song[0];
 $song_id = $song->ID;
-$video_embed = get_field('video', $song_id);
 $song_title = $song->post_title ?? '';
+
+// Get first YouTube embed from embeds repeater
+$video_embed = '';
+$embeds = get_field( 'embeds', $song_id );
+if ( $embeds && is_array( $embeds ) ) {
+	foreach ( $embeds as $row ) {
+		$source = $row['embed_type'] ?? 'youtube';
+		if ( $source !== 'youtube' ) {
+			continue;
+		}
+		$embed_raw = $row['youtube_video'] ?? '';
+		if ( empty( $embed_raw ) ) {
+			continue;
+		}
+		// ACF oembed can return HTML string or array with 'html' / 'url'
+		if ( is_array( $embed_raw ) ) {
+			$video_embed = $embed_raw['html'] ?? $embed_raw['url'] ?? '';
+		} else {
+			$video_embed = $embed_raw;
+		}
+		if ( $video_embed ) {
+			break;
+		}
+	}
+}
 
 // Build the output
 $output = '<div class="wp-block-jww-latest-song">';
