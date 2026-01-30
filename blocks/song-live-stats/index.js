@@ -10,11 +10,7 @@ import './style.scss';
 
 registerBlockType('jww/song-live-stats', {
     edit: ({ attributes, setAttributes }) => {
-        const { 
-            statType,
-            songId,
-            recentShowsLimit
-        } = attributes;
+        const { statType, songId } = attributes;
         const blockProps = useBlockProps();
 
         // Get songs for select control
@@ -39,8 +35,7 @@ registerBlockType('jww/song-live-stats', {
             { label: __('Total Times Played', 'jww-theme'), value: 'play_count' },
             { label: __('Last Played', 'jww-theme'), value: 'last_played' },
             { label: __('First Played', 'jww-theme'), value: 'first_played' },
-            { label: __('Days Since Last Played', 'jww-theme'), value: 'days_since' },
-            { label: __('Recent Shows', 'jww-theme'), value: 'recent_shows' }
+            { label: __('Days Since Last Played', 'jww-theme'), value: 'days_since' }
         ];
 
         return (
@@ -60,16 +55,6 @@ registerBlockType('jww/song-live-stats', {
                             options={statTypeOptions}
                             onChange={(value) => setAttributes({ statType: value })}
                         />
-
-                        {statType === 'recent_shows' && (
-                            <RangeControl
-                                label={__('Number of Recent Shows', 'jww-theme')}
-                                value={recentShowsLimit}
-                                onChange={(value) => setAttributes({ recentShowsLimit: value })}
-                                min={1}
-                                max={20}
-                            />
-                        )}
                     </PanelBody>
                 </InspectorControls>
 
@@ -82,9 +67,6 @@ registerBlockType('jww/song-live-stats', {
                         <p><strong>{__('Statistic Type:', 'jww-theme')}</strong> {
                             statTypeOptions.find(opt => opt.value === statType)?.label || statType
                         }</p>
-                        {statType === 'recent_shows' && (
-                            <p><strong>{__('Recent Shows Limit:', 'jww-theme')}</strong> {recentShowsLimit}</p>
-                        )}
                     </div>
                     <p><em>{__('Note: Full statistic will be displayed on the frontend', 'jww-theme')}</em></p>
                 </div>

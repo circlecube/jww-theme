@@ -3,7 +3,7 @@
     "apiVersion": 3,
     "name": "jww-theme/random-lyrics",
     "version": "1.0.0",
-    "title": "Random Lyrics",
+    "title": "JWW Random Lyrics",
     "category": "text",
     "icon": "format-quote",
     "description": "Display a random lyric line from a random song on your site.",

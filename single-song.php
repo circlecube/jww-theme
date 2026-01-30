@@ -231,40 +231,72 @@ get_header();
 		?>
 	</div>
 	
-	<?php 
-		// only for Jesse Welles songs
-		if ( $artist_name === 'Jesse Welles' ) {
-	?>
-	<h3 class="wp-block-heading"><strong>Live Performances</strong></h3>
 	<?php
-		// Display song live statistics blocks (one for each stat type) in a grid
-		$stat_types = array(
-			'play_count' => 'Total Times Played',
-			'last_played' => 'Last Played',
-			'first_played' => 'First Played',
-			'days_since' => 'Days Since Last Played',
-			'recent_shows' => 'Recent Shows',
-		);
-		
-		echo '<div class="song-stats-grid-container">';
-		foreach ( $stat_types as $stat_type => $stat_label ) {
-			$block_attributes = array(
-				'statType' => $stat_type,
-				'songId' => get_the_ID(),
-				'recentShowsLimit' => 10,
-			);
+		// only for Jesse Welles songs: stat cards visible, play history in accordion
+		if ( $artist_name === 'Jesse Welles' ) {
+			$song_id = get_the_ID();
+			$nonce   = wp_create_nonce( 'jww_song_live_stats' );
+			$ajax_url = admin_url( 'admin-ajax.php' );
+			$stat_types = array( 'play_count', 'last_played', 'first_played', 'days_since' );
+	?>
+	<div class="song-stats-grid-container">
+		<?php foreach ( $stat_types as $stat_type ) :
 			$block_content = render_block( array(
 				'blockName' => 'jww/song-live-stats',
-				'attrs'     => $block_attributes,
+				'attrs'     => array( 'statType' => $stat_type, 'songId' => $song_id ),
 			) );
 			if ( $block_content ) {
 				echo $block_content;
 			}
+		endforeach; ?>
+	</div>
+	<div class="wp-block-group alignwide">
+		<details class="song-live-performances-collapsible stat-card" id="song-live-performances">
+			<summary class="song-live-performances-summary">
+				<strong>Play history</strong>
+			</summary>
+			<div class="song-live-stats-lazy" data-song-id="<?php echo (int) $song_id; ?>" data-nonce="<?php echo esc_attr( $nonce ); ?>" data-ajax-url="<?php echo esc_url( $ajax_url ); ?>">
+				<p class="song-live-stats-loading" aria-live="polite"><?php esc_html_e( 'Loading…', 'jww-theme' ); ?></p>
+			</div>
+		</details>
+	</div>
+	<script>
+	(function() {
+		var details = document.getElementById('song-live-performances');
+		if (!details) return;
+		var container = details.querySelector('.song-live-stats-lazy');
+		if (!container || container.dataset.loaded === '1') return;
+		function load() {
+			if (container.dataset.loaded === '1') return;
+			container.dataset.loaded = '1';
+			var formData = new FormData();
+			formData.append('action', 'jww_song_live_stats_fragment');
+			formData.append('nonce', container.dataset.nonce);
+			formData.append('song_id', container.dataset.songId);
+			fetch(container.dataset.ajaxUrl, {
+				method: 'POST',
+				body: formData,
+				credentials: 'same-origin'
+			})
+			.then(function(r) { return r.json(); })
+			.then(function(data) {
+				if (data.success && data.data && data.data.html) {
+					container.innerHTML = data.data.html;
+					if (window.jwwInitSortableTables) window.jwwInitSortableTables();
+				} else {
+					container.innerHTML = '<p class="song-live-stats-error"><?php echo esc_js( __( 'Could not load stats.', 'jww-theme' ) ); ?></p>';
+				}
+			})
+			.catch(function() {
+				container.innerHTML = '<p class="song-live-stats-error"><?php echo esc_js( __( 'Could not load stats.', 'jww-theme' ) ); ?></p>';
+			});
 		}
-		echo '</div>';
-	?>
+		details.addEventListener('toggle', function() {
+			if (details.open && container.dataset.loaded !== '1') load();
+		});
+	})();
+	</script>
 	<?php
-		// endif; for Jesse Welles songs only
 		}
 	?>
 </div>

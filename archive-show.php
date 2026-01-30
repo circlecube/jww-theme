@@ -199,157 +199,6 @@ if ( $selected_city ) {
 $total_shows = count( $shows );
 $upcoming_count = count( $upcoming_shows );
 $past_count = count( $past_shows );
-
-/**
- * Helper function to get location hierarchy (City/Country and Venue)
- * Cached for performance
- */
-function jww_get_location_hierarchy( $location_id ) {
-	if ( ! $location_id ) {
-		return array(
-			'city_country' => '',
-			'venue'        => '',
-			'venue_link'   => '',
-		);
-	}
-	
-	// Try cache first
-	$cache_key = 'jww_location_hierarchy_' . $location_id;
-	$cached = get_transient( $cache_key );
-	if ( $cached !== false ) {
-		return $cached;
-	}
-	
-	$location_term = get_term( $location_id, 'location' );
-	if ( ! $location_term || is_wp_error( $location_term ) ) {
-		$result = array(
-			'city_country' => '',
-			'venue'        => '',
-			'venue_link'   => '',
-		);
-		set_transient( $cache_key, $result, 6 * HOUR_IN_SECONDS );
-		return $result;
-	}
-	
-	// Build hierarchy path from venue up to country
-	// Using array_unshift, so path[0] = country, path[1] = city, path[2] = venue
-	$path = array();
-	$current_term = $location_term;
-	
-	// Fetch all parent terms in one go if possible
-	$term_ids_to_fetch = array( $location_id );
-	$parent_id = $location_term->parent;
-	while ( $parent_id ) {
-		$term_ids_to_fetch[] = $parent_id;
-		$parent_term = get_term( $parent_id, 'location' );
-		if ( $parent_term && ! is_wp_error( $parent_term ) && $parent_term->parent ) {
-			$parent_id = $parent_term->parent;
-		} else {
-			break;
-		}
-	}
-	
-	// Prime term cache
-	$terms = get_terms( array(
-		'taxonomy' => 'location',
-		'include'  => $term_ids_to_fetch,
-		'hide_empty' => false,
-	) );
-	
-	// Build lookup
-	$terms_by_id = array();
-	foreach ( $terms as $term ) {
-		$terms_by_id[ $term->term_id ] = $term;
-	}
-	
-	// Build path
-	$current_term = $location_term;
-	while ( $current_term ) {
-		array_unshift( $path, $current_term );
-		if ( $current_term->parent && isset( $terms_by_id[ $current_term->parent ] ) ) {
-			$current_term = $terms_by_id[ $current_term->parent ];
-		} else {
-			break;
-		}
-	}
-	
-	// After building: path[0] = country, path[1] = city, path[2] = venue
-	// We want to display: Venue > City > Country (reversed order)
-	$venue = '';
-	$venue_link = '';
-	$city_name = '';
-	$city_link = '';
-	$country_name = '';
-	$country_link = '';
-	
-	$path_count = count( $path );
-	
-	if ( $path_count >= 1 ) {
-		// Last item is the venue (deepest level)
-		$venue_term = $path[$path_count - 1];
-		$venue = $venue_term->name;
-		$venue_link = get_term_link( $venue_term->term_id, 'location' );
-	}
-	
-	if ( $path_count >= 2 ) {
-		// Second to last is city
-		$city_term = $path[$path_count - 2];
-		$city_name = $city_term->name;
-		$city_link = get_term_link( $city_term->term_id, 'location' );
-	}
-	
-	if ( $path_count >= 3 ) {
-		// First item is country
-		$country_term = $path[0];
-		$country_name = $country_term->name;
-		$country_link = get_term_link( $country_term->term_id, 'location' );
-	}
-	
-	// Build city_country string with links for display
-	$city_country_parts = array();
-	if ( $city_name ) {
-		if ( $city_link && ! is_wp_error( $city_link ) ) {
-			$city_country_parts[] = '<a href="' . esc_url( $city_link ) . '">' . esc_html( $city_name ) . '</a>';
-		} else {
-			$city_country_parts[] = esc_html( $city_name );
-		}
-	}
-	if ( $country_name ) {
-		if ( $country_link && ! is_wp_error( $country_link ) ) {
-			$city_country_parts[] = '<a href="' . esc_url( $country_link ) . '">' . esc_html( $country_name ) . '</a>';
-		} else {
-			$city_country_parts[] = esc_html( $country_name );
-		}
-	}
-	
-	$result = array(
-		'city_country' => implode( ', ', $city_country_parts ),
-		'venue'        => $venue,
-		'venue_link'   => $venue_link,
-	);
-	
-	// Cache for 6 hours
-	set_transient( $cache_key, $result, 6 * HOUR_IN_SECONDS );
-	
-	return $result;
-}
-
-/**
- * Helper function to count songs in setlist
- */
-function jww_count_setlist_songs( $setlist ) {
-	if ( ! $setlist || ! is_array( $setlist ) ) {
-		return 0;
-	}
-	
-	$count = 0;
-	foreach ( $setlist as $item ) {
-		if ( isset( $item['entry_type'] ) && ( $item['entry_type'] === 'song-post' || $item['entry_type'] === 'song-text' ) ) {
-			$count++;
-		}
-	}
-	return $count;
-}
 ?>
 
 <main class="wp-block-group align is-layout-flow wp-block-group-is-layout-flow">
@@ -454,21 +303,25 @@ function jww_count_setlist_songs( $setlist ) {
 		</div>
 		<?php endif; ?>
 
-		<!-- Upcoming Shows Table -->
+		<!-- Upcoming Shows Table (collapsible accordion) -->
 		<?php if ( ! empty( $upcoming_shows ) ): ?>
-		<div class="wp-block-group alignwide shows-table-wrapper" style="margin-bottom:var(--wp--preset--spacing--50)">
-			<h2 class="wp-block-heading">Upcoming Shows</h2>
+		<details class="wp-block-group alignwide shows-upcoming-accordion" style="margin-bottom:var(--wp--preset--spacing--50)" open>
+			<summary class="shows-upcoming-accordion-summary">
+				<h2 class="wp-block-heading" style="margin:0;display:inline;">Upcoming Shows</h2>
+				<span class="shows-upcoming-accordion-count"><?php echo esc_html( '(' . count( $upcoming_shows ) . ')' ); ?></span>
+			</summary>
+			<div class="shows-table-wrapper">
 			<table class="shows-table sortable-table" data-table-type="upcoming">
 				<thead>
 					<tr>
 						<th class="sortable" data-sort="title" data-sort-type="text">
-							Title <span class="sort-indicator"></span>
+							Show <span class="sort-indicator"></span>
 						</th>
 						<th class="sortable" data-sort="date" data-sort-type="date">
 							Date <span class="sort-indicator"></span>
 						</th>
 						<th class="sortable" data-sort="city" data-sort-type="text">
-							City/Country <span class="sort-indicator"></span>
+							City, Country <span class="sort-indicator"></span>
 						</th>
 						<th class="sortable" data-sort="venue" data-sort-type="text">
 							Venue <span class="sort-indicator"></span>
@@ -559,7 +412,8 @@ function jww_count_setlist_songs( $setlist ) {
 					<?php endforeach; ?>
 				</tbody>
 			</table>
-		</div>
+			</div>
+		</details>
 		<?php endif; ?>
 
 		<!-- Past Shows Table -->
@@ -570,7 +424,7 @@ function jww_count_setlist_songs( $setlist ) {
 				<thead>
 					<tr>
 						<th class="sortable" data-sort="title" data-sort-type="text">
-							Title <span class="sort-indicator"></span>
+							Show <span class="sort-indicator"></span>
 						</th>
 						<th class="sortable" data-sort="date" data-sort-type="date">
 							Date <span class="sort-indicator"></span>

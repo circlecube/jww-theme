@@ -23,5 +23,7 @@ import './show-list';
 // Import show-stats block
 import './show-stats';
 import './song-live-stats';
+import './song-play-history';
+import './song-stats-table';
 import './tour-timeline';
 import './song-history-chart';

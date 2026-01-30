@@ -1,17 +1,18 @@
 {
     "$schema": "https://schemas.wp.org/trunk/block.json",
     "apiVersion": 3,
-    "name": "jww/tour-timeline",
+    "name": "jww/song-stats-table",
     "version": "1.0.0",
-    "title": "JWW Tour Timeline",
+    "title": "JWW Song Stats Table",
     "category": "media",
-    "icon": "calendar-alt",
-    "description": "Display a timeline of shows for a specific tour.",
+    "icon": "list-view",
+    "description": "Display all songs with live performance stats in a sortable table.",
     "keywords": [
-        "tour",
-        "timeline",
-        "shows",
-        "dates"
+        "song",
+        "stats",
+        "live",
+        "table",
+        "performance"
     ],
     "textdomain": "jww-theme",
     "editorScript": "file:../../build/index.js",
@@ -28,18 +29,5 @@
             "margin": true
         }
     },
-    "attributes": {
-        "tourId": {
-            "type": "number",
-            "default": 0
-        },
-        "showPastOnly": {
-            "type": "boolean",
-            "default": false
-        },
-        "showUpcomingOnly": {
-            "type": "boolean",
-            "default": false
-        }
-    }
+    "attributes": {}
 }

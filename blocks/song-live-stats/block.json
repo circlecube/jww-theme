@@ -3,7 +3,7 @@
     "apiVersion": 3,
     "name": "jww/song-live-stats",
     "version": "1.0.0",
-    "title": "Song Live Statistics",
+    "title": "JWW Song Live Statistics",
     "category": "media",
     "icon": "chart-bar",
     "description": "Display live performance statistics for a song (play count, last played, first played, recent shows).",
@@ -42,17 +42,12 @@
                 "play_count",
                 "last_played",
                 "first_played",
-                "days_since",
-                "recent_shows"
+                "days_since"
             ]
         },
         "songId": {
             "type": "number",
             "default": 0
-        },
-        "recentShowsLimit": {
-            "type": "number",
-            "default": 10
         }
     }
 }

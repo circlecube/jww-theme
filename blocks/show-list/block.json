@@ -3,7 +3,7 @@
     "apiVersion": 3,
     "name": "jww/show-list",
     "version": "1.0.0",
-    "title": "Show List",
+    "title": "JWW Show List",
     "category": "media",
     "icon": "calendar-alt",
     "description": "Display shows with filtering options (all, upcoming, past) and sorting by date.",

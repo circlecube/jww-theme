@@ -12,31 +12,54 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Clear all song statistics caches
- * 
- * Called when shows are created, updated, or deleted
+ * Clear song statistics caches for specific song IDs only (and global setlist/stats).
+ * Use when a show's setlist is updated so only affected songs are invalidated.
+ *
+ * @param int[] $song_ids Song post IDs that appear in the setlist (before or after save). Pass empty to clear only global caches.
+ */
+function jww_clear_song_stats_for_song_ids( array $song_ids ) {
+	delete_transient( 'jww_all_time_song_stats' );
+	delete_transient( 'jww_all_show_setlists' );
+
+	$song_ids = array_filter( array_map( 'intval', $song_ids ) );
+	foreach ( $song_ids as $id ) {
+		if ( $id > 0 ) {
+			delete_transient( 'jww_song_stats_' . $id );
+			delete_transient( 'jww_song_performances_' . $id );
+		}
+	}
+}
+
+/**
+ * Clear all song statistics caches (full clear for imports/bulk operations).
  */
 function jww_clear_song_stats_caches() {
-	// Clear all-time stats
 	delete_transient( 'jww_all_time_song_stats' );
-	
-	// Clear all show setlists cache
 	delete_transient( 'jww_all_show_setlists' );
-	
-	// Clear individual song stats (we'll need to delete them one by one)
-	// Since we don't know all song IDs, we'll let them expire naturally
-	// Or we could use a cache group/prefix system, but for now this is fine
+
 	global $wpdb;
-	$wpdb->query( 
-		$wpdb->prepare( 
+	$wpdb->query(
+		$wpdb->prepare(
 			"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
 			$wpdb->esc_like( '_transient_jww_song_stats_' ) . '%'
 		)
 	);
-	$wpdb->query( 
-		$wpdb->prepare( 
+	$wpdb->query(
+		$wpdb->prepare(
 			"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
 			$wpdb->esc_like( '_transient_timeout_jww_song_stats_' ) . '%'
+		)
+	);
+	$wpdb->query(
+		$wpdb->prepare(
+			"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+			$wpdb->esc_like( '_transient_jww_song_performances_' ) . '%'
+		)
+	);
+	$wpdb->query(
+		$wpdb->prepare(
+			"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+			$wpdb->esc_like( '_transient_timeout_jww_song_performances_' ) . '%'
 		)
 	);
 }
@@ -509,27 +532,40 @@ function jww_get_all_time_song_stats( $use_cache = true ) {
 			$first = reset( $shows_data );
 			$last = end( $shows_data );
 			
+			$last_show_id = $last['show_id'];
+			$first_show_id = $first['show_id'];
+			$last_loc_id  = get_field( 'show_location', $last_show_id );
+			$first_loc_id = get_field( 'show_location', $first_show_id );
+
 			$last_played = array(
-				'show'      => $last['post'],
-				'show_id'   => $last['show_id'],
-				'show_date' => get_the_date( 'F j, Y', $last['show_id'] ),
-				'show_link' => get_permalink( $last['show_id'] ),
+				'show'          => $last['post'],
+				'show_id'       => $last_show_id,
+				'show_date'     => get_the_date( 'F j, Y', $last_show_id ),
+				'show_link'     => get_permalink( $last_show_id ),
+				'location_data' => function_exists( 'jww_get_location_hierarchy' ) ? jww_get_location_hierarchy( $last_loc_id ? (int) $last_loc_id : 0 ) : array( 'city_country' => '', 'venue' => '', 'venue_link' => '' ),
 			);
-			
+
 			$first_played = array(
-				'show'      => $first['post'],
-				'show_id'   => $first['show_id'],
-				'show_date' => get_the_date( 'F j, Y', $first['show_id'] ),
-				'show_link' => get_permalink( $first['show_id'] ),
+				'show'          => $first['post'],
+				'show_id'       => $first_show_id,
+				'show_date'     => get_the_date( 'F j, Y', $first_show_id ),
+				'show_link'     => get_permalink( $first_show_id ),
+				'location_data' => function_exists( 'jww_get_location_hierarchy' ) ? jww_get_location_hierarchy( $first_loc_id ? (int) $first_loc_id : 0 ) : array( 'city_country' => '', 'venue' => '', 'venue_link' => '' ),
 			);
-			
+
+			$song_post = get_post( $song_id );
+			$first_published = $song_post ? $song_post->post_date : '';
+			$days_since = (int) floor( ( current_time( 'timestamp' ) - strtotime( $last['post_date'] ) ) / DAY_IN_SECONDS );
+
 			$stats[] = array(
-				'song_id'      => $song_id,
-				'song_title'   => get_the_title( $song_id ),
-				'song_link'    => get_permalink( $song_id ),
-				'play_count'   => $play_count,
-				'last_played'  => $last_played,
-				'first_played' => $first_played,
+				'song_id'               => $song_id,
+				'song_title'             => get_the_title( $song_id ),
+				'song_link'              => get_permalink( $song_id ),
+				'first_published'        => $first_published,
+				'play_count'             => $play_count,
+				'last_played'            => $last_played,
+				'first_played'           => $first_played,
+				'days_since_last_played' => $days_since,
 			);
 		}
 	}
@@ -571,3 +607,282 @@ function jww_get_song_gap_analysis( $song_id, $use_cache = true ) {
 		'play_count'   => $stats['play_count'],
 	);
 }
+
+/**
+ * Get location hierarchy (City/Country and Venue) for display.
+ * Cached for performance. Used by archive templates and blocks.
+ *
+ * @param int $location_id Location term ID.
+ * @return array Keys: city_country (HTML), venue, venue_link.
+ */
+function jww_get_location_hierarchy( $location_id ) {
+	if ( ! $location_id ) {
+		return array(
+			'city_country' => '',
+			'venue'        => '',
+			'venue_link'   => '',
+		);
+	}
+
+	$cache_key = 'jww_location_hierarchy_' . $location_id;
+	$cached = get_transient( $cache_key );
+	if ( $cached !== false ) {
+		return $cached;
+	}
+
+	$location_term = get_term( $location_id, 'location' );
+	if ( ! $location_term || is_wp_error( $location_term ) ) {
+		$result = array(
+			'city_country' => '',
+			'venue'        => '',
+			'venue_link'   => '',
+		);
+		set_transient( $cache_key, $result, 6 * HOUR_IN_SECONDS );
+		return $result;
+	}
+
+	$term_ids_to_fetch = array( $location_id );
+	$parent_id = $location_term->parent;
+	while ( $parent_id ) {
+		$term_ids_to_fetch[] = $parent_id;
+		$parent_term = get_term( $parent_id, 'location' );
+		if ( $parent_term && ! is_wp_error( $parent_term ) && $parent_term->parent ) {
+			$parent_id = $parent_term->parent;
+		} else {
+			break;
+		}
+	}
+
+	$terms = get_terms( array(
+		'taxonomy'   => 'location',
+		'include'   => $term_ids_to_fetch,
+		'hide_empty' => false,
+	) );
+
+	$terms_by_id = array();
+	foreach ( $terms as $term ) {
+		$terms_by_id[ $term->term_id ] = $term;
+	}
+
+	$path = array();
+	$current_term = $location_term;
+	while ( $current_term ) {
+		array_unshift( $path, $current_term );
+		if ( $current_term->parent && isset( $terms_by_id[ $current_term->parent ] ) ) {
+			$current_term = $terms_by_id[ $current_term->parent ];
+		} else {
+			break;
+		}
+	}
+
+	$venue = '';
+	$venue_link = '';
+	$city_name = '';
+	$city_link = '';
+	$country_name = '';
+	$country_link = '';
+	$path_count = count( $path );
+
+	if ( $path_count >= 1 ) {
+		$venue_term = $path[ $path_count - 1 ];
+		$venue = $venue_term->name;
+		$venue_link = get_term_link( $venue_term->term_id, 'location' );
+	}
+	if ( $path_count >= 2 ) {
+		$city_term = $path[ $path_count - 2 ];
+		$city_name = $city_term->name;
+		$city_link = get_term_link( $city_term->term_id, 'location' );
+	}
+	if ( $path_count >= 3 ) {
+		$country_term = $path[0];
+		$country_name = $country_term->name;
+		$country_link = get_term_link( $country_term->term_id, 'location' );
+	}
+
+	$city_country_parts = array();
+	if ( $city_name ) {
+		if ( $city_link && ! is_wp_error( $city_link ) ) {
+			$city_country_parts[] = '<a href="' . esc_url( $city_link ) . '">' . esc_html( $city_name ) . '</a>';
+		} else {
+			$city_country_parts[] = esc_html( $city_name );
+		}
+	}
+	if ( $country_name ) {
+		if ( $country_link && ! is_wp_error( $country_link ) ) {
+			$city_country_parts[] = '<a href="' . esc_url( $country_link ) . '">' . esc_html( $country_name ) . '</a>';
+		} else {
+			$city_country_parts[] = esc_html( $country_name );
+		}
+	}
+
+	$result = array(
+		'city_country' => implode( ', ', $city_country_parts ),
+		'venue'        => $venue,
+		'venue_link'   => is_wp_error( $venue_link ) ? '' : $venue_link,
+	);
+	set_transient( $cache_key, $result, 6 * HOUR_IN_SECONDS );
+	return $result;
+}
+
+/**
+ * Count song/entry items in a setlist (song-post and song-text only).
+ *
+ * @param array $setlist Setlist array from ACF.
+ * @return int
+ */
+function jww_count_setlist_songs( $setlist ) {
+	if ( ! $setlist || ! is_array( $setlist ) ) {
+		return 0;
+	}
+	$count = 0;
+	foreach ( $setlist as $item ) {
+		if ( isset( $item['entry_type'] ) && ( $item['entry_type'] === 'song-post' || $item['entry_type'] === 'song-text' ) ) {
+			$count++;
+		}
+	}
+	return $count;
+}
+
+/**
+ * Get all performances of a song (every show + set position + days since previous).
+ * Cached per song. Used by song-play-history block.
+ *
+ * @param int  $song_id   Song post ID.
+ * @param bool $use_cache Whether to use cached results.
+ * @return array List of performances (newest first), each with show_id, post_date, show_link, show_title, location_id, set_position, days_since_previous, location_data (city_country, venue, venue_link).
+ */
+function jww_get_song_all_performances( $song_id, $use_cache = true ) {
+	if ( ! $song_id ) {
+		return array();
+	}
+
+	$cache_key = 'jww_song_performances_' . $song_id;
+	if ( $use_cache ) {
+		$cached = get_transient( $cache_key );
+		if ( $cached !== false ) {
+			return $cached;
+		}
+	}
+
+	$all_shows = jww_get_all_show_setlists( $use_cache );
+	$performances = array();
+
+	foreach ( $all_shows as $show_id => $show_data ) {
+		$setlist = $show_data['setlist'];
+		$post_date = $show_data['post_date'];
+		$position = 0;
+
+		foreach ( $setlist as $item ) {
+			if ( $item['entry_type'] === 'song-text' ) {
+				$position++;
+				continue;
+			}
+			if ( $item['entry_type'] !== 'song-post' || empty( $item['song'] ) ) {
+				continue;
+			}
+			$song = is_array( $item['song'] ) ? $item['song'][0] : $item['song'];
+			$item_song_id = is_object( $song ) ? $song->ID : $song;
+			$position++;
+
+			if ( (int) $item_song_id !== (int) $song_id ) {
+				continue;
+			}
+
+			$location_id = get_field( 'show_location', $show_id );
+			$performances[] = array(
+				'show_id'       => $show_id,
+				'post_date'     => $post_date,
+				'show_link'     => get_permalink( $show_id ),
+				'show_title'    => get_the_title( $show_id ),
+				'location_id'   => $location_id ? (int) $location_id : 0,
+				'set_position'  => $position,
+			);
+			break;
+		}
+	}
+
+	// Sort by date ascending (oldest first) so we can compute days_since_previous
+	usort( $performances, function( $a, $b ) {
+		return strtotime( $a['post_date'] ) - strtotime( $b['post_date'] );
+	} );
+
+	$prev_date = null;
+	foreach ( $performances as &$p ) {
+		$p['days_since_previous'] = null;
+		if ( $prev_date !== null ) {
+			$p['days_since_previous'] = (int) floor( ( strtotime( $p['post_date'] ) - $prev_date ) / DAY_IN_SECONDS );
+		}
+		$prev_date = strtotime( $p['post_date'] );
+		$p['location_data'] = jww_get_location_hierarchy( $p['location_id'] );
+	}
+	unset( $p );
+
+	// Newest first for display
+	$performances = array_reverse( $performances );
+
+	if ( $use_cache ) {
+		set_transient( $cache_key, $performances, 30 * MINUTE_IN_SECONDS );
+	}
+
+	return $performances;
+}
+
+/**
+ * Extract song post IDs from an ACF setlist array.
+ *
+ * @param array $setlist Setlist from get_field( 'setlist', $show_id ).
+ * @return int[]
+ */
+function jww_get_song_ids_from_setlist( $setlist ) {
+	$ids = array();
+	if ( ! $setlist || ! is_array( $setlist ) ) {
+		return $ids;
+	}
+	foreach ( $setlist as $item ) {
+		if ( ( $item['entry_type'] ?? '' ) !== 'song-post' || empty( $item['song'] ) ) {
+			continue;
+		}
+		$song = is_array( $item['song'] ) ? $item['song'][0] : $item['song'];
+		$id = is_object( $song ) ? $song->ID : $song;
+		if ( $id ) {
+			$ids[] = (int) $id;
+		}
+	}
+	return array_unique( $ids );
+}
+
+/**
+ * Store old setlist for a show before save (for segmented cache clear).
+ */
+function jww_store_show_setlist_before_save( $post_id ) {
+	if ( get_post_type( $post_id ) !== 'show' ) {
+		return;
+	}
+	if ( ! isset( $GLOBALS['jww_old_setlist_by_show'] ) ) {
+		$GLOBALS['jww_old_setlist_by_show'] = array();
+	}
+	$GLOBALS['jww_old_setlist_by_show'][ $post_id ] = get_field( 'setlist', $post_id );
+}
+add_action( 'save_post', 'jww_store_show_setlist_before_save', 3 );
+
+/**
+ * Clear song stats caches only for songs in this show's setlist (before or after save).
+ */
+function jww_clear_song_stats_on_show_save( $post_id ) {
+	if ( get_post_type( $post_id ) !== 'show' ) {
+		return;
+	}
+	$old_setlist = isset( $GLOBALS['jww_old_setlist_by_show'][ $post_id ] ) ? $GLOBALS['jww_old_setlist_by_show'][ $post_id ] : array();
+	$new_setlist = get_field( 'setlist', $post_id );
+	$song_ids = array_merge(
+		jww_get_song_ids_from_setlist( $old_setlist ),
+		jww_get_song_ids_from_setlist( $new_setlist )
+	);
+	jww_clear_song_stats_for_song_ids( $song_ids );
+	// Keep admin list performant: store song count in post meta when setlist changes.
+	update_post_meta( $post_id, '_show_song_count', jww_count_setlist_songs( $new_setlist ) );
+	if ( isset( $GLOBALS['jww_old_setlist_by_show'][ $post_id ] ) ) {
+		unset( $GLOBALS['jww_old_setlist_by_show'][ $post_id ] );
+	}
+}
+add_action( 'save_post', 'jww_clear_song_stats_on_show_save', 20 );

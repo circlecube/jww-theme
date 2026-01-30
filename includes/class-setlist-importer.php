@@ -398,6 +398,10 @@ class Setlist_Importer {
 		$setlist = $this->parse_setlist( $sets_data );
 		// Always update setlist, even if empty (to clear old data on sync)
 		update_field( 'setlist', $setlist, $show_id );
+		// Keep admin list performant: store song count in post meta.
+		if ( function_exists( 'jww_count_setlist_songs' ) ) {
+			update_post_meta( $show_id, '_show_song_count', jww_count_setlist_songs( $setlist ) );
+		}
 
 		// Set show notes if provided
 		// On update/sync, merge new info with existing if both exist

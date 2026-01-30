@@ -73,6 +73,25 @@ function jww_register_show_post_type() {
 add_action( 'init', 'jww_register_show_post_type', 0 );
 
 /**
+ * Enable song archive with slug "songs"
+ * Song CPT is registered by ACF; we adjust archive and rewrite after init.
+ */
+function jww_enable_song_archive() {
+	$obj = get_post_type_object( 'song' );
+	if ( ! $obj ) {
+		return;
+	}
+	$obj->has_archive = true;
+	$obj->rewrite = array(
+		'slug'       => 'songs',
+		'with_front' => true,
+		'feeds'      => false,
+		'pages'      => true,
+	);
+}
+add_action( 'init', 'jww_enable_song_archive', 20 );
+
+/**
  * Register Tour and Location Taxonomies for Shows
  */
 function jww_register_show_taxonomies() {
@@ -237,3 +256,22 @@ function jww_include_scheduled_shows_in_archives( $query ) {
 	}
 }
 add_action( 'pre_get_posts', 'jww_include_scheduled_shows_in_archives' );
+
+/**
+ * Ensure /songs/ archive works with query parameters (display, sort, etc.)
+ */
+function jww_fix_song_archive_request( $query_vars ) {
+	if ( is_admin() ) {
+		return $query_vars;
+	}
+	$request_uri = $_SERVER['REQUEST_URI'] ?? '';
+	$parsed = parse_url( $request_uri );
+	$path = trim( $parsed['path'] ?? '', '/' );
+	if ( $path === 'songs' ) {
+		$query_vars['post_type'] = 'song';
+		unset( $query_vars['name'] );
+		unset( $query_vars['pagename'] );
+	}
+	return $query_vars;
+}
+add_filter( 'request', 'jww_fix_song_archive_request', 5 );

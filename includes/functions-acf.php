@@ -164,14 +164,9 @@ function jww_auto_generate_show_title( $post_id ) {
 		// Re-add the hook
 		add_action( 'save_post', 'jww_auto_generate_show_title' );
 		
-		// Clear statistics cache when show is updated
+		// Song stats cache is cleared by jww_clear_song_stats_on_show_save (save_post priority 20) for shows.
+
 		if ( ! is_wp_error( $update_result ) ) {
-			if ( function_exists( 'jww_clear_song_stats_caches' ) ) {
-				jww_clear_song_stats_caches();
-			} else {
-				delete_transient( 'jww_all_time_song_stats' );
-			}
-			
 			// Clear location hierarchy cache if location changed
 			delete_transient( 'jww_archive_locations' );
 			delete_transient( 'jww_archive_tours' );

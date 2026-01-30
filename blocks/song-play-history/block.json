@@ -1,20 +1,18 @@
 {
     "$schema": "https://schemas.wp.org/trunk/block.json",
     "apiVersion": 3,
-    "name": "jww/show-stats",
+    "name": "jww/song-play-history",
     "version": "1.0.0",
-    "title": "JWW Show Statistics",
+    "title": "JWW Song Play History",
     "category": "media",
-    "icon": "chart-line",
-    "description": "Display various statistics about shows and songs (play counts, venue stats, tour stats, gap analysis).",
+    "icon": "list-view",
+    "description": "Display all times a song was played live: list or sortable table (date, location, venue, set position, days since previous).",
     "keywords": [
-        "show",
-        "statistics",
-        "stats",
         "song",
-        "plays",
-        "venue",
-        "tour"
+        "play",
+        "history",
+        "setlist",
+        "shows"
     ],
     "textdomain": "jww-theme",
     "editorScript": "file:../../build/index.js",
@@ -36,28 +34,21 @@
         }
     },
     "attributes": {
-        "statType": {
+        "displayMode": {
             "type": "string",
-            "default": "song_plays",
+            "default": "table",
             "enum": [
-                "song_plays",
-                "venue_stats",
-                "tour_stats",
-                "gap_analysis"
+                "list",
+                "table"
             ]
+        },
+        "songId": {
+            "type": "number",
+            "default": 0
         },
         "limit": {
             "type": "number",
-            "default": 10
-        },
-        "sortBy": {
-            "type": "string",
-            "default": "count",
-            "enum": [
-                "count",
-                "name",
-                "date"
-            ]
+            "default": 0
         }
     }
 }

@@ -190,7 +190,7 @@ class Show_Importer {
 				<!-- Setlist Sync Cron Status -->
 				<div class="jww-importer-section">
 					<h2>Automatic Setlist Sync</h2>
-					<p class="description">Shows are automatically synced with setlist.fm twice daily when they are published. The cron checks for shows published since the last check and syncs them if they have a setlist.fm URL.</p>
+					<p class="description">Shows are automatically synced with setlist.fm twice daily. The cron syncs: (1) shows published since the last check that have a setlist.fm URL, and (2) past published shows that have a setlist.fm URL but no songs yet, so setlists added later on setlist.fm get picked up. A 5-second delay between API requests is used to avoid rate limits (setlist.fm does not publish exact limits).</p>
 					<div id="setlist-sync-status">
 						<p>Loading status...</p>
 					</div>
@@ -762,9 +762,12 @@ class Show_Importer {
 	}
 	
 	/**
-	 * Sync recently published shows with setlist.fm
+	 * Sync recently published shows and past shows with empty setlists with setlist.fm
 	 * Called by cron hook or manually via AJAX
-	 * 
+	 *
+	 * Includes: (1) shows published since last check that have a setlist.fm URL,
+	 * (2) past published shows that have a setlist.fm URL but song count 0 (so we retry when setlist.fm is updated).
+	 *
 	 * @return array Results array with synced_count, error_count, checked_count
 	 */
 	public function sync_recent_shows_setlist() {
@@ -778,8 +781,8 @@ class Show_Importer {
 			$check_since = $current_time - ( 7 * DAY_IN_SECONDS );
 		}
 		
-		// Find shows published since last check
-		$args = array(
+		// 1. Shows published since last check with setlist.fm URL
+		$args_recent = array(
 			'post_type'      => 'show',
 			'post_status'    => 'publish',
 			'posts_per_page' => -1,
@@ -795,12 +798,44 @@ class Show_Importer {
 				),
 			),
 		);
+		$shows_recent = get_posts( $args_recent );
 		
-		$shows = get_posts( $args );
-		$checked_count = count( $shows );
+		// 2. Past published shows with setlist.fm URL and song count 0 (retry when setlist.fm adds data)
+		$args_past = array(
+			'post_type'      => 'show',
+			'post_status'    => 'publish',
+			'posts_per_page' => -1,
+			'date_query'     => array(
+				array(
+					'before' => current_time( 'mysql' ),
+					'inclusive' => true,
+				),
+			),
+			'meta_query'     => array(
+				array(
+					'key'     => 'setlist_fm_url',
+					'compare' => 'EXISTS',
+				),
+			),
+		);
+		$shows_past = get_posts( $args_past );
+		$show_ids_empty_setlist = array();
+		if ( function_exists( 'jww_count_setlist_songs' ) ) {
+			foreach ( $shows_past as $show ) {
+				$setlist = get_field( 'setlist', $show->ID );
+				if ( jww_count_setlist_songs( $setlist ) === 0 ) {
+					$show_ids_empty_setlist[] = $show->ID;
+				}
+			}
+		}
 		
-		if ( empty( $shows ) ) {
-			// No new shows, update last check time and exit
+		// Merge and deduplicate show IDs
+		$all_ids = array_unique( array_merge(
+			wp_list_pluck( $shows_recent, 'ID' ),
+			$show_ids_empty_setlist
+		) );
+		
+		if ( empty( $all_ids ) ) {
 			update_option( 'jww_setlist_sync_last_check', $current_time );
 			return array(
 				'synced_count' => 0,
@@ -809,41 +844,58 @@ class Show_Importer {
 			);
 		}
 		
+		$shows = get_posts( array(
+			'post_type'      => 'show',
+			'post__in'       => $all_ids,
+			'posts_per_page' => -1,
+			'post_status'    => 'publish',
+			'orderby'        => 'post__in',
+		) );
+		$checked_count = count( $shows );
+		
 		$importer = new Setlist_Importer();
 		$synced_count = 0;
 		$error_count = 0;
+		// setlist.fm does not publish exact rate limits; delay between requests to avoid 429.
+		$delay_seconds = (int) apply_filters( 'jww_setlist_sync_delay_seconds', 5 );
+		$delay_seconds = max( 0, min( 60, $delay_seconds ) );
+		$request_index = 0;
 		
 		foreach ( $shows as $show ) {
 			$setlist_fm_url = get_field( 'setlist_fm_url', $show->ID );
 			
 			if ( empty( $setlist_fm_url ) ) {
-				continue; // Skip shows without setlist.fm URL
+				continue;
 			}
 			
-			// Sync this show
+			// Throttle: wait before each request except the first to stay under API rate limit.
+			if ( $request_index > 0 && $delay_seconds > 0 ) {
+				sleep( $delay_seconds );
+			}
+			$request_index++;
+			
 			$result = $importer->import_from_url( $setlist_fm_url );
 			
 			if ( is_wp_error( $result ) ) {
 				$error_count++;
 				error_log( 'Setlist sync cron error for show ' . $show->ID . ': ' . $result->get_error_message() );
+				// If we hit rate limit (429), wait longer before continuing to avoid further 429s.
+				if ( $result->get_error_code() === 'api_error' && strpos( $result->get_error_message(), 'rate limit' ) !== false && $delay_seconds < 10 ) {
+					sleep( 10 );
+				}
 			} else {
 				$synced_count++;
 			}
 		}
 		
-		// Update last check time
 		update_option( 'jww_setlist_sync_last_check', $current_time );
 		
-		// Clear song stats cache if any shows were synced
-		if ( $synced_count > 0 ) {
-			if ( function_exists( 'jww_clear_song_stats_caches' ) ) {
-				jww_clear_song_stats_caches();
-			}
+		if ( $synced_count > 0 && function_exists( 'jww_clear_song_stats_caches' ) ) {
+			jww_clear_song_stats_caches();
 		}
 		
-		// Log results
 		if ( $synced_count > 0 || $error_count > 0 ) {
-			error_log( sprintf( 
+			error_log( sprintf(
 				'Setlist sync cron: %d shows synced, %d errors',
 				$synced_count,
 				$error_count

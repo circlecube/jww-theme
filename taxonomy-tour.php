@@ -65,113 +65,6 @@ foreach ( $shows as $show ) {
 		}
 	}
 }
-
-/**
- * Helper function to get location hierarchy (City/Country and Venue)
- */
-function jww_get_location_hierarchy( $location_id ) {
-	if ( ! $location_id ) {
-		return array(
-			'city_country' => '',
-			'venue'        => '',
-			'venue_link'   => '',
-		);
-	}
-	
-	$location_term = get_term( $location_id, 'location' );
-	if ( ! $location_term || is_wp_error( $location_term ) ) {
-		return array(
-			'city_country' => '',
-			'venue'        => '',
-			'venue_link'   => '',
-		);
-	}
-	
-	// Build hierarchy path from venue up to country
-	// Using array_unshift, so path[0] = country, path[1] = city, path[2] = venue
-	$path = array();
-	$current_term = $location_term;
-	while ( $current_term ) {
-		array_unshift( $path, $current_term );
-		if ( $current_term->parent ) {
-			$current_term = get_term( $current_term->parent, 'location' );
-		} else {
-			break;
-		}
-	}
-	
-	// After building: path[0] = country, path[1] = city, path[2] = venue
-	// We want to display: Venue > City > Country (reversed order)
-	$venue = '';
-	$venue_link = '';
-	$city_name = '';
-	$city_link = '';
-	$country_name = '';
-	$country_link = '';
-	
-	$path_count = count( $path );
-	
-	if ( $path_count >= 1 ) {
-		// Last item is the venue (deepest level)
-		$venue_term = $path[$path_count - 1];
-		$venue = $venue_term->name;
-		$venue_link = get_term_link( $venue_term->term_id, 'location' );
-	}
-	
-	if ( $path_count >= 2 ) {
-		// Second to last is city
-		$city_term = $path[$path_count - 2];
-		$city_name = $city_term->name;
-		$city_link = get_term_link( $city_term->term_id, 'location' );
-	}
-	
-	if ( $path_count >= 3 ) {
-		// First item is country
-		$country_term = $path[0];
-		$country_name = $country_term->name;
-		$country_link = get_term_link( $country_term->term_id, 'location' );
-	}
-	
-	// Build city_country string with links for display
-	$city_country_parts = array();
-	if ( $city_name ) {
-		if ( $city_link && ! is_wp_error( $city_link ) ) {
-			$city_country_parts[] = '<a href="' . esc_url( $city_link ) . '">' . esc_html( $city_name ) . '</a>';
-		} else {
-			$city_country_parts[] = esc_html( $city_name );
-		}
-	}
-	if ( $country_name ) {
-		if ( $country_link && ! is_wp_error( $country_link ) ) {
-			$city_country_parts[] = '<a href="' . esc_url( $country_link ) . '">' . esc_html( $country_name ) . '</a>';
-		} else {
-			$city_country_parts[] = esc_html( $country_name );
-		}
-	}
-	
-	return array(
-		'city_country' => implode( ', ', $city_country_parts ),
-		'venue'        => $venue,
-		'venue_link'   => $venue_link,
-	);
-}
-
-/**
- * Helper function to count songs in setlist
- */
-function jww_count_setlist_songs( $setlist ) {
-	if ( ! $setlist || ! is_array( $setlist ) ) {
-		return 0;
-	}
-	
-	$count = 0;
-	foreach ( $setlist as $item ) {
-		if ( isset( $item['entry_type'] ) && ( $item['entry_type'] === 'song-post' || $item['entry_type'] === 'song-text' ) ) {
-			$count++;
-		}
-	}
-	return $count;
-}
 ?>
 
 <main class="wp-block-group align is-layout-flow wp-block-group-is-layout-flow">
@@ -221,7 +114,7 @@ function jww_count_setlist_songs( $setlist ) {
 				<thead>
 					<tr>
 						<th class="sortable" data-sort="title" data-sort-type="text">
-							Title <span class="sort-indicator"></span>
+							Show <span class="sort-indicator"></span>
 						</th>
 						<th class="sortable" data-sort="date" data-sort-type="date">
 							Date <span class="sort-indicator"></span>
@@ -303,7 +196,7 @@ function jww_count_setlist_songs( $setlist ) {
 				<thead>
 					<tr>
 						<th class="sortable" data-sort="title" data-sort-type="text">
-							Title <span class="sort-indicator"></span>
+							Show <span class="sort-indicator"></span>
 						</th>
 						<th class="sortable" data-sort="date" data-sort-type="date">
 							Date <span class="sort-indicator"></span>

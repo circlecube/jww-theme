@@ -3,7 +3,7 @@
     "apiVersion": 3,
     "name": "jww/day-counter",
     "version": "1.0.0",
-    "title": "Day Counter",
+    "title": "JWW Day Counter",
     "category": "widgets",
     "icon": "clock",
     "description": "Display the number of days since Jesse's latest song was published.",

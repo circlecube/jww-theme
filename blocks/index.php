@@ -24,6 +24,8 @@ require_once __DIR__ . '/song-list/register.php';
 require_once __DIR__ . '/show-list/register.php';
 require_once __DIR__ . '/show-stats/register.php';
 require_once __DIR__ . '/song-live-stats/register.php';
+require_once __DIR__ . '/song-play-history/register.php';
+require_once __DIR__ . '/song-stats-table/register.php';
 require_once __DIR__ . '/tour-timeline/register.php';
 require_once __DIR__ . '/song-history-chart/register.php';
 

@@ -245,15 +245,16 @@ function jww_enqueue_show_admin_scripts( $hook ) {
 add_action( 'admin_enqueue_scripts', 'jww_enqueue_show_admin_scripts' );
 
 /**
- * Add custom Location column to show admin table
+ * Add custom Location and Songs columns to show admin table
  */
 function jww_add_show_location_column( $columns ) {
-	// Insert Location column after title
+	// Insert Location and Songs columns after title
 	$new_columns = array();
 	foreach ( $columns as $key => $value ) {
 		$new_columns[ $key ] = $value;
 		if ( $key === 'title' ) {
-			$new_columns['location'] = 'Location';
+			$new_columns['location']   = 'Location';
+			$new_columns['song_count'] = 'Songs';
 		}
 	}
 	return $new_columns;
@@ -318,3 +319,52 @@ function jww_populate_show_location_column( $column, $post_id ) {
 }
 // Use priority 20 to override WordPress's default taxonomy column handler (priority 10)
 add_action( 'manage_show_posts_custom_column', 'jww_populate_show_location_column', 20, 2 );
+
+/**
+ * Populate Songs column in show admin table
+ *
+ * Uses _show_song_count meta (updated when setlist is saved). Backfills from setlist when meta
+ * is missing so existing shows get a count without a migration.
+ */
+function jww_populate_show_song_count_column( $column, $post_id ) {
+	if ( $column !== 'song_count' ) {
+		return;
+	}
+	$count = get_post_meta( $post_id, '_show_song_count', true );
+	if ( $count === '' && function_exists( 'jww_count_setlist_songs' ) ) {
+		$setlist = get_field( 'setlist', $post_id );
+		$count   = jww_count_setlist_songs( $setlist );
+		update_post_meta( $post_id, '_show_song_count', $count );
+	}
+	if ( $count === '' || $count === null ) {
+		$count = 0;
+	}
+	echo esc_html( (int) $count );
+}
+add_action( 'manage_show_posts_custom_column', 'jww_populate_show_song_count_column', 20, 2 );
+
+/**
+ * Make Songs column sortable in show admin table
+ */
+function jww_show_sortable_columns( $columns ) {
+	$columns['song_count'] = 'song_count';
+	return $columns;
+}
+add_filter( 'manage_edit-show_sortable_columns', 'jww_show_sortable_columns' );
+
+/**
+ * Order by _show_song_count when Songs column is clicked
+ */
+function jww_show_orderby_song_count( $query ) {
+	global $pagenow, $typenow;
+	if ( $pagenow !== 'edit.php' || $typenow !== 'show' || ! $query->is_main_query() ) {
+		return;
+	}
+	$orderby = $query->get( 'orderby' );
+	if ( $orderby !== 'song_count' ) {
+		return;
+	}
+	$query->set( 'meta_key', '_show_song_count' );
+	$query->set( 'orderby', 'meta_value_num' );
+}
+add_action( 'pre_get_posts', 'jww_show_orderby_song_count' );

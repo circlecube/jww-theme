@@ -3,7 +3,7 @@
     "apiVersion": 3,
     "name": "jww/song-list",
     "version": "1.0.0",
-    "title": "Song List",
+    "title": "JWW Song List",
     "category": "media",
     "icon": "playlist-audio",
     "description": "Display songs in alphabetical, chronological, cover song, or grid format with optional artist filtering and section headers.",

@@ -1,0 +1,80 @@
+.song-play-history-block {
+	margin: 1.5rem 0;
+
+	.no-performances {
+		color: #666;
+		font-style: italic;
+		padding: 1rem;
+	}
+
+	&.display-list {
+		.stat-item.stat-recent-shows {
+			text-align: left;
+
+			.recent-shows-list {
+				list-style: none;
+				padding: 0;
+				margin: 0;
+
+				li {
+					padding: 0.75rem 0;
+					border-bottom: 1px solid #eee;
+
+					>a {
+						color: #0066cc;
+						text-decoration: none;
+
+						&:hover {
+							text-decoration: underline;
+						}
+					}
+
+					.show-meta {
+						color: #666;
+						font-size: 0.9rem;
+						margin-top: 0.25rem;
+					}
+				}
+			}
+		}
+	}
+
+	.song-play-history-table-wrapper {
+		overflow-x: auto;
+	}
+
+	.song-play-history-table {
+		width: 100%;
+		border-collapse: collapse;
+
+		thead th {
+			text-align: left;
+			padding: 0.75rem;
+			border-bottom: 2px solid #ddd;
+			font-weight: 600;
+
+			&.sortable {
+				cursor: pointer;
+				user-select: none;
+			}
+		}
+
+		tbody td {
+			padding: 0.75rem;
+			border-bottom: 1px solid #eee;
+
+			a {
+				color: #0066cc;
+				text-decoration: none;
+
+				&:hover {
+					text-decoration: underline;
+				}
+			}
+
+			.empty-cell {
+				color: #999;
+			}
+		}
+	}
+}

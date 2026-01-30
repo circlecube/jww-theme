@@ -3,7 +3,7 @@
     "apiVersion": 3,
     "name": "jww/band-list",
     "version": "1.0.0",
-    "title": "Band List",
+    "title": "JWW Band List",
     "category": "media",
     "icon": "groups",
     "description": "Display all artists/bands with featured images and titles.",

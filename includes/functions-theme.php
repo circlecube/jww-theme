@@ -64,8 +64,8 @@ function jww_enqueue() {
 		wp_get_theme()->get('Version'),
 	);
 	
-	// Enqueue archive show sorting script on show archives
-	if ( is_post_type_archive( 'show' ) || is_tax( array( 'tour', 'location' ) ) ) {
+	// Enqueue sortable table script on show archives, song archive, and single song (Play history table)
+	if ( is_post_type_archive( 'show' ) || is_post_type_archive( 'song' ) || is_singular( 'song' ) || is_tax( array( 'tour', 'location' ) ) ) {
 		wp_enqueue_script( 
 			'jww-archive-sort', 
 			get_stylesheet_directory_uri() . '/includes/js/archive-show-sort.js', 
@@ -182,3 +182,35 @@ function jww_handle_theme_upgrades() {
 	}
 }
 add_action( 'admin_init', 'jww_handle_theme_upgrades' );
+
+/**
+ * AJAX: Return play history table HTML for a song (lazy-loaded in accordion on single-song).
+ */
+function jww_ajax_song_live_stats_fragment() {
+	$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( $_POST['nonce'] ) : '';
+	if ( ! wp_verify_nonce( $nonce, 'jww_song_live_stats' ) ) {
+		wp_send_json_error( array( 'message' => 'Invalid nonce' ), 403 );
+	}
+	$song_id = isset( $_POST['song_id'] ) ? (int) $_POST['song_id'] : 0;
+	if ( ! $song_id ) {
+		wp_send_json_error( array( 'message' => 'Missing song_id' ), 400 );
+	}
+	$post = get_post( $song_id );
+	if ( ! $post || $post->post_type !== 'song' || $post->post_status !== 'publish' ) {
+		wp_send_json_error( array( 'message' => 'Invalid song' ), 404 );
+	}
+
+	ob_start();
+	$play_history_content = render_block( array(
+		'blockName' => 'jww/song-play-history',
+		'attrs'     => array( 'displayMode' => 'table', 'songId' => $song_id, 'limit' => 0 ),
+	) );
+	if ( $play_history_content ) {
+		echo $play_history_content;
+	}
+	$html = ob_get_clean();
+
+	wp_send_json_success( array( 'html' => $html ) );
+}
+add_action( 'wp_ajax_jww_song_live_stats_fragment', 'jww_ajax_song_live_stats_fragment' );
+add_action( 'wp_ajax_nopriv_jww_song_live_stats_fragment', 'jww_ajax_song_live_stats_fragment' );

@@ -3,7 +3,7 @@
 	"apiVersion": 3,
 	"name": "jww/latest-song",
 	"version": "1.0.0",
-	"title": "Latest Song",
+	"title": "JWW Latest Song",
 	"category": "media",
 	"icon": "format-audio",
 	"description": "Display the most recent song with its video embed.",
