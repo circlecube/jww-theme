@@ -231,6 +231,9 @@ foreach ( $shows as $show ) {
 						$location_id = isset( $fields['show_location'] ) ? $fields['show_location'] : 0;
 						$setlist = isset( $fields['setlist'] ) ? $fields['setlist'] : array();
 						$song_count = jww_count_setlist_songs( $setlist );
+						$song_count_display = $song_count > 0 ? (string) $song_count : '?';
+						$song_count_sort    = $song_count > 0 ? $song_count : -1;
+						$song_count_title   = $song_count > 0 ? '' : __( 'Setlist not added yet; will update when available.', 'jww-theme' );
 						
 						$location_data = jww_get_location_hierarchy( $location_id );
 					?>
@@ -259,8 +262,8 @@ foreach ( $shows as $show ) {
 									<span class="empty-cell">—</span>
 								<?php endif; ?>
 							</td>
-							<td data-sort-value="<?php echo esc_attr( $song_count ); ?>">
-								<a href="<?php echo esc_url( $show_link ); ?>"><?php echo esc_html( $song_count ); ?></a>
+							<td data-sort-value="<?php echo esc_attr( $song_count_sort ); ?>">
+								<a href="<?php echo esc_url( $show_link ); ?>"<?php echo $song_count_title ? ' title="' . esc_attr( $song_count_title ) . '"' : ''; ?>><?php echo esc_html( $song_count_display ); ?></a>
 							</td>
 						</tr>
 					<?php endforeach; ?>

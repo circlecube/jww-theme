@@ -1498,8 +1498,8 @@ class YouTube_Song_Importer {
      * Enqueue admin scripts for the options page
      */
     public function enqueue_admin_scripts( $hook ) {
-        // Only load on the YouTube import options page
-        if ( $hook !== 'toplevel_page_youtube-import-settings' ) {
+        // Only load on the YouTube import options page (subpage under Songs)
+        if ( $hook !== 'song_page_youtube-import-settings' ) {
             return;
         }
 
@@ -1514,7 +1514,7 @@ class YouTube_Song_Importer {
      */
     public function add_options_page_buttons() {
         $screen = get_current_screen();
-        if ( ! $screen || $screen->id !== 'toplevel_page_youtube-import-settings' ) {
+        if ( ! $screen || $screen->id !== 'song_page_youtube-import-settings' ) {
             return;
         }
         
@@ -1533,8 +1533,10 @@ class YouTube_Song_Importer {
                     '<h3>Quick Actions</h3>' +
                     '<p>' +
                         '<button type="button" id="check-now" class="button button-primary">Check Now</button> ' +
-                        '<span class="description">Manually trigger an import check for new videos</span>' +
+                        '<span class="spinner" id="youtube-check-now-spinner" style="float: none; margin: 0 0 0 5px;"></span>' +
+                        '<span class="description" style="margin-left: 8px;">Force fresh feed and import new videos</span>' +
                     '</p>' +
+                    '<div id="youtube-check-now-result" style="margin-top: 8px;"></div>' +
                     '<p>' +
                         '<button type="button" id="bulk-update-thumbnails" class="button">Bulk Update Thumbnails</button> ' +
                         '<span class="description">Check all songs for thumbnails and add them if they are missing</span>' +
@@ -1561,21 +1563,44 @@ class YouTube_Song_Importer {
             // Now bind event handlers (elements exist now)
             $('#check-now').on('click', function() {
                 var $btn = $(this);
+                var $spinner = $('#youtube-check-now-spinner');
+                var $result = $('#youtube-check-now-result');
+                var originalText = $btn.text();
+                
                 $btn.prop('disabled', true).text('Checking...');
-                $('#youtube-logs-content').html('Running import check...');
+                $spinner.addClass('is-active');
+                $result.html('').removeClass('notice-success notice-error');
+                $('#youtube-logs-content').html('Running import check (fresh cache)...');
                 
                 $.ajax({
                     url: ajaxurl,
                     type: 'POST',
                     data: { action: 'youtube_check_now', nonce: nonce },
                     success: function(response) {
+                        $spinner.removeClass('is-active');
+                        $btn.prop('disabled', false).text(originalText);
                         loadLogs();
+                        if (response.success && response.data) {
+                            var html = '<div class="notice notice-success"><p><strong>' + response.data.message + '</strong></p>';
+                            if (response.data.imported_count !== undefined || response.data.item_count !== undefined) {
+                                html += '<p style="margin-top: 6px; font-size: 0.9em; color: #646970;">';
+                                html += 'Videos in feed: ' + (response.data.item_count || 0);
+                                if (response.data.imported_count > 0) html += ' &middot; New: ' + response.data.imported_count;
+                                if (response.data.skipped_count > 0) html += ' &middot; Already had: ' + response.data.skipped_count;
+                                html += '</p>';
+                            }
+                            html += '</div>';
+                            $result.html(html).addClass('notice-success').removeClass('notice-error');
+                        } else {
+                            var errMsg = (response.data && response.data.message) ? response.data.message : 'Check failed. See logs.';
+                            $result.html('<div class="notice notice-error"><p>' + errMsg + '</p></div>').addClass('notice-error').removeClass('notice-success');
+                        }
                     },
-                    error: function() {
+                    error: function(xhr, status, err) {
+                        $spinner.removeClass('is-active');
+                        $btn.prop('disabled', false).text(originalText);
                         loadLogs();
-                    },
-                    complete: function() {
-                        $btn.prop('disabled', false).text('Check Now');
+                        $result.html('<div class="notice notice-error"><p>Request failed. Please try again.</p></div>').addClass('notice-error').removeClass('notice-success');
                     }
                 });
             });
@@ -2039,31 +2064,41 @@ class YouTube_Song_Importer {
     }
 
     /**
-     * AJAX handler to trigger import check now
+     * AJAX handler to trigger import check now (fresh feed cache, then import new entries)
      */
     public function ajax_check_now() {
         // Check nonce
-        if ( ! wp_verify_nonce( $_POST['nonce'], 'youtube_logs_nonce' ) ) {
-            wp_send_json_error( 'Security check failed' );
+        if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'youtube_logs_nonce' ) ) {
+            wp_send_json_error( [ 'message' => 'Security check failed' ] );
         }
 
         // Check permissions
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( 'Insufficient permissions' );
+            wp_send_json_error( [ 'message' => 'Insufficient permissions' ] );
         }
 
-        $this->log_import_activity( "Manual import triggered via 'Check Now' button" );
+        $this->log_import_activity( "Manual import triggered via 'Check Now' button (fresh cache)" );
 
-        // Run the import directly (bypass the enabled check for manual trigger)
-        $this->run_manual_import();
+        $result = $this->run_manual_import();
 
-        wp_send_json_success( 'Import check completed. Check the logs for details.' );
+        if ( ! empty( $result['error'] ) ) {
+            wp_send_json_error( [ 'message' => $result['error'] ] );
+        }
+
+        wp_send_json_success( [
+            'message'        => $result['message'],
+            'imported_count' => isset( $result['imported_count'] ) ? (int) $result['imported_count'] : 0,
+            'skipped_count'  => isset( $result['skipped_count'] ) ? (int) $result['skipped_count'] : 0,
+            'item_count'     => isset( $result['item_count'] ) ? (int) $result['item_count'] : 0,
+        ] );
     }
 
     /**
      * Run manual import (bypasses the enabled check)
-     * Checks the feed for new videos and creates song posts for them
-     * Uses fresh feed data (bypasses cache) for manual checks
+     * Checks the feed for new videos and creates song posts for them.
+     * Uses fresh feed data (bypasses cache) for manual checks.
+     *
+     * @return array 'message', 'imported_count', 'skipped_count', 'item_count'; or 'error' key on failure
      */
     private function run_manual_import() {
         include_once ABSPATH . WPINC . '/feed.php';
@@ -2071,7 +2106,7 @@ class YouTube_Song_Importer {
         $feed_url = $this->get_option_with_fallback( 'youtube_feed_url' );
         if ( empty( $feed_url ) ) {
             $this->log_import_activity( '✗ No feed URL configured' );
-            return;
+            return [ 'error' => __( 'No feed URL configured. Set it in the options above.', 'jww-theme' ) ];
         }
         
         if ( strpos( $feed_url, 'feeds/videos.xml' ) === false ) {
@@ -2083,7 +2118,7 @@ class YouTube_Song_Importer {
 
         if ( ! function_exists( 'fetch_feed' ) ) {
             $this->log_import_activity( '✗ Feed error: SimplePie not available' );
-            return;
+            return [ 'error' => __( 'Feed error: SimplePie not available.', 'jww-theme' ) ];
         }
 
         // Bypass cache for manual checks - set cache lifetime to 0
@@ -2096,13 +2131,18 @@ class YouTube_Song_Importer {
         
         if ( is_wp_error( $feed ) ) {
             $this->log_import_activity( '✗ Feed error: ' . $feed->get_error_message() );
-            return;
+            return [ 'error' => __( 'Feed error: ', 'jww-theme' ) . $feed->get_error_message() ];
         }
 
         $item_count = $feed->get_item_quantity();
         if ( $item_count === 0 ) {
             $this->log_import_activity( '⊘ Feed empty - no videos found' );
-            return;
+            return [
+                'message'        => __( 'No videos found in feed.', 'jww-theme' ),
+                'imported_count' => 0,
+                'skipped_count'  => 0,
+                'item_count'     => 0,
+            ];
         }
 
         $this->log_import_activity( "  Found {$item_count} videos in feed" );
@@ -2178,6 +2218,17 @@ class YouTube_Song_Importer {
         }
 
         $this->log_import_activity( "▣ Done: {$imported_count} new, {$skipped_count} existing, {$item_count} in feed" );
+
+        $message = $imported_count
+            ? sprintf( __( 'Check completed. %d new video(s) imported.', 'jww-theme' ), $imported_count )
+            : __( 'Check completed. No new videos found.', 'jww-theme' );
+
+        return [
+            'message'        => $message,
+            'imported_count' => $imported_count,
+            'skipped_count'  => $skipped_count,
+            'item_count'     => $item_count,
+        ];
     }
 
     /**

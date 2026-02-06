@@ -50,3 +50,5 @@ vendor
 
 # Environment variables
 .env
+
+plans

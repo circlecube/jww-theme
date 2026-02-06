@@ -257,6 +257,9 @@ $location_display_string = implode( ' > ', $location_display );
 						$tour_id = isset( $fields['show_tour'] ) ? $fields['show_tour'] : 0;
 						$setlist = isset( $fields['setlist'] ) ? $fields['setlist'] : array();
 						$song_count = jww_count_setlist_songs( $setlist );
+						$song_count_display = $song_count > 0 ? (string) $song_count : '?';
+						$song_count_sort    = $song_count > 0 ? $song_count : -1;
+						$song_count_title   = $song_count > 0 ? '' : __( 'Setlist not added yet; will update when available.', 'jww-theme' );
 						
 						$location_data = jww_get_location_hierarchy( $location_id );
 						
@@ -296,8 +299,8 @@ $location_display_string = implode( ' > ', $location_display );
 									<span class="empty-cell">—</span>
 								<?php endif; ?>
 							</td>
-							<td data-sort-value="<?php echo esc_attr( $song_count ); ?>">
-								<a href="<?php echo esc_url( $show_link ); ?>"><?php echo esc_html( $song_count ); ?></a>
+							<td data-sort-value="<?php echo esc_attr( $song_count_sort ); ?>">
+								<a href="<?php echo esc_url( $show_link ); ?>"<?php echo $song_count_title ? ' title="' . esc_attr( $song_count_title ) . '"' : ''; ?>><?php echo esc_html( $song_count_display ); ?></a>
 							</td>
 							<td data-sort-value="<?php echo esc_attr( strtolower( $tour_name ) ); ?>">
 								<?php if ( $tour_name ): ?>

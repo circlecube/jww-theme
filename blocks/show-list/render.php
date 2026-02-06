@@ -156,8 +156,8 @@ foreach ( $shows as $show ) {
 			</div>
 		<?php endif; ?>
 		
-		<?php if ( $show_setlist && $song_count > 0 ): ?>
-			<div class="show-song-count"><?php echo esc_html( $song_count ); ?> songs</div>
+		<?php if ( $show_setlist ): ?>
+			<div class="show-song-count"<?php echo $song_count === 0 ? ' title="' . esc_attr__( 'Setlist not added yet; will update when available.', 'jww-theme' ) . '"' : ''; ?>><?php echo $song_count > 0 ? esc_html( $song_count ) . ' songs' : '? songs'; ?></div>
 		<?php endif; ?>
 		
 		<div class="show-links">
