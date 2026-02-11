@@ -139,6 +139,9 @@ class YouTube_Song_Importer {
             return;
         }
 
+        // Delete feed cache so we always get fresh data (cron and manual); default 12h cache often hid new videos.
+        $this->delete_feed_cache_for_url( $feed_url );
+
         $feed = fetch_feed( $feed_url );
         if ( is_wp_error( $feed ) ) {
             $this->log_import_activity( '✗ Feed error: ' . $feed->get_error_message() );
@@ -212,6 +215,9 @@ class YouTube_Song_Importer {
 
             // Add 'needs-notes' tag since new imports won't have lyric_annotations
             wp_set_post_terms( $post_id, array( 'needs-notes' ), 'post_tag', true );
+
+            // Category "original" and artist "Jesse Welles"
+            $this->set_imported_song_defaults( $post_id );
 
             $imported_count++;
             $this->log_import_activity( '✓ NEW: "' . $video_title . '"' );
@@ -472,6 +478,34 @@ class YouTube_Song_Importer {
         }
 
         return false;
+    }
+
+    /**
+     * Get the band post ID for "Jesse Welles" (used to set artist on imported YouTube songs).
+     *
+     * @return int|null Band post ID or null if not found.
+     */
+    private function get_jesse_welles_band_id() {
+        global $wpdb;
+        $id = $wpdb->get_var( $wpdb->prepare(
+            "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'band' AND post_status = 'publish' AND post_title = %s LIMIT 1",
+            'Jesse Welles'
+        ) );
+        return $id ? (int) $id : null;
+    }
+
+    /**
+     * Assign default category "original" and artist "Jesse Welles" to an imported song post.
+     *
+     * @param int $post_id Song post ID.
+     */
+    private function set_imported_song_defaults( $post_id ) {
+        wp_set_post_terms( $post_id, array( 'original' ), 'category', true );
+
+        $band_id = $this->get_jesse_welles_band_id();
+        if ( $band_id && function_exists( 'update_field' ) ) {
+            update_field( 'artist', $band_id, $post_id );
+        }
     }
 
     /**
@@ -2121,9 +2155,10 @@ class YouTube_Song_Importer {
             return [ 'error' => __( 'Feed error: SimplePie not available.', 'jww-theme' ) ];
         }
 
-        // Bypass cache for manual checks - set cache lifetime to 0
+        // Delete existing feed cache so fetch_feed() hits the network (setting lifetime to 0 only affects new writes).
+        $this->delete_feed_cache_for_url( $feed_url );
         add_filter( 'wp_feed_cache_transient_lifetime', [ $this, 'disable_feed_cache' ] );
-        
+
         $feed = fetch_feed( $feed_url );
         
         // Remove the filter after fetching
@@ -2209,6 +2244,9 @@ class YouTube_Song_Importer {
             // Add 'needs-notes' tag since new imports won't have lyric_annotations
             wp_set_post_terms( $post_id, array( 'needs-notes' ), 'post_tag', true );
 
+            // Category "original" and artist "Jesse Welles"
+            $this->set_imported_song_defaults( $post_id );
+
             $imported_count++;
             $this->log_import_activity( '✓ SUCCESS: New Song Imported:"' . $video_title . '" (ID: ' . $video_id . ')' );
             
@@ -2237,6 +2275,21 @@ class YouTube_Song_Importer {
      */
     public function disable_feed_cache( $lifetime ) {
         return 0;
+    }
+
+    /**
+     * Delete WordPress/SimplePie feed cache for a feed URL so the next fetch_feed() hits the network.
+     * WordPress stores feed data in site transients 'feed_<hash>' and 'feed_mod_<hash>' where
+     * the hash is the same as SimplePie's cache name (default: md5 of the feed URL).
+     * Setting wp_feed_cache_transient_lifetime to 0 only affects how long new data is stored;
+     * an existing transient is still returned, so we must delete it to force a fresh fetch.
+     *
+     * @param string $feed_url The full feed URL (e.g. https://www.youtube.com/feeds/videos.xml?channel_id=...)
+     */
+    private function delete_feed_cache_for_url( $feed_url ) {
+        $name = md5( $feed_url );
+        delete_site_transient( 'feed_' . $name );
+        delete_site_transient( 'feed_mod_' . $name );
     }
 
     /**
