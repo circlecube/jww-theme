@@ -1,0 +1,42 @@
+.jww-song-export-import-container {
+    max-width: 1200px;
+}
+
+.jww-song-export-import-container .jww-importer-section {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.jww-song-export-import-container .jww-importer-section h2 {
+    margin-top: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.jww-song-export-import-container .jww-import-form,
+.jww-song-export-import-container .jww-export-form {
+    margin-top: 15px;
+}
+
+.jww-song-export-import-container .spinner.is-active {
+    float: none;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+.jww-song-export-import-container .export-result,
+.jww-song-export-import-container .import-result {
+    margin-top: 15px;
+}
+
+.jww-song-export-import-container .notice {
+    margin: 0;
+}
+
+.jww-song-export-import-container .description {
+    color: #646970;
+    margin-bottom: 10px;
+}

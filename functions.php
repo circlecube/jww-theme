@@ -29,3 +29,4 @@ require_once( get_stylesheet_directory() . '/includes/class-setlist-importer.php
 require_once( get_stylesheet_directory() . '/includes/class-show-importer.php' );
 require_once( get_stylesheet_directory() . '/includes/class-song-duplicate-detector.php' );
 require_once( get_stylesheet_directory() . '/includes/class-song-video-migrator.php' );
+require_once( get_stylesheet_directory() . '/includes/class-song-export-import.php' );
