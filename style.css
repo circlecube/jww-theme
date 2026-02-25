@@ -7,7 +7,7 @@ Description: Child theme for the Twenty Twenty-Five block theme.
 Requires at least: 6.8
 Tested up to: 6.9
 Requires PHP: 8.0
-Version: 3.1.3
+Version: 3.2.0
 License: GNU General Public License v2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Template: twentytwentyfive
@@ -1349,6 +1349,610 @@ header .wp-block-site-title a[rel="home"] {
   margin-top: 0.25rem;
 }
 
+/* Show setlist chart (setlist.fm-style bar) */
+.show-setlist-chart {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.show-setlist-chart-heading {
+  font-size: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.show-setlist-chart-bar {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 2px;
+  min-height: 2.5rem;
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.show-setlist-chart-segment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 12px;
+  text-decoration: none;
+  color: inherit;
+  transition: opacity 0.15s ease, filter 0.15s ease;
+}
+
+.show-setlist-chart-segment:hover,
+.show-setlist-chart-segment:focus {
+  opacity: 0.9;
+  filter: brightness(1.1);
+}
+
+.show-setlist-chart-segment-inner {
+  position: absolute;
+  inset: 0;
+  background: var(--wp--preset--color--accent-6, #1e3a5f);
+  opacity: 0.85;
+}
+
+.show-setlist-chart-segment {
+  position: relative;
+}
+
+.show-setlist-chart-segment-label {
+  position: relative;
+  z-index: 1;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+.show-setlist-chart-legend {
+  font-size: 0.875rem;
+  color: #666;
+  margin-top: 0.5rem;
+  margin-bottom: 0;
+}
+
+/* Flex group for setlist highlights, songs on albums, tour stats */
+/* Setlist Data section (wraps the three cards) */
+.show-setlist-data-section {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.show-setlist-data-heading {
+  font-size: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Base container for Setlist Data cards; use one layout modifier: -flex or -masonry */
+.show-stats-cards {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.show-stats-cards-flex {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+/* Masonry layout: JS places cards in shortest column (true masonry).
+   Section with alignwide escapes constrained wrapper; inner wrapper stays centered.
+   Container is position:relative so script can use position:absolute on cards. */
+.show-setlist-data-section.alignwide {
+  flex: 0 0 100% !important; /* if parent is flex, take full width */
+  width: 100vw !important;
+  max-width: 100vw !important;
+  margin-left: calc(50% - 50vw) !important;
+  margin-right: calc(50% - 50vw) !important;
+  padding-left: var(--wp--preset--spacing--50, 1.5rem);
+  padding-right: var(--wp--preset--spacing--50, 1.5rem);
+  box-sizing: border-box;
+}
+
+.show-setlist-data-section.alignwide .show-stats-cards {
+  width: 100% !important;
+  max-width: 1200px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Masonry container: block + relative so JS absolute positioning works */
+#show-stats-cards-masonry.show-stats-cards-masonry,
+.show-setlist-data-section .show-stats-cards.show-stats-cards-masonry {
+  display: block !important;
+  position: relative !important;
+  width: 100% !important;
+  min-width: 0;
+  /* gap applied by JS (1.25rem) */
+}
+
+.show-stats-cards-masonry > .show-setlist-highlight-debuts,
+.show-stats-cards-masonry > .show-setlist-highlight-returns,
+.show-stats-cards-masonry > .show-setlist-highlight-standout,
+.show-stats-cards-masonry > .show-setlist-album-stats,
+.show-stats-cards-masonry > .show-tour-stats {
+  margin-bottom: 1.5rem;
+  width: 100%;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+}
+
+/* Override alignwide/wp-block-group when inside masonry so cards don't force one column */
+#show-stats-cards-masonry > .show-setlist-highlight-debuts.alignwide,
+#show-stats-cards-masonry > .show-setlist-highlight-returns.alignwide,
+#show-stats-cards-masonry > .show-setlist-highlight-standout.alignwide,
+#show-stats-cards-masonry > .show-setlist-album-stats.alignwide,
+#show-stats-cards-masonry > .show-tour-stats.alignwide {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+/* Column count and stacking are handled by show-stats-masonry.js (1 col ≤600px, 2 cols 601–900px, 3 cols >900px) */
+
+/* Each Setlist Data card: fill row on wide screens (3 per row), stack on mobile */
+.show-stats-cards-flex > .show-setlist-highlight-debuts,
+.show-stats-cards-flex > .show-setlist-highlight-returns,
+.show-stats-cards-flex > .show-setlist-highlight-standout,
+.show-stats-cards-flex > .show-setlist-album-stats,
+.show-stats-cards-flex > .show-tour-stats {
+  flex: 1 1 30%;
+  min-width: min(100%, 18rem);
+  max-width: none;
+  margin: 0;
+  width: auto;
+}
+
+/* Override alignwide when inside the flex so cards fill the row */
+.show-stats-cards-flex > .show-setlist-highlight-debuts.alignwide,
+.show-stats-cards-flex > .show-setlist-highlight-returns.alignwide,
+.show-stats-cards-flex > .show-setlist-highlight-standout.alignwide,
+.show-stats-cards-flex > .show-setlist-album-stats.alignwide,
+.show-stats-cards-flex > .show-tour-stats.alignwide {
+  max-width: none;
+  width: auto;
+}
+
+@media (max-width: 768px) {
+  .show-stats-cards-flex > .show-setlist-highlight-debuts,
+  .show-stats-cards-flex > .show-setlist-highlight-returns,
+  .show-stats-cards-flex > .show-setlist-highlight-standout,
+  .show-stats-cards-flex > .show-setlist-album-stats,
+  .show-stats-cards-flex > .show-tour-stats {
+    flex: 1 1 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+/* Show setlist album stats (setlist.fm "Songs on Albums" style) */
+.show-setlist-album-stats.setlistAlbumStats,
+.show-setlist-album-stats {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.show-setlist-album-stats-card {
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  padding: 1.25rem;
+  overflow: hidden;
+}
+
+.show-setlist-album-stats-heading {
+  font-size: 1.25rem;
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+}
+
+/* Album representation bar chart: one row per segment, label + bar (wraps clearly at small width) */
+.show-setlist-album-stats-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.show-setlist-album-stats-chart-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 1.5rem;
+}
+
+.show-setlist-album-stats-chart-row-label {
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--wp--preset--color--contrast-2, #1e293b);
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 55%;
+}
+
+.show-setlist-album-stats-chart-row-bar {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 0.625rem;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #ccc;
+}
+
+.show-setlist-album-stats-chart-row-fill {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.2s ease, filter 0.15s ease;
+  opacity: 0.95;
+}
+
+.show-setlist-album-stats-chart-row:hover .show-setlist-album-stats-chart-row-fill {
+  filter: brightness(1.15);
+}
+
+.show-setlist-album-stats-chart-segment-0 .show-setlist-album-stats-chart-row-fill { background: #1a365d; }
+.show-setlist-album-stats-chart-segment-1 .show-setlist-album-stats-chart-row-fill { background: #2c5282; }
+.show-setlist-album-stats-chart-segment-2 .show-setlist-album-stats-chart-row-fill { background: #2d5a87; }
+.show-setlist-album-stats-chart-segment-3 .show-setlist-album-stats-chart-row-fill { background: #3d7ab5; }
+.show-setlist-album-stats-chart-segment-4 .show-setlist-album-stats-chart-row-fill { background: #4a7fa8; }
+.show-setlist-album-stats-chart-segment-5 .show-setlist-album-stats-chart-row-fill { background: #5a8fb8; }
+.show-setlist-album-stats-chart-segment-6 .show-setlist-album-stats-chart-row-fill { background: #2d5a4a; }
+.show-setlist-album-stats-chart-segment-7 .show-setlist-album-stats-chart-row-fill { background: #3d6b58; }
+.show-setlist-album-stats-chart-segment-8 .show-setlist-album-stats-chart-row-fill { background: #4a7c6e; }
+.show-setlist-album-stats-chart-segment-9 .show-setlist-album-stats-chart-row-fill { background: #5a8f7a; }
+
+.show-setlist-album-stats-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.show-setlist-album-stats-details {
+  flex: 1 1 180px;
+  min-width: 0;
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.show-setlist-album-stats-summary {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.show-setlist-album-stats-summary::-webkit-details-marker {
+  display: none;
+}
+
+.show-setlist-album-stats-summary::marker {
+  display: none;
+}
+
+.show-setlist-album-stats-summary::before {
+  content: '';
+  display: block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-right: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 0.2s ease;
+  order: 3;
+  flex-shrink: 0;
+}
+
+.show-setlist-album-stats-details[open] .show-setlist-album-stats-summary::before {
+  transform: rotate(45deg);
+}
+
+.show-setlist-album-stats-thumb {
+  flex-shrink: 1;
+  width: 100%;
+  max-width: 96px;
+  height: 96px;
+  order: 1;
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.show-setlist-album-stats-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.show-setlist-album-stats-summary-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  min-width: 0;
+  font-size: 0.8rem;
+  text-align: center;
+  order: 2;
+}
+
+.show-setlist-album-stats-thumb-placeholder {
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 96px;
+  height: 96px;
+  order: 1;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.show-setlist-album-stats-count {
+  flex-shrink: 0;
+  font-weight: 600;
+}
+
+.show-setlist-album-stats-content {
+  padding: 0 1rem 1rem 1rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.show-setlist-album-stats-album-link {
+  margin: 0.75rem 0 0 0;
+  font-size: 0.9rem;
+}
+
+.show-setlist-album-stats-album-link a {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.8rem;
+  background-color: #1e3a5f;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 4px;
+  font-weight: 600;
+  transition: filter 0.15s ease;
+}
+
+.show-setlist-album-stats-album-link a:hover {
+  filter: brightness(1.1);
+  color: #fff;
+  text-decoration: none;
+}
+
+.show-setlist-album-stats-songs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.9rem;
+}
+
+.show-setlist-album-stats-songs li {
+  padding: 0.2rem 0;
+}
+
+.show-setlist-album-stats-songs a {
+  text-decoration: none;
+}
+
+.show-setlist-album-stats-songs a:hover {
+  text-decoration: underline;
+}
+
+/* Show tour stats (song counts across the tour) */
+.show-tour-stats.show-tour-stats-card {
+  margin: 0;
+  padding: 1.25rem;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.show-tour-stats-heading {
+  font-size: 1.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.show-tour-stats-heading a {
+  text-decoration: none;
+}
+
+.show-tour-stats-heading a:hover {
+  text-decoration: underline;
+}
+
+.show-tour-stats-meta {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0 0 0.75rem 0;
+}
+
+.show-tour-stats-song-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.show-tour-stats-song-item {
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+}
+
+.show-tour-stats-song-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: calc(var(--show-tour-stats-pct, 0) * 1%);
+  max-width: 100%;
+  background: rgba(30, 58, 95, 0.12);
+  border-radius: 6px 0 0 6px;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.show-tour-stats-song-item:nth-child(even) .show-tour-stats-song-bar {
+  background: rgba(45, 90, 130, 0.1);
+}
+
+.show-tour-stats-song-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.95rem;
+  padding: 0.25rem 0.5rem 0.25rem 0;
+  min-height: 2.25rem;
+}
+
+.show-tour-stats-song-thumb {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.show-tour-stats-song-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.show-tour-stats-song-thumb a {
+  display: block;
+  line-height: 0;
+}
+
+.show-tour-stats-song-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.show-tour-stats-song-item a {
+  text-decoration: none;
+  min-width: 0;
+}
+
+.show-tour-stats-song-item a:hover {
+  text-decoration: underline;
+}
+
+.show-tour-stats-count {
+  flex-shrink: 0;
+  font-weight: 600;
+  color: #555;
+}
+
+/* Setlist data cards (shared card style for Live debuts, Back in the Set, Standout) */
+.show-setlist-data-card {
+  padding: 1.25rem;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.show-setlist-highlight-debuts,
+.show-setlist-highlight-returns,
+.show-setlist-highlight-standout {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.show-setlist-data-card-heading {
+  font-size: 1.25rem;
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+}
+
+.show-setlist-data-card-content {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.95rem;
+}
+
+.show-setlist-data-card-content:last-child {
+  margin-bottom: 0;
+}
+
+.show-setlist-data-card .shows-since {
+  color: #555;
+  font-weight: normal;
+}
+
+.show-setlist-data-card .show-highlight-standout-intro {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.show-setlist-data-card .compared-consistent,
+.show-setlist-data-card .compared-unique {
+  margin-top: 0.35rem;
+}
+
+.show-setlist-data-card .compared-unique {
+  margin-top: 0.25rem;
+}
+
+/* Show meta: left block (venue image + date/location/tour) */
+.show-meta-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.show-venue-image-wrap {
+  flex-shrink: 0;
+}
+
+.show-venue-image {
+  width: 120px;
+  height: auto;
+  border-radius: 6px;
+  object-fit: cover;
+  aspect-ratio: 4 / 3;
+}
+
+.show-meta-text {
+  min-width: 0;
+}
+
+/* Show meta: YouTube search button */
+.show-meta .show-youtube-search {
+  margin-left: auto;
+}
+
+.show-youtube-search .show-youtube-search-link {
+  font-size: 0.9rem;
+  padding: 0.5rem 1rem;
+}
+
 .filter-section.filter-checkbox .filter-label {
   margin: 0;
   cursor: pointer;
@@ -1840,6 +2444,129 @@ th {
 .shows-table .ticket-link:hover {
   background-color: #004499;
   text-decoration: none;
+}
+
+/* Venue image in show tables (upcoming/past) and song stats tables */
+.shows-table-venue-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  vertical-align: middle;
+}
+
+.shows-table-venue-img {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.shows-table-venue-name {
+  min-width: 0;
+}
+
+/* Song live stats block: last played / first played venue image (full-width card with hover zoom) */
+.song-live-stats-block .stat-item-with-venue-card {
+  overflow: hidden;
+  padding: 0;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+}
+
+.song-live-stats-block .stat-item-with-venue-card .song-stat-venue-image-wrap {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  line-height: 0;
+}
+
+.song-live-stats-block .stat-item-with-venue-card .song-stat-venue-link {
+  display: block;
+  width: 100%;
+  line-height: 0;
+}
+
+.song-live-stats-block .stat-item-with-venue-card .song-stat-venue-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  aspect-ratio: 4 / 3;
+  transition: transform 0.4s ease;
+}
+
+.song-live-stats-block .stat-item-with-venue-card:hover .song-stat-venue-image {
+  transform: scale(1.08);
+}
+
+.song-live-stats-block .stat-item-with-venue-card .stat-label,
+.song-live-stats-block .stat-item-with-venue-card .stat-value {
+  padding: 0.75rem 1rem 0 1rem;
+}
+
+.song-live-stats-block .stat-item-with-venue-card .stat-value {
+  padding-bottom: 1rem;
+}
+
+.song-live-stats-block .stat-value-with-venue {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.song-live-stats-block .song-stat-venue-link {
+  flex-shrink: 0;
+  display: block;
+  line-height: 0;
+}
+
+.song-live-stats-block .song-stat-venue-image {
+  width: 120px;
+  height: auto;
+  border-radius: 6px;
+  object-fit: cover;
+  aspect-ratio: 4 / 3;
+}
+
+.song-live-stats-block .stat-note-with-venue {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.song-live-stats-block .song-stat-venue-link-note .song-stat-venue-image-note {
+  width: 80px;
+  aspect-ratio: 4 / 3;
+}
+
+/* Song play history list: venue image per item */
+.recent-shows-list .recent-show-item-with-venue {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.recent-shows-list .song-play-history-venue-link {
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.recent-shows-list .song-play-history-venue-image {
+  width: 120px;
+  height: auto;
+  border-radius: 6px;
+  object-fit: cover;
+  aspect-ratio: 4 / 3;
+}
+
+.recent-shows-list .recent-show-item-content {
+  min-width: 0;
+  flex: 1;
 }
 
 .show-stats .stats-grid {

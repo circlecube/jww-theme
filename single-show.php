@@ -75,34 +75,49 @@ if ( $show_artist ) {
 		<!-- Show Meta Information -->
 		<div class="wp-block-group is-layout-flex is-content-justification-space-between flex-direction-row alignwide show-meta" style="margin-bottom:var(--wp--preset--spacing--40)">
 			<div class="show-meta-left">
-				<div class="show-date">
-					<strong><?php echo get_the_date( 'F j, Y' ); ?></strong>
+				<?php
+				$venue_image_id = function_exists( 'jww_get_venue_image_id' ) ? jww_get_venue_image_id( $location_id ) : 0;
+				if ( $venue_image_id ) :
+					$venue_image_src = wp_get_attachment_image_url( $venue_image_id, 'medium' );
+					if ( $venue_image_src ) :
+				?>
+				<div class="show-venue-image-wrap">
+					<?php echo wp_get_attachment_image( $venue_image_id, 'medium', false, array( 'class' => 'show-venue-image', 'loading' => 'eager', 'decoding' => 'async' ) ); ?>
 				</div>
-				<?php if ( ! empty( $location_path ) ): ?>
-					<div class="show-location">
-						<?php 
-						$location_links = array();
-						foreach ( $location_path as $location_item ) {
-							if ( is_array( $location_item ) && isset( $location_item['link'] ) ) {
-								$location_links[] = '<a href="' . esc_url( $location_item['link'] ) . '">' . esc_html( $location_item['name'] ) . '</a>';
-							} else {
-								// Fallback for old format (just string)
-								$location_links[] = esc_html( $location_item );
+				<?php
+					endif;
+				endif;
+				?>
+				<div class="show-meta-text">
+					<div class="show-date">
+						<strong><?php echo get_the_date( 'F j, Y' ); ?></strong>
+					</div>
+					<?php if ( ! empty( $location_path ) ): ?>
+						<div class="show-location">
+							<?php 
+							$location_links = array();
+							foreach ( $location_path as $location_item ) {
+								if ( is_array( $location_item ) && isset( $location_item['link'] ) ) {
+									$location_links[] = '<a href="' . esc_url( $location_item['link'] ) . '">' . esc_html( $location_item['name'] ) . '</a>';
+								} else {
+									// Fallback for old format (just string)
+									$location_links[] = esc_html( $location_item );
+								}
 							}
-						}
-						echo implode( ' > ', $location_links );
-						?>
-					</div>
-				<?php endif; ?>
-				<?php if ( $tour_name ): ?>
-					<div class="show-tour">
-						<?php if ( $tour_link && ! is_wp_error( $tour_link ) ): ?>
-							<em><a href="<?php echo esc_url( $tour_link ); ?>"><?php echo esc_html( $tour_name ); ?></a></em>
-						<?php else: ?>
-							<em><?php echo esc_html( $tour_name ); ?></em>
-						<?php endif; ?>
-					</div>
-				<?php endif; ?>
+							echo implode( ' > ', $location_links );
+							?>
+						</div>
+					<?php endif; ?>
+					<?php if ( $tour_name ): ?>
+						<div class="show-tour">
+							<?php if ( $tour_link && ! is_wp_error( $tour_link ) ): ?>
+								<em><a href="<?php echo esc_url( $tour_link ); ?>"><?php echo esc_html( $tour_name ); ?></a></em>
+							<?php else: ?>
+								<em><?php echo esc_html( $tour_name ); ?></em>
+							<?php endif; ?>
+						</div>
+					<?php endif; ?>
+				</div>
 			</div>
 			<?php if ( $is_upcoming && $ticket_link ): ?>
 				<div class="show-ticket-link">
@@ -111,6 +126,20 @@ if ( $show_artist ) {
 					</a>
 				</div>
 			<?php endif; ?>
+			<?php
+			if ( ! $is_upcoming ) {
+				$youtube_url = jww_get_show_youtube_search_url( get_the_ID(), $artist_name );
+				if ( $youtube_url ) :
+			?>
+				<div class="show-youtube-search">
+					<a href="<?php echo esc_url( $youtube_url ); ?>" class="wp-block-button__link wp-element-button show-youtube-search-link" target="_blank" rel="noopener">
+						<?php esc_html_e( 'Search YouTube for videos', 'jww-theme' ); ?>
+					</a>
+				</div>
+			<?php
+				endif;
+			}
+			?>
 		</div>
 
 		<?php if ( $set_times && ( $set_times['doors_time'] || $set_times['start_time'] || $set_times['end_time'] ) ): ?>
@@ -221,6 +250,32 @@ if ( $show_artist ) {
 			</ol>
 		</div>
 	</div>
+<?php endif; ?>
+<?php if ( ! $setlist || empty( $setlist ) ): ?>
+	<div class="wp-block-group has-accent-6-background-color has-background is-layout-constrained has-global-padding" style="border-style:none;border-width:0px">
+		<div class="wp-block-post-content">
+			<h2 class="wp-block-heading"><?php esc_html_e( 'Setlist not yet available for this show', 'jww-theme' ); ?></h2>
+		</div>
+	</div>
+<?php endif; ?>
+
+<?php if ( $setlist || $tour_id ) : ?>
+	<section class="show-setlist-data-section wp-block-group alignwide has-global-padding" aria-labelledby="show-setlist-data-heading">
+		<h2 id="show-setlist-data-heading" class="show-setlist-data-heading wp-block-heading"><?php esc_html_e( 'Setlist Insights', 'jww-theme' ); ?></h2>
+		<div id="show-stats-cards-masonry" class="show-stats-cards show-stats-cards-masonry">
+			<?php if ( $setlist ) : ?>
+				<?php get_template_part( 'template-parts/show-setlist-highlight-debuts' ); ?>
+				<?php get_template_part( 'template-parts/show-setlist-highlight-returns' ); ?>
+			<?php endif; ?>
+			<?php if ( $tour_id ) : ?>
+				<?php get_template_part( 'template-parts/show-tour-stats' ); ?>
+			<?php endif; ?>
+			<?php if ( $setlist ) : ?>
+				<?php get_template_part( 'template-parts/show-setlist-chart' ); ?>
+				<?php get_template_part( 'template-parts/show-setlist-highlight-standout' ); ?>
+			<?php endif; ?>
+		</div>
+	</section>
 <?php endif; ?>
 
 <?php if ( $show_notes ): ?>

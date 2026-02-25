@@ -53,9 +53,18 @@ switch ( $stat_type ) {
 	case 'last_played':
 		if ( $last_played ) {
 			$show_title = get_the_title( $last_played['show_id'] );
-			echo '<div class="stat-item stat-last-played">';
+			$loc_id = isset( $last_played['location_id'] ) ? $last_played['location_id'] : (int) get_field( 'show_location', $last_played['show_id'] );
+			$venue_image_id = function_exists( 'jww_get_venue_image_id' ) ? jww_get_venue_image_id( $loc_id ) : 0;
+			echo '<div class="stat-item stat-last-played stat-item-with-venue-card">';
+			if ( $venue_image_id ) {
+				echo '<div class="song-stat-venue-image-wrap">';
+				echo '<a href="' . esc_url( $last_played['show_link'] ) . '" class="song-stat-venue-link">';
+				echo wp_get_attachment_image( $venue_image_id, 'medium_large', false, array( 'class' => 'song-stat-venue-image', 'loading' => 'lazy', 'decoding' => 'async' ) );
+				echo '</a>';
+				echo '</div>';
+			}
 			echo '<div class="stat-label">Last Played</div>';
-			echo '<div class="stat-value">';
+			echo '<div class="stat-value stat-value-with-venue">';
 			echo '<a href="' . esc_url( $last_played['show_link'] ) . '">' . esc_html( $show_title ) . '</a>';
 			echo '</div>';
 			echo '</div>';
@@ -71,9 +80,18 @@ switch ( $stat_type ) {
 	case 'first_played':
 		if ( $first_played ) {
 			$show_title = get_the_title( $first_played['show_id'] );
-			echo '<div class="stat-item stat-first-played">';
+			$loc_id = isset( $first_played['location_id'] ) ? $first_played['location_id'] : (int) get_field( 'show_location', $first_played['show_id'] );
+			$venue_image_id = function_exists( 'jww_get_venue_image_id' ) ? jww_get_venue_image_id( $loc_id ) : 0;
+			echo '<div class="stat-item stat-first-played stat-item-with-venue-card">';
+			if ( $venue_image_id ) {
+				echo '<div class="song-stat-venue-image-wrap">';
+				echo '<a href="' . esc_url( $first_played['show_link'] ) . '" class="song-stat-venue-link">';
+				echo wp_get_attachment_image( $venue_image_id, 'medium_large', false, array( 'class' => 'song-stat-venue-image', 'loading' => 'lazy', 'decoding' => 'async' ) );
+				echo '</a>';
+				echo '</div>';
+			}
 			echo '<div class="stat-label">First Played</div>';
-			echo '<div class="stat-value">';
+			echo '<div class="stat-value stat-value-with-venue">';
 			echo '<a href="' . esc_url( $first_played['show_link'] ) . '">' . esc_html( $show_title ) . '</a>';
 			echo '</div>';
 			echo '</div>';
@@ -87,27 +105,39 @@ switch ( $stat_type ) {
 		break;
 
 	case 'days_since':
-		if ( $gap_analysis && $gap_analysis['days_since'] > 0 ) {
-			$days = $gap_analysis['days_since'];
-			$years = floor( $days / 365 );
-			$days_remaining = $days % 365;
-			
+		if ( $gap_analysis && $last_played ) {
+			$days = (int) $gap_analysis['days_since'];
 			$time_string = '';
-			if ( $years > 0 ) {
-				$time_string = $years . ' year' . ( $years > 1 ? 's' : '' );
-				if ( $days_remaining > 0 ) {
-					$time_string .= ', ' . $days_remaining . ' day' . ( $days_remaining > 1 ? 's' : '' );
-				}
+			if ( $days === 0 ) {
+				$time_string = '0';
 			} else {
-				$time_string = $days . ' day' . ( $days > 1 ? 's' : '' );
+				$years = floor( $days / 365 );
+				$days_remaining = $days % 365;
+				if ( $years > 0 ) {
+					$time_string = $years . ' year' . ( $years > 1 ? 's' : '' );
+					if ( $days_remaining > 0 ) {
+						$time_string .= ', ' . $days_remaining . ' day' . ( $days_remaining > 1 ? 's' : '' );
+					}
+				} else {
+					$time_string = $days . ' day' . ( $days > 1 ? 's' : '' );
+				}
 			}
 			
 			echo '<div class="stat-item stat-days-since">';
 			echo '<div class="stat-label">Days Since Last Played</div>';
 			echo '<div class="stat-value">' . esc_html( $time_string ) . '</div>';
 			if ( $last_played ) {
-				$show_title = get_the_title( $last_played['show_id'] );
-				echo '<div class="stat-note">Last: <a href="' . esc_url( $last_played['show_link'] ) . '">' . esc_html( $show_title ) . '</a></div>';
+				// $show_title = get_the_title( $last_played['show_id'] );
+				// $loc_id = isset( $last_played['location_id'] ) ? $last_played['location_id'] : (int) get_field( 'show_location', $last_played['show_id'] );
+				// $venue_image_id = function_exists( 'jww_get_venue_image_id' ) ? jww_get_venue_image_id( $loc_id ) : 0;
+				// echo '<div class="stat-note stat-note-with-venue">';
+				// if ( $venue_image_id ) {
+				// 	echo '<a href="' . esc_url( $last_played['show_link'] ) . '" class="song-stat-venue-link song-stat-venue-link-note">';
+				// 	echo wp_get_attachment_image( $venue_image_id, 'medium', false, array( 'class' => 'song-stat-venue-image song-stat-venue-image-note', 'loading' => 'lazy', 'decoding' => 'async' ) );
+				// 	echo '</a>';
+				// }
+				// echo 'Last: <a href="' . esc_url( $last_played['show_link'] ) . '">' . esc_html( $show_title ) . '</a>';
+				// echo '</div>';
 			}
 			echo '</div>';
 		} else {

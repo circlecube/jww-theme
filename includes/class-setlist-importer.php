@@ -422,6 +422,11 @@ class Setlist_Importer {
 			delete_transient( 'jww_all_time_song_stats' );
 		}
 
+		// Store setlist.fm lastUpdated so we can detect when the setlist changes on setlist.fm
+		if ( ! empty( $api_data['lastUpdated'] ) ) {
+			update_post_meta( $show_id, '_setlist_fm_api_last_updated', $api_data['lastUpdated'] );
+		}
+
 		return array(
 			'success'  => true,
 			'show_id'  => $show_id,
@@ -780,6 +785,92 @@ class Setlist_Importer {
 		}
 
 		return is_array( $tour_term ) ? $tour_term['term_id'] : $tour_term;
+	}
+
+	/**
+	 * Fetch a single setlist from setlist.fm API by ID (for lastUpdated check only).
+	 *
+	 * @param string $setlist_id Setlist ID (hex string from URL).
+	 * @return array|WP_Error Array with 'lastUpdated' and 'body' (full decoded JSON), or WP_Error on failure.
+	 */
+	public function fetch_setlist_from_api( $setlist_id ) {
+		$api_key = $this->get_api_key();
+		if ( ! $api_key ) {
+			return new WP_Error( 'no_api_key', 'setlist.fm API key is required' );
+		}
+		$url = self::API_BASE_URL . '/setlist/' . sanitize_text_field( $setlist_id );
+		$response = wp_remote_get( $url, array(
+			'headers' => array(
+				'Accept'        => 'application/json',
+				'x-api-key'     => $api_key,
+			),
+			'timeout' => 15,
+		) );
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+		$code = wp_remote_retrieve_response_code( $response );
+		$body  = wp_remote_retrieve_body( $response );
+		if ( $code !== 200 ) {
+			return new WP_Error( 'api_error', 'setlist.fm API returned ' . $code, array( 'status' => $code ) );
+		}
+		$data = json_decode( $body, true );
+		if ( ! is_array( $data ) ) {
+			return new WP_Error( 'api_parse', 'Invalid JSON from setlist.fm API' );
+		}
+		return array(
+			'lastUpdated' => isset( $data['lastUpdated'] ) ? $data['lastUpdated'] : '',
+			'body'        => $data,
+		);
+	}
+
+	/**
+	 * Check if a show's setlist has been updated on setlist.fm since we last synced.
+	 *
+	 * @param int $show_id Show post ID.
+	 * @return array|WP_Error Array with keys: has_changes (bool), show_id, title, api_last_updated, our_last_updated; or WP_Error.
+	 */
+	public function check_show_has_setlist_changes( $show_id ) {
+		$show = get_post( $show_id );
+		if ( ! $show || $show->post_type !== 'show' ) {
+			return new WP_Error( 'invalid_show', 'Invalid show ID' );
+		}
+		$url = get_field( 'setlist_fm_url', $show_id );
+		if ( ! $url || strpos( $url, 'setlist.fm' ) === false ) {
+			return array(
+				'has_changes'       => false,
+				'show_id'           => (int) $show_id,
+				'title'             => $show->post_title,
+				'api_last_updated'  => '',
+				'our_last_updated'  => get_post_meta( $show_id, '_setlist_fm_api_last_updated', true ),
+			);
+		}
+		$setlist_id = null;
+		if ( preg_match( '/-([a-f0-9]+)\.html$/i', $url, $matches ) ) {
+			$setlist_id = $matches[1];
+		}
+		if ( ! $setlist_id ) {
+			return new WP_Error( 'invalid_url', 'Could not extract setlist ID from URL' );
+		}
+		$fetched = $this->fetch_setlist_from_api( $setlist_id );
+		if ( is_wp_error( $fetched ) ) {
+			return $fetched;
+		}
+		$api_last = isset( $fetched['lastUpdated'] ) ? $fetched['lastUpdated'] : '';
+		$our_last = get_post_meta( $show_id, '_setlist_fm_api_last_updated', true );
+		// If we never stored lastUpdated, consider it stale so we offer resync
+		if ( empty( $our_last ) ) {
+			$has_changes = ! empty( $api_last );
+		} else {
+			$has_changes = ! empty( $api_last ) && $api_last !== $our_last;
+		}
+		return array(
+			'has_changes'       => $has_changes,
+			'show_id'           => (int) $show_id,
+			'title'             => $show->post_title,
+			'api_last_updated'  => $api_last,
+			'our_last_updated'  => $our_last,
+		);
 	}
 
 	/**

@@ -237,7 +237,7 @@ get_header();
 			$song_id = get_the_ID();
 			$nonce   = wp_create_nonce( 'jww_song_live_stats' );
 			$ajax_url = admin_url( 'admin-ajax.php' );
-			$stat_types = array( 'play_count', 'last_played', 'first_played', 'days_since' );
+			$stat_types = array( 'play_count', 'days_since', 'first_played', 'last_played' );
 	?>
 	<div class="song-stats-grid-container">
 		<?php foreach ( $stat_types as $stat_type ) :

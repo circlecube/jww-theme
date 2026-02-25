@@ -28,6 +28,8 @@ class Show_Importer {
 		add_action( 'wp_ajax_jww_get_setlist_sync_status', array( $this, 'ajax_get_setlist_sync_status' ) );
 		add_action( 'wp_ajax_jww_save_api_key', array( $this, 'ajax_save_api_key' ) );
 		add_action( 'wp_ajax_jww_run_sync_now', array( $this, 'ajax_run_sync_now' ) );
+		add_action( 'wp_ajax_jww_get_shows_with_setlist_url', array( $this, 'ajax_get_shows_with_setlist_url' ) );
+		add_action( 'wp_ajax_jww_check_one_show_setlist_update', array( $this, 'ajax_check_one_show_setlist_update' ) );
 		
 		// Schedule cron for automatic setlist sync
 		add_action( 'wp_loaded', array( $this, 'maybe_schedule_cron' ) );
@@ -201,6 +203,17 @@ class Show_Importer {
 						</p>
 						<div id="sync-now-result"></div>
 					</div>
+				</div>
+
+				<!-- Shows with setlist changes on setlist.fm -->
+				<div class="jww-importer-section">
+					<h2>Shows with setlist changes on setlist.fm</h2>
+					<p class="description">Find shows that were imported from setlist.fm but have since been updated there (e.g. more songs or different order). Only shows that have changes are listed. Checking uses the setlist.fm API and respects rate limits with a short delay between requests.</p>
+					<div style="margin-bottom: 15px;">
+						<button type="button" class="button button-primary" id="check-setlist-updates-btn">Check for updates</button>
+						<span class="spinner" id="check-updates-spinner"></span>
+					</div>
+					<div id="setlist-updates-result" style="margin-top: 10px;"></div>
 				</div>
 
 				<!-- Import from JSON File -->
@@ -971,6 +984,59 @@ class Show_Importer {
 			'last_sync_relative' => $last_sync ? human_time_diff( $last_sync, time() ) . ' ago' : 'Never',
 			'results' => $results,
 		) );
+	}
+
+	/**
+	 * AJAX: Get show IDs (and titles/dates) that have a setlist.fm URL (for "check for updates" flow).
+	 */
+	public function ajax_get_shows_with_setlist_url() {
+		check_ajax_referer( 'jww_show_importer', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Insufficient permissions' ) );
+		}
+		$posts = get_posts( array(
+			'post_type'      => 'show',
+			'post_status'    => 'publish',
+			'posts_per_page' => -1,
+			'meta_query'     => array(
+				array(
+					'key'     => 'setlist_fm_url',
+					'compare' => 'EXISTS',
+				),
+			),
+			'orderby'        => 'date',
+			'order'          => 'DESC',
+		) );
+		$shows = array();
+		foreach ( $posts as $post ) {
+			$shows[] = array(
+				'show_id' => $post->ID,
+				'title'   => $post->post_title,
+				'date'    => get_the_date( '', $post ),
+			);
+		}
+		wp_send_json_success( array( 'shows' => $shows ) );
+	}
+
+	/**
+	 * AJAX: Check one show for setlist.fm updates (compare API lastUpdated with our stored value).
+	 */
+	public function ajax_check_one_show_setlist_update() {
+		check_ajax_referer( 'jww_show_importer', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Insufficient permissions' ) );
+		}
+		$show_id = isset( $_POST['show_id'] ) ? absint( $_POST['show_id'] ) : 0;
+		if ( ! $show_id ) {
+			wp_send_json_error( array( 'message' => 'Invalid show ID' ) );
+		}
+		$importer = new Setlist_Importer();
+		$result = $importer->check_show_has_setlist_changes( $show_id );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message(), 'code' => $result->get_error_code() ) );
+		}
+		$result['resync_nonce'] = wp_create_nonce( 'sync_setlist_' . $show_id );
+		wp_send_json_success( $result );
 	}
 	
 	/**

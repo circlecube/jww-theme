@@ -64,6 +64,17 @@ function jww_enqueue() {
 		wp_get_theme()->get('Version'),
 	);
 	
+	// Enqueue masonry layout for Setlist Data cards on single show
+	if ( is_singular( 'show' ) ) {
+		wp_enqueue_script(
+			'jww-show-stats-masonry',
+			get_stylesheet_directory_uri() . '/includes/js/show-stats-masonry.js',
+			array(),
+			wp_get_theme()->get( 'Version' ),
+			true
+		);
+	}
+
 	// Enqueue sortable table script on show archives, song archive, and single song (Play history table)
 	if ( is_post_type_archive( 'show' ) || is_post_type_archive( 'song' ) || is_singular( 'song' ) || is_tax( array( 'tour', 'location' ) ) ) {
 		wp_enqueue_script( 
@@ -185,11 +196,16 @@ add_action( 'admin_init', 'jww_handle_theme_upgrades' );
 
 /**
  * AJAX: Return play history table HTML for a song (lazy-loaded in accordion on single-song).
+ * Nonce is required only for logged-in users so that cached pages work for guests (cached
+ * HTML can contain a nonce from another session, which would otherwise fail verification).
  */
 function jww_ajax_song_live_stats_fragment() {
-	$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( $_POST['nonce'] ) : '';
-	if ( ! wp_verify_nonce( $nonce, 'jww_song_live_stats' ) ) {
-		wp_send_json_error( array( 'message' => 'Invalid nonce' ), 403 );
+	// Require nonce only when logged in; skip for guests so cached pages work (public read-only data).
+	if ( is_user_logged_in() ) {
+		$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( $_POST['nonce'] ) : '';
+		if ( ! wp_verify_nonce( $nonce, 'jww_song_live_stats' ) ) {
+			wp_send_json_error( array( 'message' => 'Invalid nonce' ), 403 );
+		}
 	}
 	$song_id = isset( $_POST['song_id'] ) ? (int) $_POST['song_id'] : 0;
 	if ( ! $song_id ) {

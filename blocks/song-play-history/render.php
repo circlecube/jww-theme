@@ -68,12 +68,22 @@ if ( $display_mode === 'table' ) {
 						</td>
 						<td data-sort-value="<?php echo esc_attr( strtolower( $loc['venue'] ) ); ?>">
 							<?php
-							if ( $loc['venue'] ) {
-								if ( $loc['venue_link'] && ! is_wp_error( $loc['venue_link'] ) ) {
-									echo '<a href="' . esc_url( $loc['venue_link'] ) . '">' . esc_html( $loc['venue'] ) . '</a>';
-								} else {
-									echo esc_html( $loc['venue'] );
+							$venue_img_id = function_exists( 'jww_get_venue_image_id' ) ? jww_get_venue_image_id( $p['location_id'] ) : 0;
+							if ( $loc['venue'] || $venue_img_id ) {
+								echo '<span class="shows-table-venue-cell">';
+								if ( $venue_img_id ) {
+									echo wp_get_attachment_image( $venue_img_id, 'thumbnail', false, array( 'class' => 'shows-table-venue-img', 'loading' => 'lazy', 'decoding' => 'async' ) );
 								}
+								if ( $loc['venue'] ) {
+									echo '<span class="shows-table-venue-name">';
+									if ( $loc['venue_link'] && ! is_wp_error( $loc['venue_link'] ) ) {
+										echo '<a href="' . esc_url( $loc['venue_link'] ) . '">' . esc_html( $loc['venue'] ) . '</a>';
+									} else {
+										echo esc_html( $loc['venue'] );
+									}
+									echo '</span>';
+								}
+								echo '</span>';
 							} else {
 								echo '<span class="empty-cell">—</span>';
 							}
@@ -108,7 +118,14 @@ if ( $display_mode === 'table' ) {
 		}
 		$loc = $p['location_data'];
 		$location_name = trim( wp_strip_all_tags( $loc['city_country'] ) . ( $loc['venue'] ? ' · ' . $loc['venue'] : '' ), ' ·' );
-		echo '<li>';
+		$venue_img_id = function_exists( 'jww_get_venue_image_id' ) ? jww_get_venue_image_id( $p['location_id'] ) : 0;
+		echo '<li class="recent-show-item-with-venue">';
+		if ( $venue_img_id ) {
+			echo '<a href="' . esc_url( $p['show_link'] ) . '" class="song-play-history-venue-link">';
+			echo wp_get_attachment_image( $venue_img_id, 'medium', false, array( 'class' => 'song-play-history-venue-image', 'loading' => 'lazy', 'decoding' => 'async' ) );
+			echo '</a>';
+		}
+		echo '<div class="recent-show-item-content">';
 		echo '<a href="' . esc_url( $p['show_link'] ) . '">' . esc_html( $p['show_title'] ) . '</a>';
 		if ( $location_name || $tour_name ) {
 			echo '<div class="show-meta">';
@@ -126,6 +143,7 @@ if ( $display_mode === 'table' ) {
 			}
 			echo '</div>';
 		}
+		echo '</div>';
 		echo '</li>';
 	}
 	echo '</ul>';

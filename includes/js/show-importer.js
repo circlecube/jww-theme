@@ -276,6 +276,143 @@ jQuery(document).ready(function($) {
         });
     });
 
+    // Check for setlist updates (compare our last synced vs setlist.fm lastUpdated)
+    var CHECK_DELAY_MS = 2000;
+    $('#check-setlist-updates-btn').on('click', function() {
+        var $btn = $(this);
+        var $spinner = $('#check-updates-spinner');
+        var $result = $('#setlist-updates-result');
+        var originalText = $btn.text();
+
+        $btn.prop('disabled', true).text('Fetching shows...');
+        $spinner.addClass('is-active');
+        $result.html('<p>Loading shows that have a setlist.fm URL...</p>').removeClass('error success');
+
+        $.ajax({
+            url: jwwShowImporter.ajaxUrl,
+            type: 'POST',
+            data: {
+                action: 'jww_get_shows_with_setlist_url',
+                nonce: jwwShowImporter.nonce
+            },
+            success: function(response) {
+                if (!response.success || !response.data.shows || response.data.shows.length === 0) {
+                    $spinner.removeClass('is-active');
+                    $btn.prop('disabled', false).text(originalText);
+                    $result.html(
+                        '<div class="notice notice-info"><p>No shows with a setlist.fm URL found.</p></div>'
+                    );
+                    return;
+                }
+                var shows = response.data.shows;
+                $result.html('<p>Checking ' + shows.length + ' show(s) with setlist.fm (one every 2 seconds to respect API limits)...</p>');
+                var withChanges = [];
+                var index = 0;
+
+                function checkNext() {
+                    if (index >= shows.length) {
+                        $spinner.removeClass('is-active');
+                        $btn.prop('disabled', false).text(originalText);
+                        renderUpdatesTable(withChanges);
+                        return;
+                    }
+                    var show = shows[index];
+                    $result.html('<p>Checking ' + (index + 1) + ' / ' + shows.length + ': ' + show.title + '...</p>');
+                    $.ajax({
+                        url: jwwShowImporter.ajaxUrl,
+                        type: 'POST',
+                        data: {
+                            action: 'jww_check_one_show_setlist_update',
+                            nonce: jwwShowImporter.nonce,
+                            show_id: show.show_id
+                        },
+                        success: function(res) {
+                            if (res.success && res.data.has_changes) {
+                                withChanges.push(res.data);
+                            }
+                        }
+                    }).always(function() {
+                        index++;
+                        setTimeout(checkNext, CHECK_DELAY_MS);
+                    });
+                }
+                setTimeout(checkNext, 0);
+            },
+            error: function() {
+                $spinner.removeClass('is-active');
+                $btn.prop('disabled', false).text(originalText);
+                $result.html(
+                    '<div class="notice notice-error"><p>Failed to load shows. Please try again.</p></div>'
+                ).addClass('error');
+            }
+        });
+    });
+
+    function formatLastUpdated(str) {
+        if (!str) return '—';
+        try {
+            var d = new Date(str);
+            return isNaN(d.getTime()) ? str : d.toLocaleString();
+        } catch (e) {
+            return str;
+        }
+    }
+
+    function renderUpdatesTable(rows) {
+        var $result = $('#setlist-updates-result');
+        if (rows.length === 0) {
+            $result.html(
+                '<div class="notice notice-success"><p>No shows with setlist changes on setlist.fm. All imported setlists are up to date.</p></div>'
+            ).addClass('success').removeClass('error');
+            return;
+        }
+        var html = '<div class="notice notice-warning" style="margin-bottom:10px;"><p><strong>' + rows.length + ' show(s) have updates on setlist.fm.</strong></p></div>';
+        html += '<table class="widefat striped" style="margin-top:0;"><thead><tr>';
+        html += '<th>Show</th><th>Last synced (ours)</th><th>Updated on setlist.fm</th><th></th></tr></thead><tbody>';
+        rows.forEach(function(r) {
+            html += '<tr data-show-id="' + r.show_id + '">';
+            html += '<td>' + (r.title ? r.title.replace(/</g, '&lt;') : 'Show #' + r.show_id) + '</td>';
+            html += '<td>' + formatLastUpdated(r.our_last_updated) + '</td>';
+            html += '<td>' + formatLastUpdated(r.api_last_updated) + '</td>';
+            html += '<td><button type="button" class="button button-small jww-resync-setlist-btn" data-show-id="' + r.show_id + '" data-nonce="' + (r.resync_nonce || '') + '">Resync now</button></td>';
+            html += '</tr>';
+        });
+        html += '</tbody></table>';
+        $result.html(html).removeClass('error success');
+
+        $result.find('.jww-resync-setlist-btn').on('click', function() {
+            var $resyncBtn = $(this);
+            var showId = $resyncBtn.data('show-id');
+            var nonce = $resyncBtn.data('nonce');
+            var $row = $resyncBtn.closest('tr');
+            var originalText = $resyncBtn.text();
+            $resyncBtn.prop('disabled', true).text('Syncing...');
+            $.ajax({
+                url: jwwShowImporter.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'jww_sync_setlist',
+                    nonce: nonce,
+                    show_id: showId
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $row.addClass('jww-resync-done');
+                        $resyncBtn.text('Synced').prop('disabled', true);
+                    } else {
+                        $resyncBtn.prop('disabled', false).text(originalText);
+                        alert(response.data && response.data.message ? response.data.message : 'Resync failed.');
+                    }
+                },
+                error: function(xhr) {
+                    $resyncBtn.prop('disabled', false).text(originalText);
+                    var msg = (xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message) ? xhr.responseJSON.data.message : 'Resync failed.';
+                    alert(msg);
+                }
+            });
+        });
+    }
+
     // Save API key
     $('#api-key-form').on('submit', function(e) {
         e.preventDefault();

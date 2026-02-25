@@ -144,6 +144,27 @@ function jww_register_show_taxonomies() {
 add_action( 'init', 'jww_register_show_taxonomies', 0 );
 
 /**
+ * Register term meta for location taxonomy: venue image (attachment ID).
+ * Used by Venues admin page and single-show template.
+ * Requires WP 4.9.8+ for register_term_meta; get_term_meta/update_term_meta work from 4.4.
+ */
+function jww_register_location_term_meta() {
+	if ( ! function_exists( 'register_term_meta' ) ) {
+		return;
+	}
+	register_term_meta( 'location', 'venue_image_id', array(
+		'type'              => 'integer',
+		'description'       => 'Attachment ID of the venue image (sideloaded from Commons or manual URL).',
+		'single'            => true,
+		'sanitize_callback' => 'absint',
+		'auth_callback'     => function () {
+			return current_user_can( 'edit_posts' );
+		},
+	) );
+}
+add_action( 'init', 'jww_register_location_term_meta', 20 );
+
+/**
  * Include block registration files
  */
 function jww_include_block_registrations() {

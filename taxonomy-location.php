@@ -175,13 +175,24 @@ $location_display_string = implode( ' > ', $location_display );
 								<?php endif; ?>
 							</td>
 							<td data-sort-value="<?php echo esc_attr( strtolower( $location_data['venue'] ) ); ?>">
-								<?php if ( $location_data['venue'] ): ?>
-									<?php if ( $location_data['venue_link'] && ! is_wp_error( $location_data['venue_link'] ) ): ?>
-										<a href="<?php echo esc_url( $location_data['venue_link'] ); ?>"><?php echo esc_html( $location_data['venue'] ); ?></a>
-									<?php else: ?>
-										<?php echo esc_html( $location_data['venue'] ); ?>
+								<?php
+								$venue_image_id = function_exists( 'jww_get_venue_image_id' ) ? jww_get_venue_image_id( $location_id ) : 0;
+								if ( $location_data['venue'] || $venue_image_id ) : ?>
+									<span class="shows-table-venue-cell">
+									<?php if ( $venue_image_id ) :
+										echo wp_get_attachment_image( $venue_image_id, 'thumbnail', false, array( 'class' => 'shows-table-venue-img', 'loading' => 'lazy', 'decoding' => 'async' ) );
+									endif;
+									if ( $location_data['venue'] ) : ?>
+										<span class="shows-table-venue-name">
+										<?php if ( $location_data['venue_link'] && ! is_wp_error( $location_data['venue_link'] ) ) : ?>
+											<a href="<?php echo esc_url( $location_data['venue_link'] ); ?>"><?php echo esc_html( $location_data['venue'] ); ?></a>
+										<?php else : ?>
+											<?php echo esc_html( $location_data['venue'] ); ?>
+										<?php endif; ?>
+										</span>
 									<?php endif; ?>
-								<?php else: ?>
+									</span>
+								<?php else : ?>
 									<span class="empty-cell">—</span>
 								<?php endif; ?>
 							</td>
@@ -289,13 +300,24 @@ $location_display_string = implode( ' > ', $location_display );
 								<?php endif; ?>
 							</td>
 							<td data-sort-value="<?php echo esc_attr( strtolower( $location_data['venue'] ) ); ?>">
-								<?php if ( $location_data['venue'] ): ?>
-									<?php if ( $location_data['venue_link'] && ! is_wp_error( $location_data['venue_link'] ) ): ?>
-										<a href="<?php echo esc_url( $location_data['venue_link'] ); ?>"><?php echo esc_html( $location_data['venue'] ); ?></a>
-									<?php else: ?>
-										<?php echo esc_html( $location_data['venue'] ); ?>
+								<?php
+								$venue_image_id = function_exists( 'jww_get_venue_image_id' ) ? jww_get_venue_image_id( $location_id ) : 0;
+								if ( $location_data['venue'] || $venue_image_id ) : ?>
+									<span class="shows-table-venue-cell">
+									<?php if ( $venue_image_id ) :
+										echo wp_get_attachment_image( $venue_image_id, 'thumbnail', false, array( 'class' => 'shows-table-venue-img', 'loading' => 'lazy', 'decoding' => 'async' ) );
+									endif;
+									if ( $location_data['venue'] ) : ?>
+										<span class="shows-table-venue-name">
+										<?php if ( $location_data['venue_link'] && ! is_wp_error( $location_data['venue_link'] ) ) : ?>
+											<a href="<?php echo esc_url( $location_data['venue_link'] ); ?>"><?php echo esc_html( $location_data['venue'] ); ?></a>
+										<?php else : ?>
+											<?php echo esc_html( $location_data['venue'] ); ?>
+										<?php endif; ?>
+										</span>
 									<?php endif; ?>
-								<?php else: ?>
+									</span>
+								<?php else : ?>
 									<span class="empty-cell">—</span>
 								<?php endif; ?>
 							</td>

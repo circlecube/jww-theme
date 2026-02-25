@@ -60,16 +60,28 @@ $stats = jww_get_all_time_song_stats( true );
 							</td>
 							<td class="song-stats-location-col">
 								<?php
-								if ( $fp_loc['city_country'] || $fp_loc['venue'] ) {
-									echo $fp_loc['city_country'] ? $fp_loc['city_country'] : '';
-									if ( $fp_loc['venue'] ) {
-										echo $fp_loc['city_country'] ? ' · ' : '';
-										if ( $fp_loc['venue_link'] && ! is_wp_error( $fp_loc['venue_link'] ) ) {
-											echo '<a href="' . esc_url( $fp_loc['venue_link'] ) . '">' . esc_html( $fp_loc['venue'] ) . '</a>';
-										} else {
-											echo esc_html( $fp_loc['venue'] );
-										}
+								$fp_loc = $fp['location_data'] ?? array( 'city_country' => '', 'venue' => '', 'venue_link' => '' );
+								$fp_loc_id = isset( $fp['location_id'] ) ? $fp['location_id'] : 0;
+								$fp_venue_img_id = function_exists( 'jww_get_venue_image_id' ) ? jww_get_venue_image_id( $fp_loc_id ) : 0;
+								if ( $fp_loc['city_country'] || $fp_loc['venue'] || $fp_venue_img_id ) {
+									echo '<span class="shows-table-venue-cell">';
+									if ( $fp_venue_img_id ) {
+										echo wp_get_attachment_image( $fp_venue_img_id, 'thumbnail', false, array( 'class' => 'shows-table-venue-img', 'loading' => 'lazy', 'decoding' => 'async' ) );
 									}
+									if ( $fp_loc['city_country'] || $fp_loc['venue'] ) {
+										echo '<span class="shows-table-venue-name">';
+										echo $fp_loc['city_country'] ? $fp_loc['city_country'] : '';
+										if ( $fp_loc['venue'] ) {
+											echo $fp_loc['city_country'] ? ' · ' : '';
+											if ( $fp_loc['venue_link'] && ! is_wp_error( $fp_loc['venue_link'] ) ) {
+												echo '<a href="' . esc_url( $fp_loc['venue_link'] ) . '">' . esc_html( $fp_loc['venue'] ) . '</a>';
+											} else {
+												echo esc_html( $fp_loc['venue'] );
+											}
+										}
+										echo '</span>';
+									}
+									echo '</span>';
 								} else {
 									echo '<span class="empty-cell">—</span>';
 								}
@@ -80,16 +92,28 @@ $stats = jww_get_all_time_song_stats( true );
 							</td>
 							<td class="song-stats-location-col">
 								<?php
-								if ( $lp_loc['city_country'] || $lp_loc['venue'] ) {
-									echo $lp_loc['city_country'] ? $lp_loc['city_country'] : '';
-									if ( $lp_loc['venue'] ) {
-										echo $lp_loc['city_country'] ? ' · ' : '';
-										if ( $lp_loc['venue_link'] && ! is_wp_error( $lp_loc['venue_link'] ) ) {
-											echo '<a href="' . esc_url( $lp_loc['venue_link'] ) . '">' . esc_html( $lp_loc['venue'] ) . '</a>';
-										} else {
-											echo esc_html( $lp_loc['venue'] );
-										}
+								$lp_loc = $lp['location_data'] ?? array( 'city_country' => '', 'venue' => '', 'venue_link' => '' );
+								$lp_loc_id = isset( $lp['location_id'] ) ? $lp['location_id'] : 0;
+								$lp_venue_img_id = function_exists( 'jww_get_venue_image_id' ) ? jww_get_venue_image_id( $lp_loc_id ) : 0;
+								if ( $lp_loc['city_country'] || $lp_loc['venue'] || $lp_venue_img_id ) {
+									echo '<span class="shows-table-venue-cell">';
+									if ( $lp_venue_img_id ) {
+										echo wp_get_attachment_image( $lp_venue_img_id, 'thumbnail', false, array( 'class' => 'shows-table-venue-img', 'loading' => 'lazy', 'decoding' => 'async' ) );
 									}
+									if ( $lp_loc['city_country'] || $lp_loc['venue'] ) {
+										echo '<span class="shows-table-venue-name">';
+										echo $lp_loc['city_country'] ? $lp_loc['city_country'] : '';
+										if ( $lp_loc['venue'] ) {
+											echo $lp_loc['city_country'] ? ' · ' : '';
+											if ( $lp_loc['venue_link'] && ! is_wp_error( $lp_loc['venue_link'] ) ) {
+												echo '<a href="' . esc_url( $lp_loc['venue_link'] ) . '">' . esc_html( $lp_loc['venue'] ) . '</a>';
+											} else {
+												echo esc_html( $lp_loc['venue'] );
+											}
+										}
+										echo '</span>';
+									}
+									echo '</span>';
 								} else {
 									echo '<span class="empty-cell">—</span>';
 								}
