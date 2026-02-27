@@ -194,7 +194,7 @@ get_header();
 			<?php echo wp_kses_post( $lyrics ); ?>
 		</div>
 	<?php else: ?>
-		<p>Sorry, no lyrics yet.</p>
+		<p>Sorry, no lyrics yet. Have some to suggest? Let us know in the comments!</p>
 	<?php endif; ?>
 	
 	</div>
@@ -215,7 +215,9 @@ get_header();
 				
 			</div>
 		</div>
-<?php endif; ?>
+	<?php else: ?>
+		<p>Sorry, no lyrics annotations or notes yet. Have some to suggest? Let us know in the comments!</p>
+	<?php endif; ?>
 
 <!-- Appears on Section -->
 <div class="wp-block-group is-style-default has-base-background-color has-background is-layout-constrained has-global-padding" style="margin-top:0;margin-bottom:0">
@@ -237,34 +239,17 @@ get_header();
 			$song_id = get_the_ID();
 			$nonce   = wp_create_nonce( 'jww_song_live_stats' );
 			$ajax_url = admin_url( 'admin-ajax.php' );
-			$stat_types = array( 'play_count', 'days_since', 'first_played', 'last_played' );
+			set_query_var( 'song_id', $song_id );
+			get_template_part( 'template-parts/song-live-stats-cards' );
 	?>
-	<div class="song-stats-grid-container">
-		<?php foreach ( $stat_types as $stat_type ) :
-			$block_content = render_block( array(
-				'blockName' => 'jww/song-live-stats',
-				'attrs'     => array( 'statType' => $stat_type, 'songId' => $song_id ),
-			) );
-			if ( $block_content ) {
-				echo $block_content;
-			}
-		endforeach; ?>
-	</div>
 	<div class="wp-block-group alignwide">
-		<details class="song-live-performances-collapsible stat-card" id="song-live-performances">
-			<summary class="song-live-performances-summary">
-				<strong>Play history</strong>
-			</summary>
-			<div class="song-live-stats-lazy" data-song-id="<?php echo (int) $song_id; ?>" data-nonce="<?php echo esc_attr( $nonce ); ?>" data-ajax-url="<?php echo esc_url( $ajax_url ); ?>">
-				<p class="song-live-stats-loading" aria-live="polite"><?php esc_html_e( 'Loading…', 'jww-theme' ); ?></p>
-			</div>
-		</details>
+		<div class="song-live-stats-lazy" id="song-live-performances" data-song-id="<?php echo (int) $song_id; ?>" data-nonce="<?php echo esc_attr( $nonce ); ?>" data-ajax-url="<?php echo esc_url( $ajax_url ); ?>">
+			<p class="song-live-stats-loading" aria-live="polite"><?php esc_html_e( 'Loading…', 'jww-theme' ); ?></p>
+		</div>
 	</div>
 	<script>
 	(function() {
-		var details = document.getElementById('song-live-performances');
-		if (!details) return;
-		var container = details.querySelector('.song-live-stats-lazy');
+		var container = document.getElementById('song-live-performances');
 		if (!container || container.dataset.loaded === '1') return;
 		function load() {
 			if (container.dataset.loaded === '1') return;
@@ -291,9 +276,11 @@ get_header();
 				container.innerHTML = '<p class="song-live-stats-error"><?php echo esc_js( __( 'Could not load stats.', 'jww-theme' ) ); ?></p>';
 			});
 		}
-		details.addEventListener('toggle', function() {
-			if (details.open && container.dataset.loaded !== '1') load();
-		});
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', load);
+		} else {
+			load();
+		}
 	})();
 	</script>
 	<?php

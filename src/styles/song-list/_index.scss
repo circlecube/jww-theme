@@ -1,0 +1,279 @@
+/* Song List Template Styles */
+.song-list {
+  margin-top: var(--wp--preset--spacing--40);
+}
+
+.song-item {
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: var(--wp--preset--color--accent-6);
+  }
+}
+
+.song-title {
+  font-size: var(--wp--preset--font-size--large);
+  font-weight: 600;
+  margin: 0 0 var(--wp--preset--spacing--20) 0;
+
+  a {
+    color: var(--wp--preset--color--contrast);
+    text-decoration: none;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: var(--wp--preset--color--accent-4);
+      text-decoration: underline;
+    }
+  }
+}
+
+.song-video {
+  margin-bottom: var(--wp--preset--spacing--20);
+}
+
+.video-link {
+  background-color: var(--wp--preset--color--accent-3);
+  border-radius: 4px;
+  color: var(--wp--preset--color--base);
+  display: inline-block;
+  font-size: var(--wp--preset--font-size--small);
+  font-weight: 500;
+  padding: var(--wp--preset--spacing--10) var(--wp--preset--spacing--20);
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: var(--wp--preset--color--accent-2);
+    color: var(--wp--preset--color--base);
+    text-decoration: none;
+  }
+}
+
+.song-lyrics-preview {
+  color: var(--wp--preset--color--accent-4);
+  font-style: italic;
+  line-height: 1.6;
+  margin-bottom: var(--wp--preset--spacing--20);
+}
+
+.song-meta {
+  align-items: center;
+  color: var(--wp--preset--color--accent-4);
+  display: flex;
+  font-size: var(--wp--preset--font-size--small);
+  justify-content: space-between;
+}
+
+.song-date {
+  font-weight: 400;
+}
+
+.read-more {
+  color: var(--wp--preset--color--accent-4);
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: var(--wp--preset--color--contrast);
+    text-decoration: underline;
+  }
+}
+
+@media (max-width: 768px) {
+  .song-meta {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--wp--preset--spacing--10);
+  }
+
+  .song-title {
+    font-size: var(--wp--preset--font-size--medium);
+  }
+}
+
+/* Archive song lists (alphabetical, chronological, cover list) */
+.with-headers .song-list {
+  list-style: none;
+}
+
+.song-list h3 {
+  margin: 0 0 1rem 0;
+}
+
+.song-list a {
+  color: var(--wp--preset--color--contrast);
+  text-decoration: none;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: var(--wp--preset--color--accent-4);
+    text-decoration: underline;
+  }
+}
+
+.song-meta {
+  display: inline-block;
+  font-size: var(--wp--preset--font-size--small);
+  font-style: italic;
+  font-weight: 400;
+}
+
+.alphabetical-song-list {
+  margin-top: 2rem;
+}
+
+.alphabet-section {
+  margin-bottom: 3rem;
+}
+
+.alphabet-letter {
+  border-bottom: 3px solid var(--wp--preset--color--accent-2);
+  color: var(--wp--preset--color--accent-2);
+  font-size: 4rem;
+  font-weight: 700;
+  line-height: 1;
+  margin: 2rem 0 1rem 0;
+  padding: 1rem 0;
+  scroll-margin-top: 2rem;
+  text-align: center;
+
+  &:first-child {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .alphabet-letter {
+    font-size: 3rem;
+    margin: 1.5rem 0 0.75rem 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .alphabet-letter {
+    font-size: 2.5rem;
+    margin: 1rem 0 0.5rem 0;
+  }
+}
+
+.song-list-nav {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  list-style: none;
+  border-top: 1px solid var(--wp--preset--color--accent-3);
+  margin: var(--wp--preset--spacing--80) 0 var(--wp--preset--spacing--20) 0;
+  padding: var(--wp--preset--spacing--20) 0;
+}
+
+.song-list-heading {
+  background-color: var(--wp--preset--color--accent-3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  color: var(--wp--preset--color--accent-6);
+  font-size: var(--wp--preset--font-size--x-large);
+  font-weight: 600;
+  margin-bottom: var(--wp--preset--spacing--20);
+  margin-top: var(--wp--preset--spacing--80);
+  padding: var(--wp--preset--spacing--40) var(--wp--preset--spacing--20) var(--wp--preset--spacing--30);
+  text-align: center;
+}
+
+.chronological-song-list {
+  margin-top: 2rem;
+}
+
+.month-section {
+  margin-bottom: 2.5rem;
+}
+
+.month-heading {
+  border-bottom: 2px solid var(--wp--preset--color--accent-2);
+  color: var(--wp--preset--color--accent-2);
+  font-size: 2.5rem;
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 1.5rem 0 0.75rem 0;
+  padding: 0.75rem 0;
+  scroll-margin-top: 2rem;
+  text-align: center;
+
+  &:first-child {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .month-heading {
+    font-size: 2rem;
+    margin: 1.25rem 0 0.5rem 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .month-heading {
+    font-size: 1.75rem;
+    margin: 1rem 0 0.5rem 0;
+  }
+}
+
+/* Sticky headers for song list sections */
+.alphabet-letter,
+.month-heading {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--wp--preset--color--base);
+  margin: 0;
+  transition: all 0.3s ease;
+}
+
+.alphabet-section,
+.month-section {
+  margin-bottom: 4rem;
+}
+
+.alphabetical-song-list .alphabet-section:first-child .alphabet-letter,
+.chronological-song-list .month-section:first-child .month-heading {
+  margin-top: 0;
+}
+
+/* Cover songs list */
+.cover-songs-list {
+  margin-top: 2rem;
+}
+
+.artist-section {
+  margin-bottom: 2rem;
+}
+
+.artist-heading {
+  border-bottom: 2px solid var(--wp--preset--color--accent-2);
+  color: var(--wp--preset--color--accent-2);
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 1.25rem 0 0.5rem 0;
+  padding: 0.5rem 0;
+  scroll-margin-top: 2rem;
+  text-align: center;
+
+  &:first-child {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .artist-heading {
+    font-size: 1.75rem;
+    margin: 1rem 0 0.5rem 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .artist-heading {
+    font-size: 1.5rem;
+    margin: 0.75rem 0 0.5rem 0;
+  }
+}

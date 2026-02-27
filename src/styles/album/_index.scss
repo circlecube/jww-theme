@@ -1,0 +1,94 @@
+/* Album Template Specific Styles */
+.album-header {
+  margin-bottom: var(--wp--preset--spacing--60);
+}
+
+.album-release-info {
+  color: var(--wp--preset--color--accent-4);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: var(--wp--preset--font-size--small);
+  gap: 0.2em;
+  margin-bottom: var(--wp--preset--spacing--60);
+}
+
+.album-content {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wp--preset--spacing--40);
+}
+
+.album-cover {
+  flex: 0 0 auto;
+  max-width: 300px;
+
+  img {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    height: auto;
+    object-fit: cover;
+    width: 100%;
+  }
+}
+
+.album-tracks {
+  flex: 1;
+  min-width: 250px;
+
+  ol {
+    margin: var(--wp--preset--spacing--20) 0 0;
+    padding-left: var(--wp--preset--spacing--30);
+  }
+
+  li {
+    margin-bottom: var(--wp--preset--spacing--10);
+  }
+
+  a {
+    color: var(--wp--preset--color--contrast);
+    text-decoration: none;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: var(--wp--preset--color--accent-4);
+      text-decoration: underline;
+    }
+  }
+}
+
+.albums-section-heading {
+  color: var(--wp--preset--color--contrast);
+  font-size: var(--wp--preset--font-size--small);
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  margin-bottom: var(--wp--preset--spacing--40);
+  text-transform: uppercase;
+}
+
+@media (max-width: 768px) {
+  .album-content {
+    flex-direction: column;
+  }
+
+  .album-cover {
+    align-self: center;
+    max-width: 100%;
+  }
+}
+
+.is-content-justification-space-between {
+  justify-content: space-between;
+}
+
+.is-content-justification-center {
+  justify-content: center;
+}
+
+.is-layout-flex.is-vertical {
+  flex-direction: column;
+}
+
+.has-gap-large {
+  gap: var(--wp--preset--spacing--80);
+}

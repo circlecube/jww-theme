@@ -1,0 +1,55 @@
+// Faint background logo effect
+body {
+  position: relative;
+
+  &::before {
+    content: '';
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 1200px;
+    height: 1200px;
+    max-width: 150vw;
+    max-height: 150vh;
+    background-image: url('../../assets/jesse-welles-world-illustration.svg');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    opacity: 0.03;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Ensure content appears above the background */
+  & > * {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+// YouTube Video Embed responsive
+.video-section .video-container {
+  height: 0;
+  padding-top: 56.25%;
+  position: relative;
+  width: 100%;
+
+  iframe {
+    height: 100%;
+    left: 0;
+    position: absolute;
+    top: 0;
+    width: 100%;
+  }
+}
+
+// Tiktok Video Embed
+.tiktok-video-section .tiktok-video-container iframe {
+  margin: 0 auto !important;
+}
+
+// Instagram Video Embed
+.instagram-video-section .instagram-video-container iframe {
+  margin: 0 auto !important;
+}

@@ -213,13 +213,13 @@ class JWW_Venues_Admin {
 		}
 		wp_enqueue_style(
 			'jww-venues-admin',
-			get_stylesheet_directory_uri() . '/includes/css/venues-admin.css',
+			get_stylesheet_directory_uri() . '/admin/css/venues-admin.css',
 			array(),
 			wp_get_theme()->get( 'Version' )
 		);
 		wp_enqueue_script(
 			'jww-venues-admin',
-			get_stylesheet_directory_uri() . '/includes/js/venues-admin.js',
+			get_stylesheet_directory_uri() . '/admin/js/venues-admin.js',
 			array( 'jquery' ),
 			wp_get_theme()->get( 'Version' ),
 			true

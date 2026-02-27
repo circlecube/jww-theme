@@ -50,7 +50,7 @@ class Song_Duplicate_Detector {
 
 		wp_enqueue_script(
 			'jww-song-duplicates',
-			get_stylesheet_directory_uri() . '/includes/js/song-duplicates.js',
+			get_stylesheet_directory_uri() . '/admin/js/song-duplicates.js',
 			array( 'jquery' ),
 			wp_get_theme()->get( 'Version' ),
 			true
@@ -63,7 +63,7 @@ class Song_Duplicate_Detector {
 
 		wp_enqueue_style(
 			'jww-song-duplicates',
-			get_stylesheet_directory_uri() . '/includes/css/song-duplicates.css',
+			get_stylesheet_directory_uri() . '/admin/css/song-duplicates.css',
 			array(),
 			wp_get_theme()->get( 'Version' )
 		);

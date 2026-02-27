@@ -63,7 +63,7 @@ class Song_Video_Migrator {
 
 		wp_enqueue_script(
 			'jww-video-migration',
-			get_stylesheet_directory_uri() . '/includes/js/video-migration.js',
+			get_stylesheet_directory_uri() . '/admin/js/video-migration.js',
 			array( 'jquery' ),
 			wp_get_theme()->get( 'Version' ),
 			true

@@ -37,68 +37,12 @@ if ( empty( $performances ) ) {
 }
 
 if ( $display_mode === 'table' ) {
-	?>
-	<div class="wp-block-group alignwide song-play-history-table-wrapper">
-		<table class="song-play-history-table sortable-table" data-table-type="play-history">
-			<thead>
-				<tr>
-					<th class="sortable" data-sort="date" data-sort-type="date"><?php esc_html_e( 'Date', 'jww-theme' ); ?> <span class="sort-indicator"></span></th>
-					<th class="sortable" data-sort="location" data-sort-type="text"><?php esc_html_e( 'Location', 'jww-theme' ); ?> <span class="sort-indicator"></span></th>
-					<th class="sortable" data-sort="venue" data-sort-type="text"><?php esc_html_e( 'Venue', 'jww-theme' ); ?> <span class="sort-indicator"></span></th>
-					<th class="sortable" data-sort="position" data-sort-type="number"><?php esc_html_e( 'Set position', 'jww-theme' ); ?> <span class="sort-indicator"></span></th>
-					<th class="sortable" data-sort="days" data-sort-type="number"><?php esc_html_e( 'Days Since Last Played', 'jww-theme' ); ?> <span class="sort-indicator"></span></th>
-				</tr>
-			</thead>
-			<tbody>
-				<?php
-				foreach ( $performances as $p ) {
-					$date_raw = $p['post_date'];
-					$date_display = get_the_date( 'M j, Y', $p['show_id'] );
-					$loc = $p['location_data'];
-					$city_country_plain = wp_strip_all_tags( $loc['city_country'] );
-					$days_display = $p['days_since_previous'] !== null ? (string) $p['days_since_previous'] : '—';
-					$days_sort = $p['days_since_previous'] !== null ? $p['days_since_previous'] : -1;
-					?>
-					<tr>
-						<td data-sort-value="<?php echo esc_attr( $date_raw ); ?>">
-							<a href="<?php echo esc_url( $p['show_link'] ); ?>"><?php echo esc_html( $date_display ); ?></a>
-						</td>
-						<td data-sort-value="<?php echo esc_attr( strtolower( $city_country_plain ) ); ?>">
-							<?php echo $loc['city_country'] ? $loc['city_country'] : '<span class="empty-cell">—</span>'; ?>
-						</td>
-						<td data-sort-value="<?php echo esc_attr( strtolower( $loc['venue'] ) ); ?>">
-							<?php
-							$venue_img_id = function_exists( 'jww_get_venue_image_id' ) ? jww_get_venue_image_id( $p['location_id'] ) : 0;
-							if ( $loc['venue'] || $venue_img_id ) {
-								echo '<span class="shows-table-venue-cell">';
-								if ( $venue_img_id ) {
-									echo wp_get_attachment_image( $venue_img_id, 'thumbnail', false, array( 'class' => 'shows-table-venue-img', 'loading' => 'lazy', 'decoding' => 'async' ) );
-								}
-								if ( $loc['venue'] ) {
-									echo '<span class="shows-table-venue-name">';
-									if ( $loc['venue_link'] && ! is_wp_error( $loc['venue_link'] ) ) {
-										echo '<a href="' . esc_url( $loc['venue_link'] ) . '">' . esc_html( $loc['venue'] ) . '</a>';
-									} else {
-										echo esc_html( $loc['venue'] );
-									}
-									echo '</span>';
-								}
-								echo '</span>';
-							} else {
-								echo '<span class="empty-cell">—</span>';
-							}
-							?>
-						</td>
-						<td data-sort-value="<?php echo esc_attr( $p['set_position'] ); ?>">
-							<a href="<?php echo esc_url( $p['show_link'] ); ?>"><?php echo esc_html( $p['set_position'] ); ?></a>
-						</td>
-						<td data-sort-value="<?php echo esc_attr( $days_sort ); ?>"><?php echo esc_html( $days_display ); ?></td>
-					</tr>
-				<?php } ?>
-			</tbody>
-		</table>
-	</div>
-	<?php
+	if ( function_exists( 'jww_render_play_history_table_card' ) ) {
+		jww_render_play_history_table_card( $performances, array(
+			'title'        => __( 'Play history', 'jww-theme' ),
+			'default_open' => true,
+		) );
+	}
 } else {
 	// List (same structure as old Recent Shows)
 	echo '<div class="stat-item stat-recent-shows">';

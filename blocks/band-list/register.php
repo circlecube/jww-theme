@@ -28,23 +28,23 @@ function enqueue_editor_assets(): void {
     $build_path = get_stylesheet_directory() . '/build/';
     
     // Enqueue block editor scripts
-    if (file_exists($build_path . 'index.js')) {
+    if (file_exists($build_path . 'editor-block-styles.js')) {
         wp_enqueue_script(
             'jww-band-list-editor',
-            get_stylesheet_directory_uri() . '/build/index.js',
+            get_stylesheet_directory_uri() . '/build/editor-block-styles.js',
             array('wp-blocks', 'wp-element', 'wp-editor', 'wp-components', 'wp-data'),
-            filemtime($build_path . 'index.js'),
+            filemtime($build_path . 'editor-block-styles.js'),
             true
         );
     }
     
     // Enqueue block editor styles
-    if (file_exists($build_path . 'index.css')) {
+    if (file_exists($build_path . 'editor-block-styles.css')) {
         wp_enqueue_style(
             'jww-band-list-editor',
-            get_stylesheet_directory_uri() . '/build/index.css',
+            get_stylesheet_directory_uri() . '/build/editor-block-styles.css',
             array('wp-edit-blocks'),
-            filemtime($build_path . 'index.css')
+            filemtime($build_path . 'editor-block-styles.css')
         );
     }
 }
@@ -56,12 +56,12 @@ add_action('enqueue_block_editor_assets', __NAMESPACE__ . '\enqueue_editor_asset
 function enqueue_frontend_assets(): void {
     $build_path = get_stylesheet_directory() . '/build/';
     
-    if (file_exists($build_path . 'style-index.css')) {
+    if (file_exists($build_path . 'block-styles.css')) {
         wp_enqueue_style(
             'jww-band-list-style',
-            get_stylesheet_directory_uri() . '/build/style-index.css',
+            get_stylesheet_directory_uri() . '/build/block-styles.css',
             array(),
-            filemtime($build_path . 'style-index.css')
+            filemtime($build_path . 'block-styles.css')
         );
     }
 }

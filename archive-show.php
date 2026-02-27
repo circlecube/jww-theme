@@ -199,11 +199,43 @@ if ( $selected_city ) {
 $total_shows = count( $shows );
 $upcoming_count = count( $upcoming_shows );
 $past_count = count( $past_shows );
+
+// All-time stats for "All Time Concert Insights" (main archive only; taxonomy uses its own template)
+if ( ! $is_taxonomy_archive && function_exists( 'jww_get_all_time_show_stats' ) ) {
+	$all_time = jww_get_all_time_show_stats( true );
+	set_query_var( 'archive_all_time_total_shows', $all_time['total_shows'] );
+	set_query_var( 'archive_all_time_upcoming_count', $all_time['upcoming_count'] );
+	set_query_var( 'archive_all_time_past_count', $all_time['past_count'] );
+	set_query_var( 'archive_all_time_venues_count', $all_time['venues_count'] );
+	set_query_var( 'archive_all_time_cities_count', $all_time['cities_count'] );
+	set_query_var( 'archive_all_time_shows_with_data_count', $all_time['shows_with_data_count'] );
+	set_query_var( 'archive_all_time_unique_songs_count', $all_time['unique_songs_count'] );
+	set_query_var( 'archive_all_time_festivals_count', $all_time['festivals_count'] );
+}
+if ( ! $is_taxonomy_archive && function_exists( 'jww_get_all_time_opener_closer' ) ) {
+	$oc = jww_get_all_time_opener_closer( true );
+	set_query_var( 'archive_all_time_openers', $oc['openers'] ?? array() );
+	set_query_var( 'archive_all_time_closers', $oc['closers'] ?? array() );
+}
+if ( ! $is_taxonomy_archive && function_exists( 'jww_get_all_time_latest_debut' ) ) {
+	set_query_var( 'archive_all_time_latest_debut', jww_get_all_time_latest_debut( true ) );
+}
+if ( ! $is_taxonomy_archive && function_exists( 'jww_get_all_time_one_offs' ) ) {
+	set_query_var( 'archive_all_time_one_offs', jww_get_all_time_one_offs( true ) );
+}
+if ( ! $is_taxonomy_archive && function_exists( 'jww_get_all_time_standout_songs' ) ) {
+	set_query_var( 'archive_all_time_standout_songs', jww_get_all_time_standout_songs( true ) );
+}
+
+// Query vars for overview cards (used when taxonomy archive uses show-stats-overview-cards; main archive uses all-time cards)
+set_query_var( 'show_stats_total', $total_shows );
+set_query_var( 'show_stats_upcoming', $upcoming_count );
+set_query_var( 'show_stats_past', $past_count );
 ?>
 
-<main class="wp-block-group align is-layout-flow wp-block-group-is-layout-flow">
+<main class="wp-block-group align alignwide is-layout-flow wp-block-group-is-layout-flow">
 	<div
-		class="wp-block-group has-global-padding is-layout-constrained wp-block-group-is-layout-constrained" 
+		class="wp-block-group has-global-padding" 
 		style="padding-top:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--50)"
 	>
 		<h1 class="wp-block-post-title alignwide has-xxx-large-font-size">
@@ -216,28 +248,19 @@ $past_count = count( $past_shows );
 			?>
 		</h1>
 
-		<!-- Statistics -->
-		<div class="wp-block-group alignwide show-stats" style="margin-bottom:var(--wp--preset--spacing--40)">
-			<div class="stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--wp--preset--spacing--30)">
-				<div class="stat-item">
-					<strong><?php echo esc_html( $total_shows ); ?></strong>
-					<div>Total Shows</div>
-				</div>
-				<div class="stat-item">
-					<strong><?php echo esc_html( $upcoming_count ); ?></strong>
-					<div>Upcoming</div>
-				</div>
-				<div class="stat-item">
-					<strong><?php echo esc_html( $past_count ); ?></strong>
-					<div>Past Shows</div>
-				</div>
-			</div>
+		<?php if ( ! $is_taxonomy_archive ) : ?>
+		<h2 id="archive-all-time-insights-heading" class="show-setlist-data-heading wp-block-heading"><?php esc_html_e( 'All Time Concert Insights', 'jww-theme' ); ?></h2>
+		<div class="wp-block-group alignwide show-stats-cards show-stats-cards-masonry" id="archive-stats-cards-masonry" style="margin-bottom:var(--wp--preset--spacing--50);">
+			<?php get_template_part( 'template-parts/archive-all-time-insight-cards' ); ?>
 		</div>
+		<?php endif; ?>
 
-		<!-- Filters -->
+		<!-- Filters (card-style when on main Shows archive) -->
 		<?php if ( ! $is_taxonomy_archive ): ?>
-		<div class="wp-block-group alignwide show-filters" style="margin-bottom:var(--wp--preset--spacing--40)">
-			<form method="get" action="<?php echo esc_url( get_post_type_archive_link( 'show' ) ); ?>" class="filter-form" style="display:flex;flex-wrap:wrap;gap:var(--wp--preset--spacing--20);align-items:end">
+		<div class="wp-block-group alignwide show-filters-card" style="margin-bottom:var(--wp--preset--spacing--50);">
+			<div class="show-filters-card-inner">
+				<h2 id="show-filters-heading" class="wp-block-heading show-filters-card-heading"><?php esc_html_e( 'Filter shows', 'jww-theme' ); ?></h2>
+				<form method="get" action="<?php echo esc_url( get_post_type_archive_link( 'show' ) ); ?>" class="filter-form" aria-labelledby="show-filters-heading">
 				<div class="filter-group">
 					<label for="filter-type">Show Type:</label>
 					<select name="type" id="filter-type">
@@ -295,263 +318,116 @@ $past_count = count( $past_shows );
 						</div>
 					</div>
 				<?php endif; ?>
-				<button type="submit" class="wp-block-button__link wp-element-button">Filter</button>
+				<button type="submit" class="filter-submit wp-block-button__link wp-element-button">Filter</button>
 				<?php if ( $filter_tour || $filter_location || $filter_location_country || $filter_location_city || $filter_type !== 'all' ): ?>
 					<a href="<?php echo esc_url( get_post_type_archive_link( 'show' ) ); ?>" class="wp-block-button__link wp-element-button">Clear Filters</a>
 				<?php endif; ?>
 			</form>
-		</div>
-		<?php endif; ?>
-
-		<!-- Upcoming Shows Table (collapsible accordion) -->
-		<?php if ( ! empty( $upcoming_shows ) ): ?>
-		<details class="wp-block-group alignwide shows-upcoming-accordion" style="margin-bottom:var(--wp--preset--spacing--50)" open>
-			<summary class="shows-upcoming-accordion-summary">
-				<h2 class="wp-block-heading" style="margin:0;display:inline;">Upcoming Shows</h2>
-				<span class="shows-upcoming-accordion-count"><?php echo esc_html( '(' . count( $upcoming_shows ) . ')' ); ?></span>
-			</summary>
-			<div class="shows-table-wrapper">
-			<table class="shows-table sortable-table" data-table-type="upcoming">
-				<thead>
-					<tr>
-						<th class="sortable" data-sort="title" data-sort-type="text">
-							Show <span class="sort-indicator"></span>
-						</th>
-						<th class="sortable" data-sort="date" data-sort-type="date">
-							Date <span class="sort-indicator"></span>
-						</th>
-						<th class="sortable" data-sort="city" data-sort-type="text">
-							City, Country <span class="sort-indicator"></span>
-						</th>
-						<th class="sortable" data-sort="venue" data-sort-type="text">
-							Venue <span class="sort-indicator"></span>
-						</th>
-						<th class="sortable" data-sort="tour" data-sort-type="text">
-							Tour <span class="sort-indicator"></span>
-						</th>
-						<th>Tickets</th>
-					</tr>
-				</thead>
-				<tbody>
-					<?php 
-					// Prime meta cache for all shows at once (when available)
-					$upcoming_show_ids = wp_list_pluck( $upcoming_shows, 'ID' );
-					if ( ! empty( $upcoming_show_ids ) && function_exists( 'update_post_meta_cache' ) ) {
-						update_post_meta_cache( $upcoming_show_ids );
-					}
-					
-					foreach ( $upcoming_shows as $show ): 
-						$show_title = get_the_title( $show->ID );
-						$show_date = get_the_date( 'M j, Y', $show->ID );
-						$show_date_raw = get_the_date( 'Y-m-d', $show->ID );
-						$show_link = get_permalink( $show->ID );
-						
-						// Use get_fields() to get all ACF fields at once (more efficient)
-						$fields = get_fields( $show->ID );
-						$location_id = isset( $fields['show_location'] ) ? $fields['show_location'] : 0;
-						$tour_id = isset( $fields['show_tour'] ) ? $fields['show_tour'] : 0;
-						$ticket_link = isset( $fields['ticket_link'] ) ? $fields['ticket_link'] : '';
-						
-						$location_data = jww_get_location_hierarchy( $location_id );
-						
-						// Get tour name and link
-						$tour_name = '';
-						$tour_link = '';
-						if ( $tour_id ) {
-							$tour_term = get_term( $tour_id, 'tour' );
-							if ( $tour_term && ! is_wp_error( $tour_term ) ) {
-								$tour_name = $tour_term->name;
-								$tour_link = get_term_link( $tour_term->term_id, 'tour' );
-							}
-						}
-					?>
-						<tr>
-							<td data-sort-value="<?php echo esc_attr( strtolower( $show_title ) ); ?>">
-								<a href="<?php echo esc_url( $show_link ); ?>"><?php echo esc_html( $show_title ); ?></a>
-							</td>
-							<td data-sort-value="<?php echo esc_attr( $show_date_raw ); ?>">
-								<a href="<?php echo esc_url( $show_link ); ?>"><?php echo esc_html( $show_date ); ?></a>
-							</td>
-							<td data-sort-value="<?php echo esc_attr( strtolower( strip_tags( $location_data['city_country'] ) ) ); ?>">
-								<?php if ( $location_data['city_country'] ): ?>
-									<?php echo $location_data['city_country']; // Already escaped in function ?>
-								<?php else: ?>
-									<span class="empty-cell">—</span>
-								<?php endif; ?>
-							</td>
-							<td data-sort-value="<?php echo esc_attr( strtolower( $location_data['venue'] ) ); ?>">
-								<?php
-								$venue_image_id = function_exists( 'jww_get_venue_image_id' ) ? jww_get_venue_image_id( $location_id ) : 0;
-								if ( $location_data['venue'] || $venue_image_id ) : ?>
-									<span class="shows-table-venue-cell">
-									<?php if ( $venue_image_id ) :
-										echo wp_get_attachment_image( $venue_image_id, 'thumbnail', false, array( 'class' => 'shows-table-venue-img', 'loading' => 'lazy', 'decoding' => 'async' ) );
-									endif;
-									if ( $location_data['venue'] ) : ?>
-										<span class="shows-table-venue-name">
-										<?php if ( $location_data['venue_link'] && ! is_wp_error( $location_data['venue_link'] ) ) : ?>
-											<a href="<?php echo esc_url( $location_data['venue_link'] ); ?>"><?php echo esc_html( $location_data['venue'] ); ?></a>
-										<?php else : ?>
-											<?php echo esc_html( $location_data['venue'] ); ?>
-										<?php endif; ?>
-										</span>
-									<?php endif; ?>
-									</span>
-								<?php else : ?>
-									<span class="empty-cell">—</span>
-								<?php endif; ?>
-							</td>
-							<td data-sort-value="<?php echo esc_attr( strtolower( $tour_name ) ); ?>">
-								<?php if ( $tour_name ): ?>
-									<?php if ( $tour_link && ! is_wp_error( $tour_link ) ): ?>
-										<a href="<?php echo esc_url( $tour_link ); ?>"><?php echo esc_html( $tour_name ); ?></a>
-									<?php else: ?>
-										<?php echo esc_html( $tour_name ); ?>
-									<?php endif; ?>
-								<?php else: ?>
-									<span class="empty-cell">—</span>
-								<?php endif; ?>
-							</td>
-							<td>
-								<?php if ( $ticket_link ): ?>
-									<a href="<?php echo esc_url( $ticket_link ); ?>" target="_blank" rel="noopener" class="ticket-link">Get Tickets</a>
-								<?php else: ?>
-									<span class="empty-cell">—</span>
-								<?php endif; ?>
-							</td>
-						</tr>
-					<?php endforeach; ?>
-				</tbody>
-			</table>
 			</div>
-		</details>
-		<?php endif; ?>
-
-		<!-- Past Shows Table -->
-		<?php if ( ! empty( $past_shows ) ): ?>
-		<div class="wp-block-group alignwide shows-table-wrapper">
-			<h2 class="wp-block-heading">Past Shows</h2>
-			<table class="shows-table sortable-table" data-table-type="past">
-				<thead>
-					<tr>
-						<th class="sortable" data-sort="title" data-sort-type="text">
-							Show <span class="sort-indicator"></span>
-						</th>
-						<th class="sortable" data-sort="date" data-sort-type="date">
-							Date <span class="sort-indicator"></span>
-						</th>
-						<th class="sortable" data-sort="city" data-sort-type="text">
-							City/Country <span class="sort-indicator"></span>
-						</th>
-						<th class="sortable" data-sort="venue" data-sort-type="text">
-							Venue <span class="sort-indicator"></span>
-						</th>
-						<th class="sortable" data-sort="songs" data-sort-type="number">
-							Songs <span class="sort-indicator"></span>
-						</th>
-						<th class="sortable" data-sort="tour" data-sort-type="text">
-							Tour <span class="sort-indicator"></span>
-						</th>
-					</tr>
-				</thead>
-				<tbody>
-					<?php 
-					// Prime meta cache for all shows at once (when available)
-					$past_show_ids = wp_list_pluck( $past_shows, 'ID' );
-					if ( ! empty( $past_show_ids ) && function_exists( 'update_post_meta_cache' ) ) {
-						update_post_meta_cache( $past_show_ids );
-					}
-					
-					foreach ( $past_shows as $show ): 
-						$show_title = get_the_title( $show->ID );
-						$show_date = get_the_date( 'M j, Y', $show->ID );
-						$show_date_raw = get_the_date( 'Y-m-d', $show->ID );
-						$show_link = get_permalink( $show->ID );
-						
-						// Use get_fields() to get all ACF fields at once (more efficient)
-						$fields = get_fields( $show->ID );
-						$location_id = isset( $fields['show_location'] ) ? $fields['show_location'] : 0;
-						$tour_id = isset( $fields['show_tour'] ) ? $fields['show_tour'] : 0;
-						$setlist = isset( $fields['setlist'] ) ? $fields['setlist'] : array();
-						$song_count = jww_count_setlist_songs( $setlist );
-						$song_count_display = $song_count > 0 ? (string) $song_count : '?';
-						$song_count_sort    = $song_count > 0 ? $song_count : -1;
-						$song_count_title   = $song_count > 0 ? '' : __( 'Setlist not added yet; will update when available.', 'jww-theme' );
-						
-						$location_data = jww_get_location_hierarchy( $location_id );
-						
-						// Get tour name and link
-						$tour_name = '';
-						$tour_link = '';
-						if ( $tour_id ) {
-							$tour_term = get_term( $tour_id, 'tour' );
-							if ( $tour_term && ! is_wp_error( $tour_term ) ) {
-								$tour_name = $tour_term->name;
-								$tour_link = get_term_link( $tour_term->term_id, 'tour' );
-							}
-						}
-					?>
-						<tr>
-							<td data-sort-value="<?php echo esc_attr( strtolower( $show_title ) ); ?>">
-								<a href="<?php echo esc_url( $show_link ); ?>"><?php echo esc_html( $show_title ); ?></a>
-							</td>
-							<td data-sort-value="<?php echo esc_attr( $show_date_raw ); ?>">
-								<a href="<?php echo esc_url( $show_link ); ?>"><?php echo esc_html( $show_date ); ?></a>
-							</td>
-							<td data-sort-value="<?php echo esc_attr( strtolower( strip_tags( $location_data['city_country'] ) ) ); ?>">
-								<?php if ( $location_data['city_country'] ): ?>
-									<?php echo $location_data['city_country']; // Already escaped in function ?>
-								<?php else: ?>
-									<span class="empty-cell">—</span>
-								<?php endif; ?>
-							</td>
-							<td data-sort-value="<?php echo esc_attr( strtolower( $location_data['venue'] ) ); ?>">
-								<?php
-								$venue_image_id = function_exists( 'jww_get_venue_image_id' ) ? jww_get_venue_image_id( $location_id ) : 0;
-								if ( $location_data['venue'] || $venue_image_id ) : ?>
-									<span class="shows-table-venue-cell">
-									<?php if ( $venue_image_id ) :
-										echo wp_get_attachment_image( $venue_image_id, 'thumbnail', false, array( 'class' => 'shows-table-venue-img', 'loading' => 'lazy', 'decoding' => 'async' ) );
-									endif;
-									if ( $location_data['venue'] ) : ?>
-										<span class="shows-table-venue-name">
-										<?php if ( $location_data['venue_link'] && ! is_wp_error( $location_data['venue_link'] ) ) : ?>
-											<a href="<?php echo esc_url( $location_data['venue_link'] ); ?>"><?php echo esc_html( $location_data['venue'] ); ?></a>
-										<?php else : ?>
-											<?php echo esc_html( $location_data['venue'] ); ?>
-										<?php endif; ?>
-										</span>
-									<?php endif; ?>
-									</span>
-								<?php else : ?>
-									<span class="empty-cell">—</span>
-								<?php endif; ?>
-							</td>
-							<td data-sort-value="<?php echo esc_attr( $song_count_sort ); ?>">
-								<a href="<?php echo esc_url( $show_link ); ?>"<?php echo $song_count_title ? ' title="' . esc_attr( $song_count_title ) . '"' : ''; ?>><?php echo esc_html( $song_count_display ); ?></a>
-							</td>
-							<td data-sort-value="<?php echo esc_attr( strtolower( $tour_name ) ); ?>">
-								<?php if ( $tour_name ): ?>
-									<?php if ( $tour_link && ! is_wp_error( $tour_link ) ): ?>
-										<a href="<?php echo esc_url( $tour_link ); ?>"><?php echo esc_html( $tour_name ); ?></a>
-									<?php else: ?>
-										<?php echo esc_html( $tour_name ); ?>
-									<?php endif; ?>
-								<?php else: ?>
-									<span class="empty-cell">—</span>
-								<?php endif; ?>
-							</td>
-						</tr>
-					<?php endforeach; ?>
-				</tbody>
-			</table>
 		</div>
 		<?php endif; ?>
 
-		<?php if ( empty( $upcoming_shows ) && empty( $past_shows ) ): ?>
+		<!-- Shows tables: card + accordion (one section = "Shows", two = "Upcoming Shows" / "Past Shows") -->
+		<?php
+		$has_upcoming = ! empty( $upcoming_shows );
+		$has_past     = ! empty( $past_shows );
+		$single_section = ( $has_upcoming && ! $has_past ) || ( ! $has_upcoming && $has_past );
+		$section_title = $single_section ? __( 'Shows', 'jww-theme' ) : null;
+
+		if ( $has_upcoming ) :
+			$upcoming_title = $section_title !== null ? $section_title : __( 'Upcoming Shows', 'jww-theme' );
+			jww_render_shows_table_card( $upcoming_shows, array(
+				'title'            => $upcoming_title,
+				'table_type'       => 'upcoming',
+				'show_tour_column' => true,
+				'default_open'     => true,
+				'accordion_id'     => 'archive-upcoming-shows-accordion',
+			) );
+		endif;
+
+		if ( $has_past ) :
+			$past_title = $section_title !== null ? $section_title : __( 'Past Shows', 'jww-theme' );
+			jww_render_shows_table_card( $past_shows, array(
+				'title'            => $past_title,
+				'table_type'       => 'past',
+				'show_tour_column' => true,
+				'default_open'     => ! $has_upcoming,
+				'accordion_id'     => 'archive-past-shows-accordion',
+			) );
+		endif;
+		?>
+
+		<?php if ( ! $has_upcoming && ! $has_past ): ?>
 			<p>No shows found.</p>
 		<?php endif; ?>
+
+		<?php
+		// Song live stats table (all songs, play counts, first/last played) — main Shows archive only. Same card + accordion as shows tables.
+		if ( ! $is_taxonomy_archive && function_exists( 'jww_get_all_time_song_stats' ) ) :
+			$song_stats_list = jww_get_all_time_song_stats( true );
+			$song_stats_count = is_array( $song_stats_list ) ? count( $song_stats_list ) : 0;
+			$song_stats_block = render_block( array(
+				'blockName' => 'jww/song-stats-table',
+				'attrs'     => array(),
+			) );
+			if ( $song_stats_block ) :
+				$song_live_open = false; // Collapsed by default
+				?>
+				<div class="wp-block-group alignwide shows-table-card" style="margin-top:var(--wp--preset--spacing--50);margin-bottom:var(--wp--preset--spacing--50);">
+					<details class="shows-accordion" id="archive-song-live-stats-accordion"<?php echo $song_live_open ? ' open' : ''; ?> aria-labelledby="archive-song-live-stats-heading">
+						<summary class="shows-accordion-summary">
+							<h2 id="archive-song-live-stats-heading" class="wp-block-heading show-setlist-data-heading" style="margin:0;display:inline;"><?php esc_html_e( 'Song live stats', 'jww-theme' ); ?></h2>
+							<span class="shows-accordion-count"><?php echo esc_html( '(' . $song_stats_count . ')' ); ?></span>
+						</summary>
+						<div class="shows-table-wrapper">
+							<?php echo $song_stats_block; ?>
+						</div>
+					</details>
+				</div>
+				<?php
+			endif;
+		endif;
+		?>
 	</div>
 </main>
+
+<?php
+// Open accordion when linking from insight cards or when page loads with hash (main Shows archive only)
+if ( ! $is_taxonomy_archive ) :
+	?>
+	<script>
+	(function() {
+		function openAccordionById(id) {
+			var el = document.getElementById(id);
+			if (el && el.tagName === 'DETAILS') {
+				el.setAttribute('open', '');
+			}
+		}
+		function initArchiveAccordionLinks() {
+			document.querySelectorAll('.archive-insight-accordion-link').forEach(function(a) {
+				a.addEventListener('click', function(e) {
+					var id = a.getAttribute('data-accordion-id');
+					if (id) {
+						e.preventDefault();
+						openAccordionById(id);
+						window.location.hash = id;
+					}
+				});
+			});
+			var hash = window.location.hash.replace(/^#/, '');
+			if (hash && (hash === 'archive-upcoming-shows-accordion' || hash === 'archive-past-shows-accordion' || hash === 'archive-song-live-stats-accordion')) {
+				openAccordionById(hash);
+			}
+		}
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', initArchiveAccordionLinks);
+		} else {
+			initArchiveAccordionLinks();
+		}
+	})();
+	</script>
+	<?php
+endif;
+?>
 
 <?php get_footer(); ?>

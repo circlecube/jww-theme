@@ -1,0 +1,28 @@
+// Theme CSS variables (music services, etc.)
+:root {
+  --amazon-color: #ff9500;
+  --apple-music-color: #fa243c;
+  --spotify-color: #1db954;
+  --tidal-color: #00ffff;
+  --qobuz-color: #1e3a8a;
+  --deezer-color: #ad47ff;
+  --bandcamp-color: #629aa0;
+  --youtube-music-color: #ff0000;
+  --soundcloud-color: #ff5500;
+  --pandora-color: #224099;
+  --iheartradio-color: #c6002b;
+  --lastfm-color: #d51007;
+  --amazon-gradient: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%);
+  --apple-music-gradient: linear-gradient(135deg, #fa243c 0%, #d70022 100%);
+  --spotify-gradient: linear-gradient(135deg, #1db954 0%, #1ed760 100%);
+  --tidal-gradient: linear-gradient(135deg, #00ffff 0%, #00cccc 100%);
+  --qobuz-gradient: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+  --deezer-gradient: linear-gradient(135deg, #ad47ff 0%, #bb73ff 100%);
+  --bandcamp-gradient: linear-gradient(135deg, #629aa0 0%, #4a7c7e 100%);
+  --youtube-music-gradient: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+  --soundcloud-gradient: linear-gradient(135deg, #ff5500 0%, #ff3300 100%);
+  --pandora-gradient: linear-gradient(135deg, #224099 0%, #1a3371 100%);
+  --iheartradio-gradient: linear-gradient(135deg, #c6002b 0%, #a00022 100%);
+  --lastfm-gradient: linear-gradient(135deg, #d51007 0%, #b00e06 100%);
+  --wp--preset--font-size--tiny: 0.60rem;
+}

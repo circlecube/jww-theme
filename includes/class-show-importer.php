@@ -60,7 +60,7 @@ class Show_Importer {
 
 		wp_enqueue_script(
 			'jww-show-importer',
-			get_stylesheet_directory_uri() . '/includes/js/show-importer.js',
+			get_stylesheet_directory_uri() . '/admin/js/show-importer.js',
 			array( 'jquery' ),
 			wp_get_theme()->get( 'Version' ),
 			true
@@ -73,7 +73,7 @@ class Show_Importer {
 
 		wp_enqueue_style(
 			'jww-show-importer',
-			get_stylesheet_directory_uri() . '/includes/css/show-importer.css',
+			get_stylesheet_directory_uri() . '/admin/css/show-importer.css',
 			array(),
 			wp_get_theme()->get( 'Version' )
 		);

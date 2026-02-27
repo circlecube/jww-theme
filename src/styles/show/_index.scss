@@ -1,0 +1,38 @@
+/* Show meta: left block (venue image + date/location/tour) */
+.show-meta-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.show-venue-image-wrap {
+  flex-shrink: 0;
+}
+
+.show-venue-image {
+  width: 120px;
+  height: auto;
+  border-radius: 6px;
+  object-fit: cover;
+  aspect-ratio: 4 / 3;
+}
+
+.show-meta-text {
+  min-width: 0;
+}
+
+/* Show meta: YouTube search button */
+.show-meta .show-youtube-search {
+  margin-left: auto;
+}
+
+.show-youtube-search .show-youtube-search-link {
+  font-size: 0.9rem;
+  padding: 0.5rem 1rem;
+}
+
+.filter-section.filter-checkbox .filter-label {
+  margin: 0;
+  cursor: pointer;
+}

@@ -259,25 +259,6 @@ if ( $show_artist ) {
 	</div>
 <?php endif; ?>
 
-<?php if ( $setlist || $tour_id ) : ?>
-	<section class="show-setlist-data-section wp-block-group alignwide has-global-padding" aria-labelledby="show-setlist-data-heading">
-		<h2 id="show-setlist-data-heading" class="show-setlist-data-heading wp-block-heading"><?php esc_html_e( 'Setlist Insights', 'jww-theme' ); ?></h2>
-		<div id="show-stats-cards-masonry" class="show-stats-cards show-stats-cards-masonry">
-			<?php if ( $setlist ) : ?>
-				<?php get_template_part( 'template-parts/show-setlist-highlight-debuts' ); ?>
-				<?php get_template_part( 'template-parts/show-setlist-highlight-returns' ); ?>
-			<?php endif; ?>
-			<?php if ( $tour_id ) : ?>
-				<?php get_template_part( 'template-parts/show-tour-stats' ); ?>
-			<?php endif; ?>
-			<?php if ( $setlist ) : ?>
-				<?php get_template_part( 'template-parts/show-setlist-chart' ); ?>
-				<?php get_template_part( 'template-parts/show-setlist-highlight-standout' ); ?>
-			<?php endif; ?>
-		</div>
-	</section>
-<?php endif; ?>
-
 <?php if ( $show_notes ): ?>
 	<!-- Show Notes Section -->
 	<div class="wp-block-group is-style-default has-base-background-color has-background is-layout-constrained has-global-padding" style="margin-top:0;margin-bottom:0">
@@ -290,6 +271,38 @@ if ( $show_artist ) {
 	</div>
 <?php endif; ?>
 
+<?php if ( $setlist || $tour_id || $location_id ) : ?>
+	<section class="show-setlist-data-section wp-block-group alignwide has-global-padding" aria-labelledby="show-setlist-data-heading">
+		<h2 id="show-setlist-data-heading" class="show-setlist-data-heading wp-block-heading"><?php esc_html_e( 'Setlist Insights', 'jww-theme' ); ?></h2>
+		<div id="show-stats-cards-masonry" class="show-stats-cards show-stats-cards-masonry">
+			<?php if ( $setlist ) : ?>
+				<?php get_template_part( 'template-parts/show-insight-song-count' ); ?>
+			<?php endif; ?>
+			<?php if ( $tour_id ) : ?>
+				<?php get_template_part( 'template-parts/show-insight-tour-gap' ); ?>
+			<?php endif; ?>
+			<?php if ( $location_id ) : ?>
+				<?php get_template_part( 'template-parts/show-insight-venue-count' ); ?>
+				<?php get_template_part( 'template-parts/show-insight-city-count' ); ?>
+			<?php endif; ?>
+			<?php if ( $setlist ) : ?>
+				<?php get_template_part( 'template-parts/show-insight-live-debuts' ); ?>
+				<?php get_template_part( 'template-parts/show-insight-returns' ); ?>
+			<?php endif; ?>
+			<?php if ( $tour_id && $setlist ) : ?>
+				<?php get_template_part( 'template-parts/show-insight-tour-debuts' ); ?>
+			<?php endif; ?>
+			<?php if ( $tour_id ) : ?>
+				<?php get_template_part( 'template-parts/show-tour-stats' ); ?>
+			<?php endif; ?>
+			<?php if ( $setlist ) : ?>
+				<?php get_template_part( 'template-parts/show-insight-release-representation' ); ?>
+				<?php get_template_part( 'template-parts/show-insight-standout' ); ?>
+			<?php endif; ?>
+		</div>
+	</section>
+<?php endif; ?>
+
 <!-- Navigation -->
 <div class="nav-link-container wp-block-group alignwide">
 	<?php
@@ -300,11 +313,10 @@ if ( $show_artist ) {
 	?>
 </div>
 
-<?php
-// If comments are open or we have at least one comment, load up the comment template.
-if (comments_open() || get_comments_number()) :
-	comments_template();
-endif;
-?>
+<!-- Comments -->
+<section class="show-comments-section wp-block-group alignwide has-global-padding" aria-labelledby="show-comments-heading">
+	<h2 id="show-comments-heading" class="wp-block-heading"><?php esc_html_e( 'Comments', 'jww-theme' ); ?></h2>
+	<?php comments_template(); ?>
+</section>
 
 <?php get_footer(); ?>

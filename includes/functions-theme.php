@@ -57,18 +57,34 @@ function jww_enqueue() {
 	);
 	
 	// Enqueue child theme styles
-	wp_enqueue_style( 
+	wp_enqueue_style(
 		'jww-style',
 		get_stylesheet_directory_uri() . '/style.css',
 		array( $parent_style, 'font-awesome' ),
 		wp_get_theme()->get('Version'),
 	);
+
+	// Enqueue compiled theme CSS (from src/styles/*.scss)
+	$theme_css = get_stylesheet_directory() . '/build/theme.css';
+	if ( file_exists( $theme_css ) ) {
+		wp_enqueue_style(
+			'jww-theme-styles',
+			get_stylesheet_directory_uri() . '/build/theme.css',
+			array( 'jww-style' ),
+			wp_get_theme()->get( 'Version' )
+		);
+	}
 	
-	// Enqueue masonry layout for Setlist Data cards on single show
-	if ( is_singular( 'show' ) ) {
+	// Enqueue masonry layout for Setlist Data cards on single show, tour archive, location archive, and main show archive
+	if ( is_singular( 'show' ) || is_tax( 'tour' ) || is_tax( 'location' ) || is_post_type_archive( 'show' ) ) {
+		$masonry_src = get_stylesheet_directory() . '/build/theme-masonry.js';
+		$masonry_uri = get_stylesheet_directory_uri() . '/build/theme-masonry.js';
+		if ( ! file_exists( $masonry_src ) ) {
+			$masonry_uri = get_stylesheet_directory_uri() . '/src/js/show-stats-masonry.js';
+		}
 		wp_enqueue_script(
 			'jww-show-stats-masonry',
-			get_stylesheet_directory_uri() . '/includes/js/show-stats-masonry.js',
+			$masonry_uri,
 			array(),
 			wp_get_theme()->get( 'Version' ),
 			true
@@ -77,21 +93,33 @@ function jww_enqueue() {
 
 	// Enqueue sortable table script on show archives, song archive, and single song (Play history table)
 	if ( is_post_type_archive( 'show' ) || is_post_type_archive( 'song' ) || is_singular( 'song' ) || is_tax( array( 'tour', 'location' ) ) ) {
-		wp_enqueue_script( 
-			'jww-archive-sort', 
-			get_stylesheet_directory_uri() . '/includes/js/archive-show-sort.js', 
-			array(), 
-			wp_get_theme()->get('Version'), 
-			true 
-		);
-		// Enqueue location cascade script for hierarchical location filtering
-		wp_enqueue_script( 
-			'jww-archive-location-cascade', 
-			get_stylesheet_directory_uri() . '/includes/js/archive-show-location-cascade.js', 
-			array(), 
-			wp_get_theme()->get('Version'), 
-			true 
-		);
+		$archives_src = get_stylesheet_directory() . '/build/theme-archives.js';
+		$archives_uri = get_stylesheet_directory_uri() . '/build/theme-archives.js';
+		if ( ! file_exists( $archives_src ) ) {
+			// Fallback: load individual scripts when build not run
+			wp_enqueue_script(
+				'jww-archive-sort',
+				get_stylesheet_directory_uri() . '/src/js/archive-show-sort.js',
+				array(),
+				wp_get_theme()->get( 'Version' ),
+				true
+			);
+			wp_enqueue_script(
+				'jww-archive-location-cascade',
+				get_stylesheet_directory_uri() . '/src/js/archive-show-location-cascade.js',
+				array(),
+				wp_get_theme()->get( 'Version' ),
+				true
+			);
+		} else {
+			wp_enqueue_script(
+				'jww-archive-sort',
+				$archives_uri,
+				array(),
+				wp_get_theme()->get( 'Version' ),
+				true
+			);
+		}
 	}
 	
 	// wp_enqueue_script( 
@@ -230,3 +258,27 @@ function jww_ajax_song_live_stats_fragment() {
 }
 add_action( 'wp_ajax_jww_song_live_stats_fragment', 'jww_ajax_song_live_stats_fragment' );
 add_action( 'wp_ajax_nopriv_jww_song_live_stats_fragment', 'jww_ajax_song_live_stats_fragment' );
+
+/**
+ * Prepend festival name to show title when the show has a festival name set.
+ * Applied everywhere get_the_title() or the_title is used for a show.
+ *
+ * @param string $title   Post title.
+ * @param int    $post_id Post ID (optional in some contexts).
+ * @return string
+ */
+function jww_show_title_prepend_festival( $title, $post_id = 0 ) {
+	if ( ! $post_id || get_post_type( $post_id ) !== 'show' ) {
+		return $title;
+	}
+	$festival_name = function_exists( 'get_field' ) ? get_field( 'show_festival_name', $post_id ) : null;
+	if ( empty( $festival_name ) || ! is_string( $festival_name ) ) {
+		return $title;
+	}
+	$festival_name = trim( $festival_name );
+	if ( $festival_name === '' ) {
+		return $title;
+	}
+	return $festival_name . ' — ' . $title;
+}
+add_filter( 'the_title', 'jww_show_title_prepend_festival', 10, 2 );

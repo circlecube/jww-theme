@@ -19,6 +19,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 function jww_clear_song_stats_for_song_ids( array $song_ids ) {
 	delete_transient( 'jww_all_time_song_stats' );
+	delete_transient( 'jww_all_time_show_stats' );
+	delete_transient( 'jww_all_time_opener_closer' );
+	delete_transient( 'jww_all_time_album_stats' );
 	delete_transient( 'jww_all_show_setlists' );
 
 	$song_ids = array_filter( array_map( 'intval', $song_ids ) );
@@ -35,6 +38,9 @@ function jww_clear_song_stats_for_song_ids( array $song_ids ) {
  */
 function jww_clear_song_stats_caches() {
 	delete_transient( 'jww_all_time_song_stats' );
+	delete_transient( 'jww_all_time_show_stats' );
+	delete_transient( 'jww_all_time_opener_closer' );
+	delete_transient( 'jww_all_time_album_stats' );
 	delete_transient( 'jww_all_show_setlists' );
 
 	global $wpdb;
@@ -416,31 +422,6 @@ function jww_get_past_shows( $args = array() ) {
 }
 
 /**
- * Get shows for a specific tour
- * 
- * @param int $tour_id Tour term ID
- * @return array Array of show posts
- */
-function jww_get_shows_by_tour( $tour_id ) {
-	$args = array(
-		'post_type'      => 'show',
-		'posts_per_page' => -1,
-		'post_status'    => array( 'publish', 'future' ),
-		'orderby'        => 'date',
-		'order'          => 'ASC',
-		'tax_query'      => array(
-			array(
-				'taxonomy' => 'tour',
-				'field'    => 'term_id',
-				'terms'    => $tour_id,
-			),
-		),
-	);
-	
-	return get_posts( $args );
-}
-
-/**
  * Get shows for a specific venue/location
  * 
  * @param int $venue_id Location term ID
@@ -463,6 +444,193 @@ function jww_get_shows_by_venue( $venue_id ) {
 	);
 	
 	return get_posts( $args );
+}
+
+/**
+ * Get most common show openers and closers for a location (first and last song of each setlist at this location).
+ * Returns top 3 openers and top 3 closers. Cached per location.
+ *
+ * @param int $location_id Location term ID.
+ * @return array Keys: openers => array of [ song_id, title, link, count ], closers => array of [ song_id, title, link, count ].
+ */
+function jww_get_location_opener_closer( $location_id ) {
+	$location_id = (int) $location_id;
+	if ( ! $location_id ) {
+		return array( 'openers' => array(), 'closers' => array() );
+	}
+	$cache_key = 'jww_location_opener_closer_' . $location_id;
+	$cached = get_transient( $cache_key );
+	if ( $cached !== false && is_array( $cached ) && isset( $cached['openers'] ) ) {
+		return $cached;
+	}
+
+	$shows = jww_get_shows_by_venue( $location_id );
+	$opener_counts = array();
+	$closer_counts = array();
+
+	foreach ( $shows as $show ) {
+		$setlist = get_field( 'setlist', $show->ID );
+		if ( ! $setlist || ! is_array( $setlist ) ) {
+			continue;
+		}
+		$first_id = function_exists( 'jww_get_setlist_first_song_id' ) ? jww_get_setlist_first_song_id( $setlist ) : 0;
+		$last_id  = function_exists( 'jww_get_setlist_last_song_id' ) ? jww_get_setlist_last_song_id( $setlist ) : 0;
+		if ( $first_id ) {
+			$opener_counts[ $first_id ] = ( $opener_counts[ $first_id ] ?? 0 ) + 1;
+		}
+		if ( $last_id ) {
+			$closer_counts[ $last_id ] = ( $closer_counts[ $last_id ] ?? 0 ) + 1;
+		}
+	}
+
+	$openers = array();
+	$closers = array();
+	$top_n = 3;
+
+	if ( ! empty( $opener_counts ) ) {
+		arsort( $opener_counts, SORT_NUMERIC );
+		$take = array_slice( array_keys( $opener_counts ), 0, $top_n, true );
+		foreach ( $take as $song_id ) {
+			$song_id = (int) $song_id;
+			$openers[] = array(
+				'song_id' => $song_id,
+				'title'   => get_the_title( $song_id ),
+				'link'    => get_permalink( $song_id ),
+				'count'   => $opener_counts[ $song_id ],
+			);
+		}
+	}
+	if ( ! empty( $closer_counts ) ) {
+		arsort( $closer_counts, SORT_NUMERIC );
+		$take = array_slice( array_keys( $closer_counts ), 0, $top_n, true );
+		foreach ( $take as $song_id ) {
+			$song_id = (int) $song_id;
+			$closers[] = array(
+				'song_id' => $song_id,
+				'title'   => get_the_title( $song_id ),
+				'link'    => get_permalink( $song_id ),
+				'count'   => $closer_counts[ $song_id ],
+			);
+		}
+	}
+
+	$result = array( 'openers' => $openers, 'closers' => $closers );
+	set_transient( $cache_key, $result, HOUR_IN_SECONDS );
+	return $result;
+}
+
+/**
+ * Get the number of venues represented under a location term (for locale insights).
+ * Country: count of all descendant venue terms (depth 2). City: count of direct child terms. Venue: 1.
+ *
+ * @param int $location_term_id Location term ID.
+ * @return int
+ */
+function jww_get_location_venue_count( $location_term_id ) {
+	$location_term_id = (int) $location_term_id;
+	if ( ! $location_term_id ) {
+		return 0;
+	}
+	$term = get_term( $location_term_id, 'location' );
+	if ( ! $term || is_wp_error( $term ) ) {
+		return 0;
+	}
+	// Venue = term whose parent has a parent (depth 2). City = parent has no parent. Country = no parent.
+	if ( $term->parent ) {
+		$parent = get_term( $term->parent, 'location' );
+		if ( $parent && ! is_wp_error( $parent ) && $parent->parent ) {
+			return 1; // This term is a venue.
+		}
+		// This term is a city; count direct children (venues).
+		$children = get_terms( array(
+			'taxonomy'   => 'location',
+			'parent'     => $location_term_id,
+			'fields'     => 'count',
+			'hide_empty' => false,
+		) );
+		return is_numeric( $children ) ? (int) $children : 0;
+	}
+	// Country: sum of venue counts for each city.
+	$cities = get_terms( array(
+		'taxonomy'   => 'location',
+		'parent'     => $location_term_id,
+		'fields'     => 'ids',
+		'hide_empty' => false,
+	) );
+	if ( ! is_array( $cities ) || empty( $cities ) ) {
+		return 0;
+	}
+	$count = 0;
+	foreach ( $cities as $city_id ) {
+		$children = get_terms( array(
+			'taxonomy'   => 'location',
+			'parent'     => $city_id,
+			'fields'     => 'count',
+			'hide_empty' => false,
+		) );
+		$count += is_numeric( $children ) ? (int) $children : 0;
+	}
+	return $count;
+}
+
+/**
+ * Get shows in a city (location term): shows whose venue is this term or a descendant (e.g. all venues in the city).
+ *
+ * @param int $city_term_id Location term ID (city).
+ * @return WP_Post[]
+ */
+function jww_get_shows_by_city( $city_term_id ) {
+	$city_term_id = (int) $city_term_id;
+	if ( ! $city_term_id ) {
+		return array();
+	}
+	$descendant_ids = get_terms( array(
+		'taxonomy'   => 'location',
+		'child_of'   => $city_term_id,
+		'fields'     => 'ids',
+		'hide_empty' => false,
+	) );
+	if ( ! is_array( $descendant_ids ) ) {
+		$descendant_ids = array();
+	}
+	$term_ids = array_merge( array( $city_term_id ), $descendant_ids );
+	$args = array(
+		'post_type'      => 'show',
+		'posts_per_page' => -1,
+		'post_status'    => array( 'publish', 'future' ),
+		'orderby'        => 'date',
+		'order'          => 'DESC',
+		'tax_query'      => array(
+			array(
+				'taxonomy' => 'location',
+				'field'    => 'term_id',
+				'terms'    => $term_ids,
+			),
+		),
+	);
+	return get_posts( $args );
+}
+
+/**
+ * Get days since the previous show in the same tour. Returns null if no tour or this is the first show.
+ *
+ * @param int $show_id Show post ID.
+ * @return int|null Days since previous show, or null.
+ */
+function jww_get_show_tour_gap_days( $show_id ) {
+	$earlier = jww_get_earlier_shows_in_tour( $show_id );
+	if ( empty( $earlier ) ) {
+		return null;
+	}
+	$post = get_post( $show_id );
+	if ( ! $post || $post->post_type !== 'show' ) {
+		return null;
+	}
+	$prev_show = end( $earlier ); // Chronologically last earlier show
+	$this_time = strtotime( $post->post_date );
+	$prev_time = strtotime( $prev_show->post_date );
+	$diff = $this_time - $prev_time;
+	return (int) round( $diff / DAY_IN_SECONDS );
 }
 
 /**
@@ -588,6 +756,507 @@ function jww_get_all_time_song_stats( $use_cache = true ) {
 	}
 	
 	return $stats;
+}
+
+/**
+ * Get all-time show statistics (total shows, upcoming, past, venues, cities, shows with setlist data, unique songs).
+ * Used on the main Shows archive for "All Time Concert Insights". Cached; cleared when shows/setlists change.
+ *
+ * @param bool $use_cache Whether to use cached results (default: true).
+ * @return array Keys: total_shows, upcoming_count, past_count, venues_count, cities_count, shows_with_data_count, unique_songs_count.
+ */
+function jww_get_all_time_show_stats( $use_cache = true ) {
+	if ( $use_cache ) {
+		$cached = get_transient( 'jww_all_time_show_stats' );
+		if ( $cached !== false && is_array( $cached ) ) {
+			return $cached;
+		}
+	}
+
+	$shows = get_posts( array(
+		'post_type'      => 'show',
+		'posts_per_page' => -1,
+		'post_status'    => array( 'publish', 'future' ),
+		'orderby'        => 'date',
+		'order'          => 'ASC',
+	) );
+
+	$current_time = current_time( 'timestamp' );
+	$upcoming_count = 0;
+	$past_count = 0;
+	$venue_ids = array();
+	$city_ids = array();
+	$shows_with_data_count = 0;
+	$unique_song_ids = array();
+	$festivals_count = 0;
+
+	foreach ( $shows as $show ) {
+		$t = strtotime( $show->post_date );
+		if ( $t > $current_time ) {
+			$upcoming_count++;
+		} else {
+			$past_count++;
+		}
+
+		if ( get_field( 'show_festival', $show->ID ) ) {
+			$festivals_count++;
+		}
+
+		$loc_id = get_field( 'show_location', $show->ID );
+		if ( $loc_id ) {
+			$loc_id = (int) $loc_id;
+			$venue_ids[ $loc_id ] = true;
+			$term = get_term( $loc_id, 'location' );
+			if ( $term && ! is_wp_error( $term ) && $term->parent ) {
+				$city_ids[ (int) $term->parent ] = true;
+			}
+		}
+
+		$setlist = get_field( 'setlist', $show->ID );
+		if ( function_exists( 'jww_count_setlist_songs' ) && jww_count_setlist_songs( $setlist ) > 0 ) {
+			$shows_with_data_count++;
+			if ( $setlist && is_array( $setlist ) ) {
+				foreach ( $setlist as $item ) {
+					if ( isset( $item['entry_type'] ) && $item['entry_type'] === 'song-post' && ! empty( $item['song'] ) ) {
+						$song = is_array( $item['song'] ) ? $item['song'][0] : $item['song'];
+						$song_id = is_object( $song ) ? $song->ID : $song;
+						$unique_song_ids[ (int) $song_id ] = true;
+					}
+				}
+			}
+		}
+	}
+
+	$stats = array(
+		'total_shows'            => count( $shows ),
+		'upcoming_count'         => $upcoming_count,
+		'past_count'             => $past_count,
+		'venues_count'           => count( $venue_ids ),
+		'cities_count'           => count( $city_ids ),
+		'shows_with_data_count'  => $shows_with_data_count,
+		'unique_songs_count'     => count( $unique_song_ids ),
+		'festivals_count'        => $festivals_count,
+	);
+
+	if ( $use_cache ) {
+		set_transient( 'jww_all_time_show_stats', $stats, HOUR_IN_SECONDS );
+	}
+
+	return $stats;
+}
+
+/**
+ * Get all-time most common show opener and closer (first and last song of each setlist).
+ * Returns top 3 openers and top 3 closers.
+ * Cached; cleared when setlists change.
+ *
+ * @param bool $use_cache Whether to use cached results.
+ * @return array Keys: openers => array of [ song_id, title, link, count ], closers => array of [ song_id, title, link, count ].
+ */
+function jww_get_all_time_opener_closer( $use_cache = true ) {
+	if ( $use_cache ) {
+		$cached = get_transient( 'jww_all_time_opener_closer' );
+		if ( $cached !== false && is_array( $cached ) ) {
+			return $cached;
+		}
+	}
+
+	$shows = get_posts( array(
+		'post_type'      => 'show',
+		'posts_per_page' => -1,
+		'post_status'    => array( 'publish', 'future' ),
+		'orderby'        => 'date',
+		'order'          => 'ASC',
+	) );
+
+	$opener_counts = array();
+	$closer_counts = array();
+
+	foreach ( $shows as $show ) {
+		$setlist = get_field( 'setlist', $show->ID );
+		if ( ! $setlist || ! is_array( $setlist ) ) {
+			continue;
+		}
+		$first_id = function_exists( 'jww_get_setlist_first_song_id' ) ? jww_get_setlist_first_song_id( $setlist ) : 0;
+		$last_id  = function_exists( 'jww_get_setlist_last_song_id' ) ? jww_get_setlist_last_song_id( $setlist ) : 0;
+		if ( $first_id ) {
+			$opener_counts[ $first_id ] = ( $opener_counts[ $first_id ] ?? 0 ) + 1;
+		}
+		if ( $last_id ) {
+			$closer_counts[ $last_id ] = ( $closer_counts[ $last_id ] ?? 0 ) + 1;
+		}
+	}
+
+	$openers = array();
+	$closers = array();
+	$top_n = 3;
+
+	if ( ! empty( $opener_counts ) ) {
+		arsort( $opener_counts, SORT_NUMERIC );
+		$take = array_slice( array_keys( $opener_counts ), 0, $top_n, true );
+		foreach ( $take as $song_id ) {
+			$song_id = (int) $song_id;
+			$openers[] = array(
+				'song_id' => $song_id,
+				'title'   => get_the_title( $song_id ),
+				'link'    => get_permalink( $song_id ),
+				'count'   => $opener_counts[ $song_id ],
+			);
+		}
+	}
+	if ( ! empty( $closer_counts ) ) {
+		arsort( $closer_counts, SORT_NUMERIC );
+		$take = array_slice( array_keys( $closer_counts ), 0, $top_n, true );
+		foreach ( $take as $song_id ) {
+			$song_id = (int) $song_id;
+			$closers[] = array(
+				'song_id' => $song_id,
+				'title'   => get_the_title( $song_id ),
+				'link'    => get_permalink( $song_id ),
+				'count'   => $closer_counts[ $song_id ],
+			);
+		}
+	}
+
+	$result = array(
+		'openers' => $openers,
+		'closers' => $closers,
+	);
+
+	if ( $use_cache ) {
+		set_transient( 'jww_all_time_opener_closer', $result, HOUR_IN_SECONDS );
+	}
+
+	return $result;
+}
+
+/**
+ * Get album/release representation stats for all setlists (all past shows).
+ * Same structure as jww_get_tour_album_stats; each group's count is unique songs. Cached.
+ *
+ * @param bool $use_cache Whether to use cached results.
+ * @return array{groups: array, total_entries: int}
+ */
+function jww_get_all_time_album_stats( $use_cache = true ) {
+	if ( $use_cache ) {
+		$cached = get_transient( 'jww_all_time_album_stats' );
+		if ( $cached !== false && is_array( $cached ) && isset( $cached['groups'] ) ) {
+			return $cached;
+		}
+	}
+
+	$past_shows = get_posts( array(
+		'post_type'      => 'show',
+		'posts_per_page' => -1,
+		'post_status'    => 'publish',
+		'orderby'        => 'date',
+		'order'          => 'ASC',
+		'date_query'     => array( array( 'before' => 'today' ) ),
+	) );
+
+	$entries = array();
+	$excluded_slugs = defined( 'JWW_SETLIST_EXCLUDED_RELEASE_SLUGS' ) ? array_map( 'trim', explode( ',', JWW_SETLIST_EXCLUDED_RELEASE_SLUGS ) ) : array( 'single', 'live' );
+	foreach ( $past_shows as $show ) {
+		$setlist = get_field( 'setlist', $show->ID );
+		if ( ! $setlist || ! is_array( $setlist ) ) {
+			continue;
+		}
+		foreach ( $setlist as $item ) {
+			$entry_type = $item['entry_type'] ?? 'song-post';
+			if ( $entry_type === 'note' ) {
+				continue;
+			}
+			$song_id = null;
+			$title   = '';
+			$link    = '';
+			$notes   = $item['notes'] ?? '';
+			$song_text = $item['song_text'] ?? '';
+			if ( $entry_type === 'song-post' && ! empty( $item['song'] ) ) {
+				$song = is_array( $item['song'] ) ? $item['song'][0] : $item['song'];
+				if ( is_object( $song ) && isset( $song->ID ) ) {
+					$song_id = (int) $song->ID;
+					$title   = get_the_title( $song_id );
+					$link    = get_permalink( $song_id );
+				}
+			} elseif ( $entry_type === 'song-text' && ! empty( $song_text ) ) {
+				$title = $song_text;
+			}
+			if ( $title === '' ) {
+				continue;
+			}
+			$is_cover = false;
+			if ( $song_id ) {
+				$terms = wp_get_post_terms( $song_id, 'category' );
+				foreach ( $terms as $term ) {
+					if ( $term->slug === 'cover' ) {
+						$is_cover = true;
+						break;
+					}
+				}
+			} else {
+				if ( $notes && preg_match( '/\bcover\s*:/i', $notes ) ) {
+					$is_cover = true;
+				} elseif ( preg_match( '/\s*\([^)]*cover\)\s*$/i', $title ) ) {
+					$is_cover = true;
+				}
+			}
+			$entries[] = array(
+				'song_id'   => $song_id,
+				'title'     => $title,
+				'link'      => $link,
+				'is_cover'  => $is_cover,
+				'set_order' => count( $entries ),
+			);
+		}
+	}
+
+	if ( empty( $entries ) ) {
+		$result = array( 'groups' => array(), 'total_entries' => 0 );
+		if ( $use_cache ) {
+			set_transient( 'jww_all_time_album_stats', $result, HOUR_IN_SECONDS );
+		}
+		return $result;
+	}
+
+	$groups = array(
+		'__covers' => array( 'label' => __( 'Covers', 'jww-theme' ), 'album_id' => null, 'count' => 0, 'songs' => array() ),
+		'__others' => array( 'label' => __( 'Others', 'jww-theme' ), 'album_id' => null, 'count' => 0, 'songs' => array(), '_key' => 'others' ),
+	);
+	$album_groups = array();
+	$seen_song_in_group = array();
+
+	foreach ( $entries as $e ) {
+		$song_data = array( 'title' => $e['title'], 'link' => $e['link'], 'song_id' => $e['song_id'], 'set_order' => isset( $e['set_order'] ) ? $e['set_order'] : 9999 );
+
+		if ( $e['is_cover'] ) {
+			if ( ! isset( $seen_song_in_group['__covers'][ $e['song_id'] ] ) ) {
+				$seen_song_in_group['__covers'][ $e['song_id'] ] = true;
+				$groups['__covers']['count']++;
+				$groups['__covers']['songs'][] = array_merge( $song_data, array( 'track_number' => null ) );
+			}
+			continue;
+		}
+
+		$album_ids = array();
+		if ( $e['song_id'] ) {
+			$album = get_field( 'album', $e['song_id'] );
+			if ( $album ) {
+				if ( is_array( $album ) ) {
+					foreach ( $album as $a ) {
+						$aid = is_object( $a ) && isset( $a->ID ) ? (int) $a->ID : (int) $a;
+						if ( $aid > 0 ) {
+							$album_ids[] = $aid;
+						}
+					}
+				} elseif ( is_object( $album ) && isset( $album->ID ) ) {
+					$album_ids[] = (int) $album->ID;
+				} else {
+					$aid = (int) $album;
+					if ( $aid > 0 ) {
+						$album_ids[] = $aid;
+					}
+				}
+			}
+		}
+
+		$added_to_any_album = false;
+		foreach ( $album_ids as $album_id ) {
+			$release_terms = wp_get_post_terms( $album_id, 'release' );
+			$has_excluded  = false;
+			$has_album_or_ep = false;
+			foreach ( $release_terms as $term ) {
+				if ( in_array( $term->slug, $excluded_slugs, true ) ) {
+					$has_excluded = true;
+					break;
+				}
+				if ( $term->slug === 'album' || $term->slug === 'ep' ) {
+					$has_album_or_ep = true;
+				}
+			}
+			if ( ! $has_album_or_ep || $has_excluded ) {
+				continue;
+			}
+			$album_title = get_the_title( $album_id );
+			if ( $album_title === '' ) {
+				continue;
+			}
+
+			if ( ! isset( $album_groups[ $album_id ] ) ) {
+				$thumb_url = get_the_post_thumbnail_url( $album_id, 'thumbnail' );
+				$album_groups[ $album_id ] = array(
+					'label'         => $album_title,
+					'album_id'      => $album_id,
+					'count'         => 0,
+					'songs'         => array(),
+					'thumbnail_url' => $thumb_url ? $thumb_url : null,
+				);
+				$seen_song_in_group[ $album_id ] = array();
+			}
+
+			if ( ! isset( $seen_song_in_group[ $album_id ][ $e['song_id'] ] ) ) {
+				$seen_song_in_group[ $album_id ][ $e['song_id'] ] = true;
+				$album_groups[ $album_id ]['count']++;
+				$track_number = null;
+				$tracklist = get_field( 'tracklist', $album_id );
+				if ( is_array( $tracklist ) && ! empty( $tracklist ) && $e['song_id'] ) {
+					$tracklist_ids = array_map( function ( $s ) {
+						return is_object( $s ) && isset( $s->ID ) ? (int) $s->ID : (int) $s;
+					}, $tracklist );
+					$pos = array_search( (int) $e['song_id'], $tracklist_ids, true );
+					if ( $pos !== false ) {
+						$track_number = $pos + 1;
+					}
+				}
+				$album_groups[ $album_id ]['songs'][] = array_merge( $song_data, array( 'track_number' => $track_number ) );
+			}
+			$added_to_any_album = true;
+		}
+
+		if ( ! $added_to_any_album ) {
+			if ( ! isset( $seen_song_in_group['__others'][ $e['song_id'] ] ) ) {
+				$seen_song_in_group['__others'][ $e['song_id'] ] = true;
+				$groups['__others']['count']++;
+				$groups['__others']['songs'][] = array_merge( $song_data, array( 'track_number' => null ) );
+			}
+		}
+	}
+
+	$unique_in_setlists = array();
+	foreach ( $entries as $e ) {
+		if ( ! empty( $e['song_id'] ) ) {
+			$unique_in_setlists[ $e['song_id'] ] = true;
+		} else {
+			$unique_in_setlists[ 'text-' . ( isset( $e['set_order'] ) ? $e['set_order'] : 0 ) ] = true;
+		}
+	}
+	$total_entries = count( $unique_in_setlists );
+
+	foreach ( $album_groups as $album_id => $group ) {
+		usort( $album_groups[ $album_id ]['songs'], function( $a, $b ) {
+			$ta = isset( $a['track_number'] ) && $a['track_number'] !== null ? (int) $a['track_number'] : 9999;
+			$tb = isset( $b['track_number'] ) && $b['track_number'] !== null ? (int) $b['track_number'] : 9999;
+			if ( $ta !== $tb ) {
+				return $ta - $tb;
+			}
+			$sa = isset( $a['set_order'] ) ? (int) $a['set_order'] : 9999;
+			$sb = isset( $b['set_order'] ) ? (int) $b['set_order'] : 9999;
+			return $sa - $sb;
+		} );
+	}
+
+	$result = array();
+	foreach ( $album_groups as $g ) {
+		$result[] = $g;
+	}
+	usort( $result, function( $a, $b ) {
+		return ( (int) $b['count'] ) - ( (int) $a['count'] );
+	} );
+	if ( $groups['__others']['count'] > 0 ) {
+		$groups['__others']['thumbnail_url'] = null;
+		$result[] = $groups['__others'];
+	}
+	if ( $groups['__covers']['count'] > 0 ) {
+		$groups['__covers']['thumbnail_url'] = null;
+		$result[] = $groups['__covers'];
+	}
+
+	$return = array( 'groups' => $result, 'total_entries' => $total_entries );
+	if ( $use_cache ) {
+		set_transient( 'jww_all_time_album_stats', $return, HOUR_IN_SECONDS );
+	}
+	return $return;
+}
+
+/**
+ * Get the most recently debuted song (first-ever live performance) across all shows.
+ *
+ * @param bool $use_cache Whether to use cached song stats.
+ * @return array|null Keys: song_id, song_title, song_link, show_id, show_date, show_link; or null if none.
+ */
+function jww_get_all_time_latest_debut( $use_cache = true ) {
+	$stats = function_exists( 'jww_get_all_time_song_stats' ) ? jww_get_all_time_song_stats( $use_cache ) : array();
+	if ( empty( $stats ) ) {
+		return null;
+	}
+	// Sort by first_played show date descending (most recent debut first)
+	usort( $stats, function( $a, $b ) {
+		$date_a = isset( $a['first_played']['show_id'] ) ? strtotime( get_the_date( 'Y-m-d', $a['first_played']['show_id'] ) ) : 0;
+		$date_b = isset( $b['first_played']['show_id'] ) ? strtotime( get_the_date( 'Y-m-d', $b['first_played']['show_id'] ) ) : 0;
+		return $date_b - $date_a;
+	} );
+	$first = reset( $stats );
+	if ( empty( $first['first_played'] ) ) {
+		return null;
+	}
+	$fp = $first['first_played'];
+	return array(
+		'song_id'    => (int) $first['song_id'],
+		'song_title' => $first['song_title'],
+		'song_link'  => $first['song_link'],
+		'show_id'    => (int) $fp['show_id'],
+		'show_date'  => $fp['show_date'],
+		'show_link'  => $fp['show_link'],
+	);
+}
+
+/**
+ * Get all-time one-offs: songs played at only one show ever (from setlists we have).
+ *
+ * @param bool $use_cache Whether to use cached song stats.
+ * @return array List of items with song_id, song_title, song_link, thumbnail_url, show_id, show_link, show_date.
+ */
+function jww_get_all_time_one_offs( $use_cache = true ) {
+	$stats = function_exists( 'jww_get_all_time_song_stats' ) ? jww_get_all_time_song_stats( $use_cache ) : array();
+	$out = array();
+	foreach ( $stats as $row ) {
+		if ( (int) $row['play_count'] !== 1 || empty( $row['first_played'] ) ) {
+			continue;
+		}
+		$fp = $row['first_played'];
+		$out[] = array(
+			'song_id'       => (int) $row['song_id'],
+			'song_title'    => $row['song_title'],
+			'song_link'     => $row['song_link'],
+			'thumbnail_url' => get_the_post_thumbnail_url( $row['song_id'], 'thumbnail' ) ?: null,
+			'show_id'       => (int) $fp['show_id'],
+			'show_link'     => $fp['show_link'],
+			'show_date'     => $fp['show_date'],
+		);
+	}
+	return $out;
+}
+
+/**
+ * Get all-time standout songs: played at (shows_with_data - 1) or more shows.
+ *
+ * @param bool $use_cache Whether to use cached stats.
+ * @return array List of items with song_id, song_title, song_link, count, thumbnail_url.
+ */
+function jww_get_all_time_standout_songs( $use_cache = true ) {
+	$show_stats = function_exists( 'jww_get_all_time_show_stats' ) ? jww_get_all_time_show_stats( $use_cache ) : array();
+	$n_shows = (int) ( $show_stats['shows_with_data_count'] ?? 0 );
+	if ( $n_shows <= 0 ) {
+		return array();
+	}
+	$min_count = max( 1, $n_shows - 1 );
+	$stats = function_exists( 'jww_get_all_time_song_stats' ) ? jww_get_all_time_song_stats( $use_cache ) : array();
+	$out = array();
+	foreach ( $stats as $row ) {
+		if ( (int) $row['play_count'] < $min_count ) {
+			continue;
+		}
+		$out[] = array(
+			'song_id'       => (int) $row['song_id'],
+			'song_title'    => $row['song_title'],
+			'song_link'     => $row['song_link'],
+			'count'         => (int) $row['play_count'],
+			'thumbnail_url' => get_the_post_thumbnail_url( $row['song_id'], 'thumbnail' ) ?: null,
+		);
+	}
+	usort( $out, function( $a, $b ) {
+		return $b['count'] - $a['count'];
+	} );
+	return $out;
 }
 
 /**
@@ -723,9 +1392,13 @@ function jww_get_location_hierarchy( $location_id ) {
 	}
 
 	$result = array(
-		'city_country' => implode( ', ', $city_country_parts ),
-		'venue'        => $venue,
-		'venue_link'   => is_wp_error( $venue_link ) ? '' : $venue_link,
+		'city_country'   => implode( ', ', $city_country_parts ),
+		'venue'          => $venue,
+		'venue_link'     => is_wp_error( $venue_link ) ? '' : $venue_link,
+		'city_term_id'   => $path_count >= 2 ? (int) $city_term->term_id : 0,
+		'venue_term_id'  => $path_count >= 1 ? (int) $venue_term->term_id : 0,
+		'city_link'      => ( $path_count >= 2 && $city_link && ! is_wp_error( $city_link ) ) ? $city_link : '',
+		'city_name'      => $city_name,
 	);
 	set_transient( $cache_key, $result, 6 * HOUR_IN_SECONDS );
 	return $result;
@@ -767,6 +1440,47 @@ function jww_count_setlist_songs( $setlist ) {
 		}
 	}
 	return $count;
+}
+
+/**
+ * Get the song ID of the first song in a setlist (first entry with entry_type song-post).
+ *
+ * @param array $setlist Setlist array from ACF.
+ * @return int Song post ID or 0.
+ */
+function jww_get_setlist_first_song_id( $setlist ) {
+	if ( ! $setlist || ! is_array( $setlist ) ) {
+		return 0;
+	}
+	foreach ( $setlist as $item ) {
+		if ( ( $item['entry_type'] ?? '' ) !== 'song-post' || empty( $item['song'] ) ) {
+			continue;
+		}
+		$song = is_array( $item['song'] ) ? $item['song'][0] : $item['song'];
+		return is_object( $song ) ? (int) $song->ID : (int) $song;
+	}
+	return 0;
+}
+
+/**
+ * Get the song ID of the last song in a setlist (last entry with entry_type song-post).
+ *
+ * @param array $setlist Setlist array from ACF.
+ * @return int Song post ID or 0.
+ */
+function jww_get_setlist_last_song_id( $setlist ) {
+	if ( ! $setlist || ! is_array( $setlist ) ) {
+		return 0;
+	}
+	$last = 0;
+	foreach ( $setlist as $item ) {
+		if ( ( $item['entry_type'] ?? '' ) !== 'song-post' || empty( $item['song'] ) ) {
+			continue;
+		}
+		$song = is_array( $item['song'] ) ? $item['song'][0] : $item['song'];
+		$last = is_object( $song ) ? (int) $song->ID : (int) $song;
+	}
+	return $last;
 }
 
 /**
@@ -975,10 +1689,11 @@ function jww_get_show_ids_by_date( $use_cache = true ) {
 /**
  * Get other shows in the same tour as the given show (excluding the show itself).
  *
- * @param int $show_id Show post ID.
+ * @param int  $show_id   Show post ID.
+ * @param bool $past_only If true, only return shows that have already happened (post_date <= now). Default false.
  * @return WP_Post[] Other show posts in the same tour, or empty array if no tour or none found.
  */
-function jww_get_other_shows_in_tour( $show_id ) {
+function jww_get_other_shows_in_tour( $show_id, $past_only = false ) {
 	$tour_id = get_field( 'show_tour', $show_id );
 	if ( ! $tour_id ) {
 		return array();
@@ -987,7 +1702,7 @@ function jww_get_other_shows_in_tour( $show_id ) {
 	if ( ! $tour_id ) {
 		return array();
 	}
-	$others = get_posts( array(
+	$args = array(
 		'post_type'      => 'show',
 		'posts_per_page' => -1,
 		'post_status'    => array( 'publish', 'future' ),
@@ -1001,8 +1716,111 @@ function jww_get_other_shows_in_tour( $show_id ) {
 		),
 		'orderby'        => 'date',
 		'order'          => 'ASC',
-	) );
+	);
+	if ( $past_only ) {
+		$args['date_query'] = array(
+			array(
+				'before' => current_time( 'mysql' ),
+				'inclusive' => true,
+			),
+		);
+	}
+	$others = get_posts( $args );
 	return is_array( $others ) ? $others : array();
+}
+
+/**
+ * Get earlier shows in the same tour (strictly before this show's date). Used for tour debuts.
+ *
+ * @param int $show_id Show post ID.
+ * @return WP_Post[] Shows in the same tour with post_date < this show's post_date, chronological order.
+ */
+function jww_get_earlier_shows_in_tour( $show_id ) {
+	$post = get_post( $show_id );
+	if ( ! $post || $post->post_type !== 'show' ) {
+		return array();
+	}
+	$tour_id = get_field( 'show_tour', $show_id );
+	if ( ! $tour_id ) {
+		return array();
+	}
+	$tour_id = is_object( $tour_id ) && isset( $tour_id->term_id ) ? (int) $tour_id->term_id : (int) $tour_id;
+	if ( ! $tour_id ) {
+		return array();
+	}
+	$args = array(
+		'post_type'      => 'show',
+		'posts_per_page' => -1,
+		'post_status'    => array( 'publish', 'future' ),
+		'post__not_in'   => array( (int) $show_id ),
+		'date_query'     => array(
+			array(
+				'before'    => $post->post_date,
+				'inclusive' => false,
+			),
+		),
+		'tax_query'      => array(
+			array(
+				'taxonomy' => 'tour',
+				'field'    => 'term_id',
+				'terms'    => $tour_id,
+			),
+		),
+		'orderby'        => 'date',
+		'order'          => 'ASC',
+	);
+	$shows = get_posts( $args );
+	return is_array( $shows ) ? $shows : array();
+}
+
+/**
+ * Get tour debuts for a show: songs in this setlist that weren't played at any earlier show in this tour.
+ * If this is the first show of the tour, returns array( 'is_first_show' => true ) so the template can show a friendly message.
+ *
+ * @param int $show_id Show post ID.
+ * @return array Either array( 'is_first_show' => true ) or array( 'is_first_show' => false, 'debuts' => array of song_id, song_title, song_link ). Empty array if no tour or no setlist.
+ */
+function jww_get_show_setlist_highlights_tour_debuts( $show_id ) {
+	$tour_id = get_field( 'show_tour', $show_id );
+	if ( ! $tour_id ) {
+		return array();
+	}
+	$setlist = get_field( 'setlist', $show_id );
+	if ( ! $setlist || ! is_array( $setlist ) ) {
+		return array();
+	}
+	$song_ids = jww_get_song_ids_from_setlist( $setlist );
+	if ( empty( $song_ids ) ) {
+		return array();
+	}
+
+	$earlier_shows = jww_get_earlier_shows_in_tour( $show_id );
+	if ( empty( $earlier_shows ) ) {
+		return array( 'is_first_show' => true );
+	}
+
+	$played_in_tour = array();
+	foreach ( $earlier_shows as $show ) {
+		$sl = get_field( 'setlist', $show->ID );
+		if ( $sl && is_array( $sl ) ) {
+			foreach ( jww_get_song_ids_from_setlist( $sl ) as $sid ) {
+				$played_in_tour[ $sid ] = true;
+			}
+		}
+	}
+
+	$debuts = array();
+	foreach ( $song_ids as $song_id ) {
+		if ( ! empty( $played_in_tour[ $song_id ] ) ) {
+			continue;
+		}
+		$debuts[] = array(
+			'song_id'    => $song_id,
+			'song_title' => get_the_title( $song_id ),
+			'song_link'  => get_permalink( $song_id ),
+		);
+	}
+	return array( 'is_first_show' => false, 'debuts' => $debuts );
 }
 
 /**
@@ -1036,7 +1854,7 @@ function jww_get_show_setlist_highlights_context( $show_id ) {
 		'show_id'           => (int) $show_id,
 		'setlist'           => $setlist,
 		'song_ids'          => $song_ids,
-		'comparison_shows'   => jww_get_other_shows_in_tour( $show_id ),
+		'comparison_shows'   => jww_get_other_shows_in_tour( $show_id, true ), // Past shows only for standout.
 		'show_ids_by_date'  => $show_ids_by_date,
 		'show_id_to_index'  => $show_id_to_index,
 		'current_index'     => $current_index,
@@ -1133,8 +1951,9 @@ function jww_get_show_setlist_highlights_returns( $show_id, $context = null ) {
 }
 
 /**
- * Get standout comparison for a show: songs consistent across the tour vs unique to this show.
- * Tour-only comparison (other shows in the same tour).
+ * Get standout comparison for a show: songs consistent across the tour vs rarities (played at few tour stops).
+ * Tour-only comparison (other past shows in the same tour).
+ * Consistent = played at every other show. Rarity = played at 20% or fewer of the other shows (min 1), so it adapts for longer tours.
  *
  * @param int   $show_id Show post ID.
  * @param array $context Optional. Result of jww_get_show_setlist_highlights_context( $show_id ). If omitted, context is built internally.
@@ -1165,7 +1984,12 @@ function jww_get_show_setlist_highlights_standout( $show_id, $context = null ) {
 		}
 	}
 
-	$consistent_min = 2;
+	$n_others = count( $comparison_shows );
+	// Consistent = played at every other show in the tour (so every show has it).
+	$consistent_required = $n_others;
+	// Rarity = played at only a few tour stops; threshold grows with tour size (e.g. 20% of other shows, min 1).
+	$rarity_max_other_shows = $n_others > 0 ? max( 1, (int) ceil( $n_others * 0.2 ) ) : 0;
+
 	foreach ( $song_ids as $sid ) {
 		$count = isset( $song_tour_count[ $sid ] ) ? $song_tour_count[ $sid ] : 0;
 		$item = array(
@@ -1174,9 +1998,9 @@ function jww_get_show_setlist_highlights_standout( $show_id, $context = null ) {
 			'song_link'       => get_permalink( $sid ),
 			'tour_show_count' => $count,
 		);
-		if ( $count >= $consistent_min ) {
+		if ( $n_others > 0 && $count >= $consistent_required ) {
 			$result['consistent_songs'][] = $item;
-		} else {
+		} elseif ( $count <= $rarity_max_other_shows ) {
 			$result['unique_songs'][] = $item;
 		}
 	}
@@ -1235,31 +2059,35 @@ function jww_get_show_youtube_search_url( $show_id, $artist_name = 'Jesse Welles
 }
 
 /**
- * Release type slugs to exclude from "Songs on Albums" (EP, single, live).
- * Only albums (release type "album") are included as separate rows.
+ * Release type slugs to exclude from "Songs on Albums" (singles and live stay in Others).
+ * Albums and EPs are included as separate rows.
  */
-define( 'JWW_SETLIST_EXCLUDED_RELEASE_SLUGS', 'ep,single,live' );
+define( 'JWW_SETLIST_EXCLUDED_RELEASE_SLUGS', 'single,live' );
 
 /**
  * Get album/release representation stats for a show's setlist (setlist.fm style).
- * Groups songs by: Covers, Others (unreleased / not on album), then by Album (only release type "album").
+ * Groups songs by: Album/EP first (by count descending), then Others (unreleased / singles / not on album or EP), then Covers.
  * Cached per show in a transient.
  *
  * @param int $show_id Show post ID.
- * @return array List of groups: [ ['label' => 'Covers'|'Others'|album title, 'album_id' => int|null, 'count' => int, 'songs' => [ ['title'=>, 'link'=>, 'song_id'=>] ] ], ... ]
+ * @return array{groups: array, total_entries: int} List of groups (each with label, album_id, count, songs, thumbnail_url) and total setlist song entries for chart percentages.
  */
 function jww_get_show_setlist_album_stats( $show_id ) {
 	$cache_key = 'jww_show_album_stats_' . $show_id;
 	$cached = get_transient( $cache_key );
 	if ( $cached !== false && is_array( $cached ) ) {
-		return $cached;
+		if ( isset( $cached['groups'] ) ) {
+			return $cached;
+		}
+		// Old cache format: plain array of groups.
+		return array( 'groups' => $cached, 'total_entries' => array_sum( array_column( $cached, 'count' ) ) );
 	}
 
 	$setlist = get_field( 'setlist', $show_id );
 	if ( ! $setlist || ! is_array( $setlist ) ) {
 		$result = array();
-		set_transient( $cache_key, $result, HOUR_IN_SECONDS );
-		return $result;
+		set_transient( $cache_key, array( 'groups' => $result, 'total_entries' => 0 ), HOUR_IN_SECONDS );
+		return array( 'groups' => $result, 'total_entries' => 0 );
 	}
 
 	$excluded_slugs = array_map( 'trim', explode( ',', JWW_SETLIST_EXCLUDED_RELEASE_SLUGS ) );
@@ -1309,14 +2137,15 @@ function jww_get_show_setlist_album_stats( $show_id ) {
 		}
 
 		$entries[] = array(
-			'song_id'  => $song_id,
-			'title'    => $title,
-			'link'     => $link,
-			'is_cover' => $is_cover,
+			'song_id'   => $song_id,
+			'title'     => $title,
+			'link'      => $link,
+			'is_cover'  => $is_cover,
+			'set_order' => count( $entries ), // Order in the setlist (for tiebreaker when sorting by album order).
 		);
 	}
 
-	// Group: Covers, Others, then by Album (only release type "album").
+	// Group: collect into Covers, Others, and per Album/EP; result order is albums first, then Others, then Covers.
 	$groups = array(
 		'__covers' => array( 'label' => __( 'Covers', 'jww-theme' ), 'album_id' => null, 'count' => 0, 'songs' => array() ),
 		'__others' => array( 'label' => __( 'Others', 'jww-theme' ), 'album_id' => null, 'count' => 0, 'songs' => array(), '_key' => 'others' ),
@@ -1324,51 +2153,59 @@ function jww_get_show_setlist_album_stats( $show_id ) {
 	$album_groups = array(); // album_id => [ label, album_id, count, songs ]
 
 	foreach ( $entries as $e ) {
-		$song_data = array( 'title' => $e['title'], 'link' => $e['link'], 'song_id' => $e['song_id'] );
+		$song_data = array( 'title' => $e['title'], 'link' => $e['link'], 'song_id' => $e['song_id'], 'set_order' => isset( $e['set_order'] ) ? $e['set_order'] : 9999 );
 
 		if ( $e['is_cover'] ) {
-			$groups['__covers']['songs'][] = $song_data;
+			$groups['__covers']['songs'][] = array_merge( $song_data, array( 'track_number' => null ) );
 			$groups['__covers']['count']++;
 			continue;
 		}
 
-		$album_id = null;
+		// Song can be on multiple albums: normalize to array of album IDs.
+		$album_ids = array();
 		if ( $e['song_id'] ) {
 			$album = get_field( 'album', $e['song_id'] );
 			if ( $album ) {
 				if ( is_array( $album ) ) {
-					$album_id = isset( $album[0] ) ? ( is_object( $album[0] ) ? (int) $album[0]->ID : (int) $album[0] ) : 0;
+					foreach ( $album as $a ) {
+						$aid = is_object( $a ) && isset( $a->ID ) ? (int) $a->ID : (int) $a;
+						if ( $aid > 0 ) {
+							$album_ids[] = $aid;
+						}
+					}
 				} elseif ( is_object( $album ) && isset( $album->ID ) ) {
-					$album_id = (int) $album->ID;
+					$album_ids[] = (int) $album->ID;
 				} else {
-					$album_id = (int) $album;
+					$aid = (int) $album;
+					if ( $aid > 0 ) {
+						$album_ids[] = $aid;
+					}
 				}
 			}
 		}
 
-		$include_as_album = false;
-		$album_title     = '';
-
-		if ( $album_id ) {
+		$added_to_any_album = false;
+		foreach ( $album_ids as $album_id ) {
 			$release_terms = wp_get_post_terms( $album_id, 'release' );
 			$has_excluded  = false;
-			$has_album     = false;
+			$has_album_or_ep = false;
 			foreach ( $release_terms as $term ) {
 				if ( in_array( $term->slug, $excluded_slugs, true ) ) {
 					$has_excluded = true;
 					break;
 				}
-				if ( $term->slug === 'album' ) {
-					$has_album = true;
+				if ( $term->slug === 'album' || $term->slug === 'ep' ) {
+					$has_album_or_ep = true;
 				}
 			}
-			if ( $has_album && ! $has_excluded ) {
-				$include_as_album = true;
-				$album_title     = get_the_title( $album_id );
+			if ( ! $has_album_or_ep || $has_excluded ) {
+				continue;
 			}
-		}
+			$album_title = get_the_title( $album_id );
+			if ( $album_title === '' ) {
+				continue;
+			}
 
-		if ( $include_as_album && $album_title !== '' ) {
 			if ( ! isset( $album_groups[ $album_id ] ) ) {
 				$thumb_url = get_the_post_thumbnail_url( $album_id, 'thumbnail' );
 				$album_groups[ $album_id ] = array(
@@ -1379,47 +2216,68 @@ function jww_get_show_setlist_album_stats( $show_id ) {
 					'thumbnail_url' => $thumb_url ? $thumb_url : null,
 				);
 			}
-			$album_groups[ $album_id ]['songs'][] = $song_data;
+
+			// Track number on this album: position in album's tracklist (1-based).
+			$track_number = null;
+			$tracklist = get_field( 'tracklist', $album_id );
+			if ( is_array( $tracklist ) && ! empty( $tracklist ) && $e['song_id'] ) {
+				$tracklist_ids = array_map( function ( $s ) {
+					return is_object( $s ) && isset( $s->ID ) ? (int) $s->ID : (int) $s;
+				}, $tracklist );
+				$pos = array_search( (int) $e['song_id'], $tracklist_ids, true );
+				if ( $pos !== false ) {
+					$track_number = $pos + 1;
+				}
+			}
+
+			$song_data_with_track = $song_data;
+			$song_data_with_track['track_number'] = $track_number;
+			$album_groups[ $album_id ]['songs'][] = $song_data_with_track;
 			$album_groups[ $album_id ]['count']++;
-		} else {
-			$groups['__others']['songs'][] = $song_data;
+			$added_to_any_album = true;
+		}
+
+		if ( ! $added_to_any_album ) {
+			$groups['__others']['songs'][] = array_merge( $song_data, array( 'track_number' => null ) );
 			$groups['__others']['count']++;
 		}
 	}
 
-	// Build result: sort by count descending, but always put Others last.
-	$result = array();
-	if ( $groups['__covers']['count'] > 0 ) {
-		$groups['__covers']['thumbnail_url'] = null;
-		$result[] = $groups['__covers'];
+	// Sort each album/EP group's songs by album track order (track_number asc), with set order as tiebreaker for missing track numbers.
+	foreach ( $album_groups as $album_id => $group ) {
+		usort( $album_groups[ $album_id ]['songs'], function( $a, $b ) {
+			$ta = isset( $a['track_number'] ) && $a['track_number'] !== null ? (int) $a['track_number'] : 9999;
+			$tb = isset( $b['track_number'] ) && $b['track_number'] !== null ? (int) $b['track_number'] : 9999;
+			if ( $ta !== $tb ) {
+				return $ta - $tb;
+			}
+			$sa = isset( $a['set_order'] ) ? (int) $a['set_order'] : 9999;
+			$sb = isset( $b['set_order'] ) ? (int) $b['set_order'] : 9999;
+			return $sa - $sb;
+		} );
 	}
+
+	// Build result: albums first (sorted by count descending), then Others, then Covers.
+	$result = array();
 	foreach ( $album_groups as $g ) {
 		$result[] = $g;
 	}
+	usort( $result, function( $a, $b ) {
+		return ( (int) $b['count'] ) - ( (int) $a['count'] );
+	} );
 	if ( $groups['__others']['count'] > 0 ) {
 		$groups['__others']['thumbnail_url'] = null;
 		$result[] = $groups['__others'];
 	}
-	// Sort by count descending (highest first), but keep Others at the end.
-	$others = null;
-	$rest = array();
-	foreach ( $result as $g ) {
-		if ( isset( $g['_key'] ) && $g['_key'] === 'others' ) {
-			$others = $g;
-		} else {
-			$rest[] = $g;
-		}
-	}
-	usort( $rest, function( $a, $b ) {
-		return ( (int) $b['count'] ) - ( (int) $a['count'] );
-	} );
-	$result = $rest;
-	if ( $others !== null ) {
-		$result[] = $others;
+	if ( $groups['__covers']['count'] > 0 ) {
+		$groups['__covers']['thumbnail_url'] = null;
+		$result[] = $groups['__covers'];
 	}
 
-	set_transient( $cache_key, $result, HOUR_IN_SECONDS );
-	return $result;
+	// Total setlist song entries (for bar chart: percentages are of setlist size, not sum of group counts).
+	$total_entries = count( $entries );
+	set_transient( $cache_key, array( 'groups' => $result, 'total_entries' => $total_entries ), HOUR_IN_SECONDS );
+	return array( 'groups' => $result, 'total_entries' => $total_entries );
 }
 
 /**
@@ -1432,104 +2290,3 @@ function jww_clear_show_setlist_album_stats_on_save( $post_id ) {
 	delete_transient( 'jww_show_album_stats_' . $post_id );
 }
 add_action( 'save_post', 'jww_clear_show_setlist_album_stats_on_save', 25 );
-
-/**
- * Store show's tour ID before save (for cache invalidation when tour changes).
- */
-function jww_store_show_tour_before_save( $post_id ) {
-	if ( get_post_type( $post_id ) !== 'show' ) {
-		return;
-	}
-	if ( ! isset( $GLOBALS['jww_old_tour_by_show'] ) ) {
-		$GLOBALS['jww_old_tour_by_show'] = array();
-	}
-	$GLOBALS['jww_old_tour_by_show'][ $post_id ] = get_field( 'show_tour', $post_id );
-}
-add_action( 'save_post', 'jww_store_show_tour_before_save', 5 );
-
-/**
- * Get song performance counts for a tour (all shows in the tour with setlists).
- * Cached in transient; invalidated when any show in that tour is saved.
- *
- * @param int $tour_id Tour term ID.
- * @return array [ 'show_count' => int, 'songs' => [ [ 'song_id' => int, 'song_title' => string, 'song_link' => string, 'count' => int ], ... ] ] sorted by count desc.
- */
-function jww_get_tour_song_counts( $tour_id ) {
-	$tour_id = (int) $tour_id;
-	if ( ! $tour_id ) {
-		return array( 'show_count' => 0, 'songs' => array() );
-	}
-
-	$cache_key = 'jww_tour_song_counts_' . $tour_id;
-	$cached = get_transient( $cache_key );
-	if ( $cached !== false && is_array( $cached ) ) {
-		return $cached;
-	}
-
-	$shows = jww_get_shows_by_tour( $tour_id );
-	$counts = array(); // song_id => count
-	$show_count_with_setlist = 0;
-
-	foreach ( $shows as $show ) {
-		$setlist = get_field( 'setlist', $show->ID );
-		if ( ! $setlist || ! is_array( $setlist ) ) {
-			continue;
-		}
-		$show_count_with_setlist++;
-		$song_ids = jww_get_song_ids_from_setlist( $setlist );
-		foreach ( $song_ids as $sid ) {
-			$counts[ $sid ] = isset( $counts[ $sid ] ) ? $counts[ $sid ] + 1 : 1;
-		}
-	}
-
-	$songs = array();
-	foreach ( $counts as $song_id => $count ) {
-		$thumb_url = get_the_post_thumbnail_url( $song_id, 'thumbnail' );
-		$songs[] = array(
-			'song_id'       => $song_id,
-			'song_title'    => get_the_title( $song_id ),
-			'song_link'     => get_permalink( $song_id ),
-			'count'         => $count,
-			'thumbnail_url' => $thumb_url ? $thumb_url : null,
-		);
-	}
-	usort( $songs, function( $a, $b ) {
-		return $b['count'] - $a['count'];
-	} );
-
-	$result = array(
-		'show_count' => $show_count_with_setlist,
-		'songs'      => $songs,
-	);
-	set_transient( $cache_key, $result, HOUR_IN_SECONDS );
-	return $result;
-}
-
-/**
- * Invalidate tour song counts when any show in that tour is saved (or when a show's tour changes).
- */
-function jww_clear_tour_song_counts_on_show_save( $post_id ) {
-	if ( get_post_type( $post_id ) !== 'show' ) {
-		return;
-	}
-	$new_tour = get_field( 'show_tour', $post_id );
-	$old_tour = isset( $GLOBALS['jww_old_tour_by_show'][ $post_id ] ) ? $GLOBALS['jww_old_tour_by_show'][ $post_id ] : null;
-
-	$normalize = function( $id ) {
-		if ( ! $id ) {
-			return 0;
-		}
-		if ( is_object( $id ) && isset( $id->term_id ) ) {
-			return (int) $id->term_id;
-		}
-		return (int) $id;
-	};
-	$tour_ids = array_unique( array_filter( array( $normalize( $new_tour ), $normalize( $old_tour ) ) ) );
-	foreach ( $tour_ids as $tid ) {
-		delete_transient( 'jww_tour_song_counts_' . $tid );
-	}
-	if ( isset( $GLOBALS['jww_old_tour_by_show'][ $post_id ] ) ) {
-		unset( $GLOBALS['jww_old_tour_by_show'][ $post_id ] );
-	}
-}
-add_action( 'save_post', 'jww_clear_tour_song_counts_on_show_save', 26 );

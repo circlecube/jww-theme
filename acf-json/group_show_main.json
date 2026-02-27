@@ -51,6 +51,55 @@
             "bidirectional_target": []
         },
         {
+            "key": "field_show_festival",
+            "label": "Part of a festival",
+            "name": "show_festival",
+            "aria-label": "",
+            "type": "true_false",
+            "instructions": "Check if this show was part of a festival (e.g. multi-day or multi-artist event). Use the Festival name field below when checked.",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "message": "This show is part of a festival",
+            "default_value": 0,
+            "ui": 1,
+            "ui_on_text": "Yes",
+            "ui_off_text": "No"
+        },
+        {
+            "key": "field_show_festival_name",
+            "label": "Festival name",
+            "name": "show_festival_name",
+            "aria-label": "",
+            "type": "text",
+            "instructions": "Name of the festival (e.g. Newport Folk Festival). Shown in tables when the show has no tour and used to prefix the show title.",
+            "required": 0,
+            "conditional_logic": [
+                [
+                    {
+                        "field": "field_show_festival",
+                        "operator": "==",
+                        "value": "1"
+                    }
+                ]
+            ],
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "maxlength": "",
+            "allow_in_bindings": 0,
+            "placeholder": "e.g. Newport Folk Festival",
+            "prepend": "",
+            "append": ""
+        },
+        {
             "key": "field_show_setlist",
             "label": "Setlist",
             "name": "setlist",

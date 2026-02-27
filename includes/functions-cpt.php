@@ -64,13 +64,49 @@ function jww_register_show_post_type() {
 		'capability_type'      => 'post',
 		'menu_position'       => 54,
 		'menu_icon'            => 'dashicons-calendar-alt',
-		'supports'             => array( 'title', 'editor', 'thumbnail', 'custom-fields' ),
+		'supports'             => array( 'title', 'editor', 'thumbnail', 'custom-fields', 'comments' ),
 		'taxonomies'           => array( 'tour', 'location' ),
 	);
 
 	register_post_type( 'show', $args );
 }
 add_action( 'init', 'jww_register_show_post_type', 0 );
+
+/**
+ * Enable comments on Show post type (for reviews and discussion).
+ * Runs after ACF may have registered the post type so we add support either way.
+ */
+function jww_show_supports_comments() {
+	add_post_type_support( 'show', 'comments' );
+}
+add_action( 'init', 'jww_show_supports_comments', 20 );
+
+/**
+ * Default comment status to 'open' for new show posts so readers can add reviews.
+ */
+function jww_show_default_comment_status( $data, $postarr ) {
+	if ( isset( $data['post_type'] ) && $data['post_type'] === 'show' ) {
+		if ( empty( $postarr['ID'] ) ) {
+			$data['comment_status'] = 'open';
+		}
+	}
+	return $data;
+}
+add_filter( 'wp_insert_post_data', 'jww_show_default_comment_status', 10, 2 );
+
+/**
+ * Ensure the comment form is shown on single show pages.
+ * WordPress's comment_form() outputs nothing when comments_open() is false.
+ * Existing show posts may have comment_status closed; this forces open for display.
+ */
+function jww_show_comments_open_for_display( $open, $post_id ) {
+	$post = get_post( $post_id );
+	if ( $post && $post->post_type === 'show' ) {
+		return true;
+	}
+	return $open;
+}
+add_filter( 'comments_open', 'jww_show_comments_open_for_display', 10, 2 );
 
 /**
  * Enable song archive with slug "songs"

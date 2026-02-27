@@ -1,8 +1,7 @@
 <?php
 /**
- * Template part: Tour song performance counts for the current show's tour.
- * Displays how many times each song has been played across the tour (thus far).
- * Only shown when the show is part of a tour. Cached per tour; invalidated when any show in the tour is updated.
+ * Template part: show-tour-stats — Song performance counts (used on single show page and tour archive).
+ * Show context: gets tour from current show. Tour context: gets tour_id from query var. Logic in includes/tour-functions.php.
  *
  * @package JWW_Theme
  */
@@ -11,19 +10,25 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$show_id = get_the_ID();
-if ( ! $show_id || get_post_type() !== 'show' ) {
-	return;
-}
+$tour_id_from_var = get_query_var( 'tour_id', 0 );
+$tour_id_from_var = $tour_id_from_var ? (int) $tour_id_from_var : 0;
 
-$tour_id = get_field( 'show_tour', $show_id );
-if ( ! $tour_id ) {
-	return;
-}
-
-$tour_id = is_object( $tour_id ) && isset( $tour_id->term_id ) ? (int) $tour_id->term_id : (int) $tour_id;
-if ( ! $tour_id ) {
-	return;
+if ( $tour_id_from_var ) {
+	$tour_id = $tour_id_from_var;
+	$show_id = 0;
+} else {
+	$show_id = get_the_ID();
+	if ( ! $show_id || get_post_type() !== 'show' ) {
+		return;
+	}
+	$tour_id = get_field( 'show_tour', $show_id );
+	if ( ! $tour_id ) {
+		return;
+	}
+	$tour_id = is_object( $tour_id ) && isset( $tour_id->term_id ) ? (int) $tour_id->term_id : (int) $tour_id;
+	if ( ! $tour_id ) {
+		return;
+	}
 }
 
 if ( ! function_exists( 'jww_get_tour_song_counts' ) ) {
@@ -47,24 +52,24 @@ $songs = $data['songs'];
 ?>
 
 <div class="show-tour-stats wp-block-group alignwide has-global-padding show-tour-stats-card" aria-labelledby="show-tour-stats-heading">
-	<h2 id="show-tour-stats-heading" class="wp-block-heading show-tour-stats-heading">
-		<?php
-		printf(
-			/* translators: 1: tour name, 2: number of shows */
-			esc_html__( 'Tour stats: %1$s', 'jww-theme' ),
-			$tour_link && ! is_wp_error( $tour_link )
-				? '<a href="' . esc_url( $tour_link ) . '">' . esc_html( $tour_name ) . '</a>'
-				: esc_html( $tour_name )
-		);
-		?>
-	</h2>
+	<div class="show-setlist-data-card-header-wrapper">
+		<h2 id="show-tour-stats-heading" class="wp-block-heading show-tour-stats-heading"><?php esc_html_e( 'Tour stats', 'jww-theme' ); ?></h2>
+		<span class="show-setlist-data-card-info" title="<?php esc_attr_e( 'How often each song appears in the setlists we have for this tour.', 'jww-theme' ); ?>">
+			<span class="dashicons dashicons-analytics" aria-hidden="true"></span>
+		</span>
+	</div>
 	<p class="show-tour-stats-meta">
 		<?php
-		printf(
-			/* translators: %d: number of shows with setlists in the tour */
-			esc_html( _n( 'Song performance counts across %d show in this tour.', 'Song performance counts across %d shows in this tour.', $show_count, 'jww-theme' ) ),
-			$show_count
+		$tour_markup = ( $tour_link && ! is_wp_error( $tour_link ) )
+			? '<a href="' . esc_url( $tour_link ) . '">' . esc_html( $tour_name ) . '</a>'
+			: esc_html( $tour_name );
+		$meta_fmt = _n(
+			'%1$s — Song counts across %2$d show with data in this tour.',
+			'%1$s — Song counts across %2$d shows with data in this tour.',
+			$show_count,
+			'jww-theme'
 		);
+		printf( wp_kses_post( $meta_fmt ), $tour_markup, $show_count );
 		?>
 	</p>
 	<ul class="show-tour-stats-song-list">

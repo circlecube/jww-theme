@@ -231,7 +231,7 @@ function jww_enqueue_show_admin_scripts( $hook ) {
 	if ( $hook === 'edit.php' && $post_type === 'show' ) {
 		wp_enqueue_script(
 			'jww-show-sync',
-			get_stylesheet_directory_uri() . '/includes/js/show-sync.js',
+			get_stylesheet_directory_uri() . '/admin/js/show-sync.js',
 			array( 'jquery' ),
 			wp_get_theme()->get( 'Version' ),
 			true

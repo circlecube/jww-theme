@@ -25,6 +25,8 @@ require_once( get_stylesheet_directory() . '/includes/class-venues-admin.php' );
 require_once( get_stylesheet_directory() . '/includes/functions-shortcodes.php' );
 require_once( get_stylesheet_directory() . '/includes/functions-theme.php' );
 require_once( get_stylesheet_directory() . '/includes/show-functions.php' );
+require_once( get_stylesheet_directory() . '/includes/shows-table-render.php' );
+require_once( get_stylesheet_directory() . '/includes/tour-functions.php' );
 require_once( get_stylesheet_directory() . '/includes/rest-api-show-endpoints.php' );
 require_once( get_stylesheet_directory() . '/includes/class-setlist-importer.php' );
 require_once( get_stylesheet_directory() . '/includes/class-show-importer.php' );

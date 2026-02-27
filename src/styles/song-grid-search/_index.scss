@@ -1,0 +1,181 @@
+/* Song Grid */
+.song-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--wp--preset--spacing--10);
+}
+
+.song-grid-item {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  aspect-ratio: 1;
+  text-align: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  background-color: var(--wp--preset--color--accent-3);
+  overflow: hidden;
+  transform: scale(0.975);
+}
+.song-grid-item:nth-child(4n+1) {
+  background-color: var(--wp--preset--color--accent-4);
+}
+.song-grid-item:nth-child(4n+2) {
+  background-color: var(--wp--preset--color--accent-1);
+}
+.song-grid-item:nth-child(4n+3) {
+  background-color: var(--wp--preset--color--accent-5);
+}
+.song-grid-item:hover {
+  transform: scale(1.025);
+  z-index: 1000;
+}
+.song-grid-item img {
+  transition: all 0.2s ease;
+  aspect-ratio: 1;
+  object-fit: cover;
+  width: 100%;
+  position: absolute;
+  height: 100%;
+  object-position: center;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+}
+
+.song-grid-item-content {
+  background-color: var(--wp--preset--color--contrast);
+  z-index: 1;
+  position: relative;
+  transition: all 0.2s ease;
+}
+.song-grid-item-title {
+  display: block;
+  font-size: var(--wp--preset--font-size--medium);
+  color: var(--wp--preset--color--base);
+  margin-top: auto;
+  padding: .5rem 1rem 0 1rem;
+}
+.song-grid-item-date,
+.song-grid-item-attribution {
+  display: block;
+  font-size: var(--wp--preset--font-size--small);
+  color: var(--wp--preset--color--base);
+  padding: 0 1rem .5rem 1rem;
+}
+
+.song-grid-item.has-thumbnail .song-grid-item-content {
+  position: absolute;
+  bottom: -100%;
+  left:0;
+  width:100%;
+  height: auto;
+  z-index: 3;
+}
+.song-grid-item.has-thumbnail:focus .song-grid-item-content,
+.song-grid-item.has-thumbnail:hover .song-grid-item-content {
+  bottom: 0;
+}
+
+.song-grid-item.no-thumbnail .song-grid-item-title {
+  font-size: var(--wp--preset--font-size--x-large);
+}
+.song-grid-item.no-thumbnail .song-grid-item-date {
+  font-size: var(--wp--preset--font-size--medium);
+}
+
+/* Band Hero Image */
+.band-hero-image {
+  width: 100vw;
+  margin-bottom: var(--wp--preset--spacing--20);
+}
+.band-hero-image img {
+  width: 100%;
+  height: 50vh;
+  object-fit: cover;
+  object-position: center;
+}
+
+.song-artist-heading,
+.artist-link {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-direction: row;
+}
+.artist-image {
+  width: 1.25em;
+  height: 1.25em;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 50%;
+}
+
+.wp-block-navigation__responsive-container.is-menu-open .wp-block-navigation__container {
+  gap: 1rem !important;
+}
+
+.wp-block-navigation__responsive-container.is-menu-open .wp-block-navigation-item__label {
+  font-size: var(--wp--preset--font-size--x-large) !important;
+}
+
+.post-meta-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.post-type-label {
+  padding:0.25rem 0.75rem;
+  background-color:var(--wp--preset--color--accent-3);
+  color:var(--wp--preset--color--base);
+  border-radius:4px;
+  font-size:0.875rem;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  margin-bottom:0.5rem;
+}
+
+/* Search snippet styles */
+.search-snippet {
+  line-height: 1.6;
+  color: inherit;
+}
+
+.search-snippet mark,
+.search-snippet .search-term-highlight {
+  background-color: var(--wp--preset--color--accent-4);
+  color: var(--wp--preset--color--base);
+  padding: 0.125rem 0.25rem;
+  border-radius: 3px;
+  font-weight: 600;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+
+.wp-block-search__button,
+.wp-block-search__inside-wrapper {
+  border-width: 0 !important;
+}
+.wp-block-search__inside-wrapper .wp-block-search__button {
+  margin: 0;
+  background-color: var(--wp--preset--color--accent-5);
+}
+#footer form.wp-block-search {
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.post-single .post-featured-image img {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  object-position: center;
+}
+

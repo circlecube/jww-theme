@@ -15,9 +15,9 @@
         "plays"
     ],
     "textdomain": "jww-theme",
-    "editorScript": "file:../../build/index.js",
-    "editorStyle": "file:../../build/index.css",
-    "style": "file:../../build/style-index.css",
+    "editorScript": "file:../../build/editor-block-styles.js",
+    "editorStyle": "file:../../build/editor-block-styles.css",
+    "style": "file:../../build/block-styles.css",
     "render": "file:./render.php",
     "supports": {
         "align": [

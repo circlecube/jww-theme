@@ -50,7 +50,7 @@ class Song_Export_Import {
 
 		wp_enqueue_script(
 			'jww-song-export-import',
-			get_stylesheet_directory_uri() . '/includes/js/song-export-import.js',
+			get_stylesheet_directory_uri() . '/admin/js/song-export-import.js',
 			array( 'jquery' ),
 			wp_get_theme()->get( 'Version' ),
 			true
@@ -63,7 +63,7 @@ class Song_Export_Import {
 
 		wp_enqueue_style(
 			'jww-song-export-import',
-			get_stylesheet_directory_uri() . '/includes/css/song-export-import.css',
+			get_stylesheet_directory_uri() . '/admin/css/song-export-import.css',
 			array(),
 			wp_get_theme()->get( 'Version' )
 		);
