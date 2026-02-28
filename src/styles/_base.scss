@@ -1,3 +1,10 @@
+// Prevent horizontal scroll from full-bleed sections using 100vw (vw includes scrollbar in most browsers).
+// Reserve space for scrollbar so 100vw doesn't overflow (Chrome 145+); fallback clips horizontal overflow.
+html {
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+}
+
 // Faint background logo effect
 body {
   position: relative;

@@ -6,12 +6,21 @@
   min-width: 0;
 }
 
+.show-featured-image img {
+  max-width: 300px;
+  height: auto;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 6px;
+}
+
 .show-venue-image-wrap {
   flex-shrink: 0;
+  margin: 1rem 0;
 }
 
 .show-venue-image {
-  width: 120px;
+  width: 300px;
   height: auto;
   border-radius: 6px;
   object-fit: cover;

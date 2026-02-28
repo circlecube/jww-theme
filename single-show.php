@@ -64,31 +64,22 @@ if ( $show_artist ) {
 		class="wp-block-group has-global-padding is-layout-constrained wp-block-group-is-layout-constrained" 
 		style="padding-top:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--50)"
 	>
-		<?php if ( has_post_thumbnail() ): ?>
-			<div class="wp-block-group alignwide show-featured-image" style="margin-bottom:var(--wp--preset--spacing--40)">
-				<?php the_post_thumbnail( 'large', array( 'class' => 'show-image' ) ); ?>
-			</div>
-		<?php endif; ?>
 
 		<?php the_title('<h1 class="wp-block-post-title alignwide has-xxx-large-font-size">', '</h1>'); ?>
 		
 		<!-- Show Meta Information -->
 		<div class="wp-block-group is-layout-flex is-content-justification-space-between flex-direction-row alignwide show-meta" style="margin-bottom:var(--wp--preset--spacing--40)">
 			<div class="show-meta-left">
-				<?php
-				$venue_image_id = function_exists( 'jww_get_venue_image_id' ) ? jww_get_venue_image_id( $location_id ) : 0;
-				if ( $venue_image_id ) :
-					$venue_image_src = wp_get_attachment_image_url( $venue_image_id, 'medium' );
-					if ( $venue_image_src ) :
-				?>
-				<div class="show-venue-image-wrap">
-					<?php echo wp_get_attachment_image( $venue_image_id, 'medium', false, array( 'class' => 'show-venue-image', 'loading' => 'eager', 'decoding' => 'async' ) ); ?>
-				</div>
-				<?php
-					endif;
-				endif;
-				?>
 				<div class="show-meta-text">
+					<?php if ( $tour_name ): ?>
+						<div class="show-tour">
+							<?php if ( $tour_link && ! is_wp_error( $tour_link ) ): ?>
+								<em><a href="<?php echo esc_url( $tour_link ); ?>"><?php echo esc_html( $tour_name ); ?></a></em>
+							<?php else: ?>
+								<em><?php echo esc_html( $tour_name ); ?></em>
+							<?php endif; ?>
+						</div>
+					<?php endif; ?>
 					<div class="show-date">
 						<strong><?php echo get_the_date( 'F j, Y' ); ?></strong>
 					</div>
@@ -108,38 +99,49 @@ if ( $show_artist ) {
 							?>
 						</div>
 					<?php endif; ?>
-					<?php if ( $tour_name ): ?>
-						<div class="show-tour">
-							<?php if ( $tour_link && ! is_wp_error( $tour_link ) ): ?>
-								<em><a href="<?php echo esc_url( $tour_link ); ?>"><?php echo esc_html( $tour_name ); ?></a></em>
-							<?php else: ?>
-								<em><?php echo esc_html( $tour_name ); ?></em>
-							<?php endif; ?>
-						</div>
-					<?php endif; ?>
+					<?php
+					$venue_image_id = function_exists( 'jww_get_venue_image_id' ) ? jww_get_venue_image_id( $location_id ) : 0;
+					if ( $venue_image_id ) :
+						$venue_image_src = wp_get_attachment_image_url( $venue_image_id, 'medium' );
+						if ( $venue_image_src ) :
+					?>
+					<div class="show-venue-image-wrap">
+						<?php echo wp_get_attachment_image( $venue_image_id, 'medium', false, array( 'class' => 'show-venue-image', 'loading' => 'eager', 'decoding' => 'async' ) ); ?>
+					</div>
+					<?php
+						endif;
+					endif;
+					?>
 				</div>
 			</div>
-			<?php if ( $is_upcoming && $ticket_link ): ?>
-				<div class="show-ticket-link">
-					<a href="<?php echo esc_url( $ticket_link ); ?>" class="wp-block-button__link wp-element-button" target="_blank" rel="noopener">
-						Buy Tickets
-					</a>
-				</div>
-			<?php endif; ?>
-			<?php
-			if ( ! $is_upcoming ) {
-				$youtube_url = jww_get_show_youtube_search_url( get_the_ID(), $artist_name );
-				if ( $youtube_url ) :
-			?>
-				<div class="show-youtube-search">
-					<a href="<?php echo esc_url( $youtube_url ); ?>" class="wp-block-button__link wp-element-button show-youtube-search-link" target="_blank" rel="noopener">
-						<?php esc_html_e( 'Search YouTube for videos', 'jww-theme' ); ?>
-					</a>
-				</div>
-			<?php
-				endif;
-			}
-			?>
+			<div class="show-meta-right">
+				<?php if ( has_post_thumbnail() ): ?>
+					<div class="wp-block-group alignwide show-featured-image" style="margin-bottom:var(--wp--preset--spacing--40)">
+						<?php the_post_thumbnail( 'medium', array( 'class' => 'show-image' ) ); ?>
+					</div>
+				<?php endif; ?>
+				<?php if ( $is_upcoming && $ticket_link ): ?>
+					<div class="show-ticket-link">
+						<a href="<?php echo esc_url( $ticket_link ); ?>" class="wp-block-button__link wp-element-button" target="_blank" rel="noopener">
+							Buy Tickets
+						</a>
+					</div>
+				<?php endif; ?>
+				<?php
+				if ( ! $is_upcoming ) {
+					$youtube_url = jww_get_show_youtube_search_url( get_the_ID(), $artist_name );
+					if ( $youtube_url ) :
+				?>
+					<div class="show-youtube-search">
+						<a href="<?php echo esc_url( $youtube_url ); ?>" class="wp-block-button__link wp-element-button show-youtube-search-link" target="_blank" rel="noopener">
+							<?php esc_html_e( 'Search YouTube for videos', 'jww-theme' ); ?>
+						</a>
+					</div>
+				<?php
+					endif;
+				}
+				?>
+			</div>
 		</div>
 
 		<?php if ( $set_times && ( $set_times['doors_time'] || $set_times['start_time'] || $set_times['end_time'] ) ): ?>

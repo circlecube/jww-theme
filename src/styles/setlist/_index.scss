@@ -203,7 +203,8 @@
 
 /* Masonry layout: JS places cards in shortest column (true masonry).
    Section with alignwide escapes constrained wrapper; inner wrapper stays centered.
-   Container is position:relative so script can use position:absolute on cards. */
+   Container is position:relative so script can use position:absolute on cards.
+   Full-bleed uses 100vw; horizontal scroll is prevented by overflow-x: hidden on html. */
 .show-setlist-data-section.alignwide {
   flex: 0 0 100% !important;
   /* if parent is flex, take full width */
