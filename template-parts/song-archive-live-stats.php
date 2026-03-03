@@ -29,7 +29,7 @@ $default_open = true;
 <div class="wp-block-group alignwide shows-table-card" style="margin-bottom:var(--wp--preset--spacing--50);">
 	<details class="shows-accordion" id="song-archive-live-stats-accordion"<?php echo $default_open ? ' open' : ''; ?> aria-labelledby="song-archive-live-stats-heading">
 		<summary class="shows-accordion-summary">
-			<h2 id="song-archive-live-stats-heading" class="wp-block-heading show-setlist-data-heading" style="margin:0;display:inline;"><?php esc_html_e( 'Live Stats', 'jww-theme' ); ?></h2>
+			<h2 id="song-archive-live-stats-heading" class="wp-block-heading show-setlist-data-heading"><?php esc_html_e( 'Song Performances', 'jww-theme' ); ?></h2>
 			<span class="shows-accordion-count"><?php echo esc_html( '(' . $song_stats_count . ')' ); ?></span>
 		</summary>
 		<div class="shows-table-wrapper">

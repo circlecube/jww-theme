@@ -19,6 +19,8 @@ import './song-list';
 
 // Import show-list block
 import './show-list';
+import './latest-shows';
+import './upcoming-shows';
 
 // Import show-stats block
 import './show-stats';

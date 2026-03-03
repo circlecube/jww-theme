@@ -194,72 +194,213 @@ add_action( 'created_term', 'jww_clear_location_tour_caches', 10, 3 );
 add_action( 'delete_term', 'jww_clear_location_tour_caches', 10, 3 );
 
 /**
- * Get random lyrics data for reuse across templates
- * 
- * @return array|false Array with 'song_id', 'lyrics_line', and 'song_title', or false on failure
+ * Get the explicit location type for a location term (from ACF or term meta).
+ *
+ * @param int $term_id Location term ID.
+ * @return string One of 'country', 'state_province', 'city', 'venue', or '' if not set.
+ */
+function jww_get_location_type( $term_id ) {
+	$term_id = (int) $term_id;
+	if ( $term_id <= 0 ) {
+		return '';
+	}
+	if ( function_exists( 'get_field' ) ) {
+		$type = get_field( 'location_type', 'location_' . $term_id );
+	} else {
+		$type = get_term_meta( $term_id, 'location_type', true );
+	}
+	return in_array( $type, array( 'country', 'state_province', 'city', 'venue' ), true ) ? $type : '';
+}
+
+/**
+ * Whether a country term uses a state/province level (from ACF or term meta).
+ * Falls back to checking if the country has any child with location_type = state_province.
+ *
+ * @param int $country_term_id Top-level location (country) term ID.
+ * @return bool
+ */
+function jww_country_has_states( $country_term_id ) {
+	$country_term_id = (int) $country_term_id;
+	if ( $country_term_id <= 0 ) {
+		return false;
+	}
+	if ( function_exists( 'get_field' ) ) {
+		$has = get_field( 'country_has_states', 'location_' . $country_term_id );
+		if ( $has === true || $has === '1' || $has === 1 ) {
+			return true;
+		}
+		if ( $has === false || $has === '0' || $has === 0 || $has === '' ) {
+			// Explicit false/empty: still check for state_province children
+		}
+	} else {
+		$has = get_term_meta( $country_term_id, 'country_has_states', true );
+		if ( $has === true || $has === '1' || $has === 1 ) {
+			return true;
+		}
+	}
+	$children = get_terms( array(
+		'taxonomy'   => 'location',
+		'parent'     => $country_term_id,
+		'hide_empty' => false,
+		'fields'     => 'ids',
+	) );
+	if ( is_wp_error( $children ) || empty( $children ) ) {
+		return false;
+	}
+	foreach ( $children as $child_id ) {
+		if ( jww_get_location_type( $child_id ) === 'state_province' ) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * Get country code (e.g. US, CA) for a country term. Used by setlist importer for API matching.
+ *
+ * @param int $country_term_id Country term ID.
+ * @return string Empty if not set.
+ */
+function jww_get_country_code( $country_term_id ) {
+	$country_term_id = (int) $country_term_id;
+	if ( $country_term_id <= 0 ) {
+		return '';
+	}
+	if ( function_exists( 'get_field' ) ) {
+		$code = get_field( 'country_code', 'location_' . $country_term_id );
+	} else {
+		$code = get_term_meta( $country_term_id, 'country_code', true );
+	}
+	return is_string( $code ) ? trim( $code ) : '';
+}
+
+/**
+ * Get list of country codes for countries that use state/province level (for setlist importer).
+ * Uses ACF country_has_states + country_code when set; falls back to constant if none configured.
+ *
+ * @return array Uppercase country codes, e.g. array( 'US', 'CA', 'AU' ).
+ */
+function jww_get_countries_with_state_level_codes() {
+	$countries = get_terms( array(
+		'taxonomy'   => 'location',
+		'parent'     => 0,
+		'hide_empty' => false,
+		'fields'     => 'ids',
+	) );
+	if ( is_wp_error( $countries ) || empty( $countries ) ) {
+		return array( 'US', 'CA', 'AU' ); // Fallback
+	}
+	$codes = array();
+	foreach ( $countries as $term_id ) {
+		if ( ! jww_country_has_states( $term_id ) ) {
+			continue;
+		}
+		$code = jww_get_country_code( $term_id );
+		if ( $code !== '' ) {
+			$codes[] = strtoupper( $code );
+		}
+	}
+	if ( empty( $codes ) ) {
+		return array( 'US', 'CA', 'AU' ); // Fallback when no ACF data yet
+	}
+	return array_values( array_unique( $codes ) );
+}
+
+/**
+ * Get random lyrics data for reuse across templates, block, and REST API.
+ *
+ * @return array|null Associative array with song_id, song_title, song_link, lyrics_line, artist_name, featured_image_url; null on failure
  */
 function jww_get_random_lyrics_data() {
-	// Get a random song that has lyrics
-	$songs = get_posts([
-		'post_type' => 'song',
+	if ( ! function_exists( 'get_field' ) ) {
+		return null;
+	}
+	if ( ! post_type_exists( 'song' ) ) {
+		return null;
+	}
+
+	$songs = get_posts( array(
+		'post_type'      => 'song',
 		'posts_per_page' => 1,
 		'orderby'        => 'rand',
-		'order'          => 'DESC',
-		'meta_query' => [
-			[
-				'key' => 'lyrics',
-				'compare' => 'EXISTS'
-			],
-			[
-				'key' => 'lyrics',
-				'value' => '',
-				'compare' => '!='
-			]
-		],
+		'meta_query'     => array(
+			array( 'key' => 'lyrics', 'compare' => 'EXISTS' ),
+			array( 'key' => 'lyrics', 'value' => '', 'compare' => '!=' ),
+		),
 		'tax_query'      => array(
 			array(
 				'taxonomy' => 'category',
-				'field'     => 'slug',
-				'terms'    => 'original'
-			)
+				'field'    => 'slug',
+				'terms'    => 'original',
+			),
+			array(
+				'taxonomy' => 'post_tag',
+				'field'    => 'slug',
+				'terms'    => 'jesse-welles',
+			),
 		),
-		'fields' => 'ids'
-	]);
+		'fields'         => 'ids',
+	) );
 
-	if (empty($songs)) {
-		return false;
+	if ( empty( $songs ) ) {
+		return null;
 	}
 
-	// Get a random song
-	$random_song_id = $songs[0];
-	$song_title = get_the_title($random_song_id);
-	$lyrics = get_field('lyrics', $random_song_id);
-
-	if (empty($lyrics)) {
-		return false;
+	$song_id = (int) $songs[0];
+	if ( $song_id <= 0 ) {
+		return null;
 	}
+	$lyrics = get_field( 'lyrics', $song_id );
+	if ( $lyrics === null || $lyrics === false || $lyrics === '' ) {
+		return null;
+	}
+	$lyrics = is_string( $lyrics ) ? $lyrics : (string) $lyrics;
+	$lyrics = wp_strip_all_tags( $lyrics );
 
-	// Split lyrics into lines and filter out empty lines
 	$lyrics_lines = array_filter(
-		array_map('trim', explode("\n", $lyrics)),
-		function($line) {
-			return !empty($line) && strlen($line) > 10; // Filter out very short lines
+		array_map( 'trim', explode( "\n", $lyrics ) ),
+		function ( $line ) {
+			return $line !== '' && strlen( $line ) > 10;
 		}
 	);
-
-	if (empty($lyrics_lines)) {
-		return false;
+	$lyrics_lines = array_values( $lyrics_lines );
+	if ( empty( $lyrics_lines ) ) {
+		return null;
 	}
 
-	// Get a random line
-	$random_line = $lyrics_lines[array_rand($lyrics_lines)];
-	
-	// Strip HTML tags from the lyrics line
-	$random_line = strip_tags($random_line);
+	$lyrics_line = $lyrics_lines[ array_rand( $lyrics_lines ) ];
+	$artist_name = 'Jesse Welles';
+	$artist      = get_field( 'artist', $song_id );
+	if ( ! empty( $artist ) ) {
+		$artist_id = null;
+		if ( is_array( $artist ) && isset( $artist[0] ) ) {
+			$first     = $artist[0];
+			$artist_id = is_object( $first ) && isset( $first->ID ) ? (int) $first->ID : ( is_numeric( $first ) ? (int) $first : null );
+		} elseif ( is_object( $artist ) && isset( $artist->ID ) ) {
+			$artist_id = (int) $artist->ID;
+		} elseif ( is_numeric( $artist ) ) {
+			$artist_id = (int) $artist;
+		}
+		if ( $artist_id ) {
+			$artist_name = get_the_title( $artist_id );
+			if ( $artist_name === '' ) {
+				$artist_name = 'Jesse Welles';
+			}
+		}
+	}
 
-	return [
-		'song_id' => $random_song_id,
-		'lyrics_line' => $random_line,
-		'song_title' => $song_title
-	];
+	$featured_image_url = null;
+	$thumbnail_id       = get_post_thumbnail_id( $song_id );
+	if ( $thumbnail_id ) {
+		$featured_image_url = wp_get_attachment_image_url( $thumbnail_id, 'large' );
+	}
+
+	return array(
+		'song_id'            => $song_id,
+		'song_title'         => get_the_title( $song_id ),
+		'song_link'          => get_permalink( $song_id ),
+		'lyrics_line'        => $lyrics_line,
+		'artist_name'        => $artist_name,
+		'featured_image_url' => $featured_image_url ? $featured_image_url : null,
+	);
 }

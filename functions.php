@@ -22,6 +22,7 @@ require_once( get_stylesheet_directory() . '/includes/functions-search.php' );
 require_once( get_stylesheet_directory() . '/includes/functions-rest.php' );
 require_once( get_stylesheet_directory() . '/includes/functions-admin.php' );
 require_once( get_stylesheet_directory() . '/includes/class-venues-admin.php' );
+require_once( get_stylesheet_directory() . '/includes/class-location-reorganizer.php' );
 require_once( get_stylesheet_directory() . '/includes/functions-shortcodes.php' );
 require_once( get_stylesheet_directory() . '/includes/functions-theme.php' );
 require_once( get_stylesheet_directory() . '/includes/show-functions.php' );

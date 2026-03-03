@@ -193,6 +193,18 @@ function jww_rest_get_shows( $request ) {
 			}
 		}
 
+		// Featured image: post thumbnail or fallback to venue image
+		$featured_image_url = null;
+		$thumb_id = get_post_thumbnail_id( $show->ID );
+		if ( $thumb_id ) {
+			$featured_image_url = wp_get_attachment_image_url( $thumb_id, 'large' );
+		} elseif ( $location_id_field && function_exists( 'jww_get_venue_image_id' ) ) {
+			$venue_image_id = jww_get_venue_image_id( $location_id_field );
+			if ( $venue_image_id ) {
+				$featured_image_url = wp_get_attachment_image_url( $venue_image_id, 'large' );
+			}
+		}
+
 		$shows[] = array(
 			'id'            => $show->ID,
 			'title'         => get_the_title( $show->ID ),
@@ -200,6 +212,7 @@ function jww_rest_get_shows( $request ) {
 			'date_formatted' => get_the_date( 'F j, Y', $show->ID ),
 			'link'          => get_permalink( $show->ID ),
 			'is_upcoming'   => $is_upcoming,
+			'featured_image_url' => $featured_image_url,
 			'location'      => array(
 				'id'   => $location_id_field,
 				'name' => $location_name,

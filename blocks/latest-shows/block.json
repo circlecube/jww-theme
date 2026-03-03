@@ -1,0 +1,33 @@
+{
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "jww/latest-shows",
+    "version": "1.0.0",
+    "title": "JWW Latest Shows",
+    "category": "media",
+    "icon": "calendar-alt",
+    "description": "Display the 5 most recent shows as a list with links to each show.",
+    "keywords": [
+        "show",
+        "shows",
+        "latest",
+        "concert",
+        "list"
+    ],
+    "textdomain": "jww-theme",
+    "editorScript": "file:../../build/editor-block-styles.js",
+    "editorStyle": "file:../../build/editor-block-styles.css",
+    "style": "file:../../build/block-styles.css",
+    "render": "file:./render.php",
+    "supports": {
+        "align": ["wide", "full"],
+        "spacing": { "padding": true, "margin": true },
+        "typography": { "fontSize": true, "lineHeight": true }
+    },
+    "attributes": {
+        "heading": {
+            "type": "string",
+            "default": ""
+        }
+    }
+}

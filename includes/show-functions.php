@@ -22,6 +22,9 @@ function jww_clear_song_stats_for_song_ids( array $song_ids ) {
 	delete_transient( 'jww_all_time_show_stats' );
 	delete_transient( 'jww_all_time_opener_closer' );
 	delete_transient( 'jww_all_time_album_stats' );
+	delete_transient( 'jww_all_time_tours_list' );
+	delete_transient( 'jww_all_time_festivals_list' );
+	delete_transient( 'jww_all_time_longest_set' );
 	delete_transient( 'jww_all_show_setlists' );
 
 	$song_ids = array_filter( array_map( 'intval', $song_ids ) );
@@ -41,6 +44,9 @@ function jww_clear_song_stats_caches() {
 	delete_transient( 'jww_all_time_show_stats' );
 	delete_transient( 'jww_all_time_opener_closer' );
 	delete_transient( 'jww_all_time_album_stats' );
+	delete_transient( 'jww_all_time_tours_list' );
+	delete_transient( 'jww_all_time_festivals_list' );
+	delete_transient( 'jww_all_time_longest_set' );
 	delete_transient( 'jww_all_show_setlists' );
 
 	global $wpdb;
@@ -612,6 +618,44 @@ function jww_get_shows_by_city( $city_term_id ) {
 }
 
 /**
+ * Get shows in a state/province (location term): shows whose venue is this term or a descendant (e.g. all cities and venues in the state).
+ *
+ * @param int $state_term_id Location term ID (state/province).
+ * @return WP_Post[]
+ */
+function jww_get_shows_by_state( $state_term_id ) {
+	$state_term_id = (int) $state_term_id;
+	if ( ! $state_term_id ) {
+		return array();
+	}
+	$descendant_ids = get_terms( array(
+		'taxonomy'   => 'location',
+		'child_of'   => $state_term_id,
+		'fields'     => 'ids',
+		'hide_empty' => false,
+	) );
+	if ( ! is_array( $descendant_ids ) ) {
+		$descendant_ids = array();
+	}
+	$term_ids = array_merge( array( $state_term_id ), $descendant_ids );
+	$args = array(
+		'post_type'      => 'show',
+		'posts_per_page' => -1,
+		'post_status'    => array( 'publish', 'future' ),
+		'orderby'        => 'date',
+		'order'          => 'DESC',
+		'tax_query'      => array(
+			array(
+				'taxonomy' => 'location',
+				'field'    => 'term_id',
+				'terms'    => $term_ids,
+			),
+		),
+	);
+	return get_posts( $args );
+}
+
+/**
  * Get days since the previous show in the same tour. Returns null if no tour or this is the first show.
  *
  * @param int $show_id Show post ID.
@@ -846,6 +890,197 @@ function jww_get_all_time_show_stats( $use_cache = true ) {
 }
 
 /**
+ * Get the show with the longest setlist (most songs) across all shows. For archive "All Time" insight card.
+ * Cached; cleared when setlists change (same as other all_time transients).
+ *
+ * @param bool $use_cache Whether to use cached results (default: true).
+ * @return array|null Keys: show_id, song_count, show_title, show_link, show_date. Null if no shows with setlist data.
+ */
+function jww_get_all_time_longest_set( $use_cache = true ) {
+	if ( $use_cache ) {
+		$cached = get_transient( 'jww_all_time_longest_set' );
+		if ( $cached !== false && is_array( $cached ) ) {
+			return $cached;
+		}
+	}
+
+	$shows = get_posts( array(
+		'post_type'      => 'show',
+		'posts_per_page' => -1,
+		'post_status'    => array( 'publish', 'future' ),
+		'orderby'        => 'date',
+		'order'          => 'DESC',
+	) );
+
+	$best_show_id = 0;
+	$best_count   = 0;
+
+	foreach ( $shows as $show ) {
+		$setlist = get_field( 'setlist', $show->ID );
+		$count   = function_exists( 'jww_count_setlist_songs' ) ? jww_count_setlist_songs( $setlist ) : 0;
+		if ( $count > $best_count ) {
+			$best_count   = $count;
+			$best_show_id = $show->ID;
+		}
+	}
+
+	if ( $best_show_id <= 0 || $best_count <= 0 ) {
+		$result = null;
+	} else {
+		$post = get_post( $best_show_id );
+		$result = array(
+			'show_id'    => $best_show_id,
+			'song_count' => $best_count,
+			'show_title' => $post ? get_the_title( $post ) : '',
+			'show_link'  => get_permalink( $best_show_id ),
+			'show_date'  => $post ? get_the_date( 'M j, Y', $post ) : '',
+		);
+	}
+
+	if ( $use_cache ) {
+		set_transient( 'jww_all_time_longest_set', $result, HOUR_IN_SECONDS );
+	}
+
+	return $result;
+}
+
+/**
+ * Get all-time list of tours with show count and date range. Sorted by most recent show first.
+ * Cached; cleared when shows change.
+ *
+ * @param bool $use_cache Whether to use cached results.
+ * @return array List of arrays with keys: term_id, name, link, show_count, date_range (formatted string), date_end (for sorting).
+ */
+function jww_get_all_time_tours_list( $use_cache = true ) {
+	if ( $use_cache ) {
+		$cached = get_transient( 'jww_all_time_tours_list' );
+		if ( $cached !== false && is_array( $cached ) ) {
+			return $cached;
+		}
+	}
+
+	$shows = get_posts( array(
+		'post_type'      => 'show',
+		'posts_per_page' => -1,
+		'post_status'    => array( 'publish', 'future' ),
+		'orderby'        => 'date',
+		'order'          => 'ASC',
+		'fields'         => 'ids',
+	) );
+
+	$by_tour = array();
+	foreach ( $shows as $show_id ) {
+		$tour_id = get_field( 'show_tour', $show_id );
+		if ( ! $tour_id ) {
+			continue;
+		}
+		$tour_id = (int) $tour_id;
+		if ( ! isset( $by_tour[ $tour_id ] ) ) {
+			$by_tour[ $tour_id ] = array( 'dates' => array() );
+		}
+		$by_tour[ $tour_id ]['dates'][] = get_post_field( 'post_date', $show_id );
+	}
+
+	$list = array();
+	foreach ( $by_tour as $tour_id => $data ) {
+		$term = get_term( $tour_id, 'tour' );
+		if ( ! $term || is_wp_error( $term ) ) {
+			continue;
+		}
+		$dates = $data['dates'];
+		sort( $dates );
+		$first = strtotime( $dates[0] );
+		$last  = strtotime( $dates[ count( $dates ) - 1 ] );
+		$date_range = date_i18n( 'M j, Y', $first );
+		if ( $first !== $last ) {
+			$date_range .= ' – ' . date_i18n( 'M j, Y', $last );
+		}
+		$link = get_term_link( $term->term_id, 'tour' );
+		$list[] = array(
+			'term_id'     => $term->term_id,
+			'name'        => $term->name,
+			'link'        => is_wp_error( $link ) ? '' : $link,
+			'show_count'  => count( $dates ),
+			'date_range'  => $date_range,
+			'date_end'    => $dates[ count( $dates ) - 1 ],
+		);
+	}
+
+	// Sort by date_end descending (newest first)
+	usort( $list, function ( $a, $b ) {
+		return strcmp( $b['date_end'], $a['date_end'] );
+	} );
+
+	if ( $use_cache ) {
+		set_transient( 'jww_all_time_tours_list', $list, HOUR_IN_SECONDS );
+	}
+
+	return $list;
+}
+
+/**
+ * Get all-time list of unique festivals with date. Sorted by date newest first.
+ * Cached; cleared when shows change.
+ *
+ * @param bool $use_cache Whether to use cached results.
+ * @return array List of arrays with keys: name, date (formatted), date_iso (for sorting), show_link (optional).
+ */
+function jww_get_all_time_festivals_list( $use_cache = true ) {
+	if ( $use_cache ) {
+		$cached = get_transient( 'jww_all_time_festivals_list' );
+		if ( $cached !== false && is_array( $cached ) ) {
+			return $cached;
+		}
+	}
+
+	$shows = get_posts( array(
+		'post_type'      => 'show',
+		'posts_per_page' => -1,
+		'post_status'    => array( 'publish', 'future' ),
+		'orderby'        => 'date',
+		'order'          => 'DESC',
+	) );
+
+	$by_name = array();
+	foreach ( $shows as $show ) {
+		if ( ! get_field( 'show_festival', $show->ID ) ) {
+			continue;
+		}
+		$name = get_field( 'show_festival_name', $show->ID );
+		if ( $name === null || $name === false || trim( (string) $name ) === '' ) {
+			continue;
+		}
+		$name = trim( (string) $name );
+		if ( ! isset( $by_name[ $name ] ) ) {
+			$by_name[ $name ] = array(
+				'date_iso'   => $show->post_date,
+				'show_link'  => get_permalink( $show->ID ),
+			);
+		}
+	}
+
+	$list = array();
+	foreach ( $by_name as $name => $data ) {
+		$list[] = array(
+			'name'       => $name,
+			'date'       => date_i18n( get_option( 'date_format' ), strtotime( $data['date_iso'] ) ),
+			'date_iso'   => $data['date_iso'],
+			'show_link'  => $data['show_link'],
+		);
+	}
+
+	usort( $list, function ( $a, $b ) {
+		return strcmp( $b['date_iso'], $a['date_iso'] );
+	} );
+
+	if ( $use_cache ) {
+		set_transient( 'jww_all_time_festivals_list', $list, HOUR_IN_SECONDS );
+	}
+
+	return $list;
+}
+
+/**
  * Get all-time most common show opener and closer (first and last song of each setlist).
  * Returns top 3 openers and top 3 closers.
  * Cached; cleared when setlists change.
@@ -928,6 +1163,32 @@ function jww_get_all_time_opener_closer( $use_cache = true ) {
 	}
 
 	return $result;
+}
+
+/**
+ * Get top N most played songs (by performance count) across all shows. For archive "All Time" insight card.
+ * Uses jww_get_all_time_song_stats (same cache); returns same item shape as openers/closers: title, link, count.
+ *
+ * @param int  $limit     Number of songs to return (default 5).
+ * @param bool $use_cache Whether to use cached results (default true).
+ * @return array List of arrays with keys: title, link, count (and song_id).
+ */
+function jww_get_all_time_most_played_songs( $limit = 5, $use_cache = true ) {
+	$all = function_exists( 'jww_get_all_time_song_stats' ) ? jww_get_all_time_song_stats( $use_cache ) : array();
+	if ( ! is_array( $all ) ) {
+		return array();
+	}
+	$top = array_slice( $all, 0, $limit );
+	$out = array();
+	foreach ( $top as $row ) {
+		$out[] = array(
+			'song_id' => isset( $row['song_id'] ) ? (int) $row['song_id'] : 0,
+			'title'   => isset( $row['song_title'] ) ? $row['song_title'] : '',
+			'link'    => isset( $row['song_link'] ) ? $row['song_link'] : '',
+			'count'   => isset( $row['play_count'] ) ? (int) $row['play_count'] : 0,
+		);
+	}
+	return $out;
 }
 
 /**
@@ -1286,10 +1547,10 @@ function jww_get_song_gap_analysis( $song_id, $use_cache = true ) {
 
 /**
  * Get location hierarchy (City/Country and Venue) for display.
- * Cached for performance. Used by archive templates and blocks.
+ * Supports 3-level (Country > City > Venue) and 4-level (Country > State > City > Venue). Cached for performance.
  *
  * @param int $location_id Location term ID.
- * @return array Keys: city_country (HTML), venue, venue_link.
+ * @return array Keys: city_country (HTML), venue, venue_link, and when 4-level: state_term, state_name, state_link, state_term_id.
  */
 function jww_get_location_hierarchy( $location_id ) {
 	if ( ! $location_id ) {
@@ -1355,6 +1616,8 @@ function jww_get_location_hierarchy( $location_id ) {
 	$venue_link = '';
 	$city_name = '';
 	$city_link = '';
+	$state_name = '';
+	$state_link = '';
 	$country_name = '';
 	$country_link = '';
 	$path_count = count( $path );
@@ -1374,6 +1637,12 @@ function jww_get_location_hierarchy( $location_id ) {
 		$country_name = $country_term->name;
 		$country_link = get_term_link( $country_term->term_id, 'location' );
 	}
+	// 4-level: path[0]=country, path[1]=state, path[2]=city, path[3]=venue
+	if ( $path_count >= 4 ) {
+		$state_term = $path[1];
+		$state_name = $state_term->name;
+		$state_link = get_term_link( $state_term->term_id, 'location' );
+	}
 
 	$city_country_parts = array();
 	if ( $city_name ) {
@@ -1381,6 +1650,13 @@ function jww_get_location_hierarchy( $location_id ) {
 			$city_country_parts[] = '<a href="' . esc_url( $city_link ) . '">' . esc_html( $city_name ) . '</a>';
 		} else {
 			$city_country_parts[] = esc_html( $city_name );
+		}
+	}
+	if ( $state_name ) {
+		if ( $state_link && ! is_wp_error( $state_link ) ) {
+			$city_country_parts[] = '<a href="' . esc_url( $state_link ) . '">' . esc_html( $state_name ) . '</a>';
+		} else {
+			$city_country_parts[] = esc_html( $state_name );
 		}
 	}
 	if ( $country_name ) {
@@ -1400,6 +1676,12 @@ function jww_get_location_hierarchy( $location_id ) {
 		'city_link'      => ( $path_count >= 2 && $city_link && ! is_wp_error( $city_link ) ) ? $city_link : '',
 		'city_name'      => $city_name,
 	);
+	if ( $path_count >= 4 ) {
+		$result['state_term']    = $state_term;
+		$result['state_name']    = $state_name;
+		$result['state_link']    = is_wp_error( $state_link ) ? '' : $state_link;
+		$result['state_term_id'] = (int) $state_term->term_id;
+	}
 	set_transient( $cache_key, $result, 6 * HOUR_IN_SECONDS );
 	return $result;
 }

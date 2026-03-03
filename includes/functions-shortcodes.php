@@ -51,29 +51,14 @@ function jww_random_lyrics_inline_shortcode() {
 add_shortcode('random_lyrics_inline', 'jww_random_lyrics_inline_shortcode');
 
 /**
- * Is Home Page
- * 
- * @return bool True if current page is the home page, false otherwise
- */
-function jww_is_home_page() {
-	return is_front_page() || is_home();
-}
-
-/**
- * Shortcode for header site title (adapts based on page type)
+ * Shortcode for header site title (unified large title site-wide)
  * Usage: [header_site_title]
- * 
+ *
  * @return string HTML output
  */
-function jww_header_site_title_shortcode() {	
-	if ( jww_is_home_page() ) {
-		$site_title = '<!-- wp:site-title {"level":0,"className":"header-large-text","style":{"typography":{"fontSize":"7vw","lineHeight":"1.2"},"layout":{"selfStretch":"fill","flexSize":null},"elements":{"link":{"color":{"text":"var:preset|color|base"}}}},"textColor":"base"} /-->';
-	} else {
-		$site_title = '<!-- wp:site-title {"level":2,"className":"header-normal-text","fontSize":"xx-large","fontFamily":"roboto-slab"} /-->';
-	}
-
-	
-	return do_blocks($site_title);
+function jww_header_site_title_shortcode() {
+	$site_title = '<!-- wp:site-title {"level":0,"className":"header-large-text","style":{"typography":{"lineHeight":"1.2"},"layout":{"selfStretch":"fill","flexSize":null},"elements":{"link":{"color":{"text":"var:preset|color|base"}}}},"textColor":"base"} /-->';
+	return do_blocks( $site_title );
 }
 add_shortcode('header_site_title', 'jww_header_site_title_shortcode');
 
@@ -105,7 +90,7 @@ function jww_header_navigation_shortcode() {
 		}
 	}
 	
-	// Build navigation block attributes
+	// Build navigation block attributes (same on all pages for consistent mobile nav)
 	$base_attrs = array(
 		'icon' => 'menu',
 		'overlayBackgroundColor' => 'base',
@@ -113,14 +98,14 @@ function jww_header_navigation_shortcode() {
 		'className' => 'header-nav-site',
 		'style' => array(
 			'spacing' => array(
-				'blockGap' => jww_is_home_page() ? 'var:preset|spacing|30' : 'var:preset|spacing|40'
+				'blockGap' => 'var:preset|spacing|40'
 			)
 		),
 		'fontSize' => 'medium',
 		'layout' => array(
 			'type' => 'flex',
 			'justifyContent' => 'right',
-			'orientation' => jww_is_home_page() ? 'vertical' : 'horizontal',
+			'orientation' => 'horizontal',
 			'flexWrap' => 'nowrap'
 		)
 	);

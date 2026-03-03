@@ -32,8 +32,6 @@ if ( $location_term && ! is_wp_error( $location_term ) ) {
 			break;
 		}
 	}
-	// Reverse the array to show Venue > City > Country instead of Country > City > Venue
-	$location_path = array_reverse( $location_path );
 }
 
 // Get tour name and link
@@ -74,7 +72,7 @@ if ( $show_artist ) {
 					<?php if ( $tour_name ): ?>
 						<div class="show-tour">
 							<?php if ( $tour_link && ! is_wp_error( $tour_link ) ): ?>
-								<em><a href="<?php echo esc_url( $tour_link ); ?>"><?php echo esc_html( $tour_name ); ?></a></em>
+								<?php echo $artist_name; ?> Tour:<em><a href="<?php echo esc_url( $tour_link ); ?>"><?php echo esc_html( $tour_name ); ?></a></em>
 							<?php else: ?>
 								<em><?php echo esc_html( $tour_name ); ?></em>
 							<?php endif; ?>
@@ -120,27 +118,58 @@ if ( $show_artist ) {
 						<?php the_post_thumbnail( 'medium', array( 'class' => 'show-image' ) ); ?>
 					</div>
 				<?php endif; ?>
-				<?php if ( $is_upcoming && $ticket_link ): ?>
-					<div class="show-ticket-link">
-						<a href="<?php echo esc_url( $ticket_link ); ?>" class="wp-block-button__link wp-element-button" target="_blank" rel="noopener">
-							Buy Tickets
-						</a>
-					</div>
-				<?php endif; ?>
-				<?php
-				if ( ! $is_upcoming ) {
-					$youtube_url = jww_get_show_youtube_search_url( get_the_ID(), $artist_name );
-					if ( $youtube_url ) :
-				?>
-					<div class="show-youtube-search">
-						<a href="<?php echo esc_url( $youtube_url ); ?>" class="wp-block-button__link wp-element-button show-youtube-search-link" target="_blank" rel="noopener">
-							<?php esc_html_e( 'Search YouTube for videos', 'jww-theme' ); ?>
-						</a>
-					</div>
-				<?php
-					endif;
-				}
-				?>
+				<div class="wp-block-buttons is-content-justification-center is-layout-flex wp-block-buttons-is-layout-flex show-meta-buttons">
+					<?php if ( $is_upcoming && $ticket_link ): ?>
+						<div class="wp-block-button">
+							<a
+								href="<?php echo esc_url( $ticket_link ); ?>"
+								class="wp-block-button__link wp-element-button show-ticket-link"
+								target="_blank"
+								rel="noopener noreferrer"
+								title="Buy Tickets"
+							>
+								Get Tickets
+								<span class="dashicons dashicons-tickets-alt"></span>
+							</a>
+						</div>
+					<?php endif; ?>
+					<?php
+					if ( ! $is_upcoming ) {
+						$youtube_url = jww_get_show_youtube_search_url( get_the_ID(), $artist_name );
+						if ( $youtube_url ) :
+					?>
+						<div class="wp-block-button">
+							<a
+								class="wp-block-button__link wp-element-button show-youtube-search-link"
+								href="<?php echo esc_url( $youtube_url ); ?>"
+								target="_blank"
+								rel="noopener noreferrer"
+								title="Search YouTube for videos"
+							>
+								<?php esc_html_e( 'Find Videos', 'jww-theme' ); ?>
+								<span class="dashicons dashicons-search"></span>
+								<span class="dashicons dashicons-youtube"></span>
+							</a>
+						</div>
+					<?php
+						endif;
+					}
+					?>
+					<?php if ( get_field('setlist_fm_url') ): ?>
+						<div class="wp-block-button">
+							<a
+								class="wp-block-button__link wp-element-button show-setlistfm-url-link" 
+								href="<?php echo esc_url( get_field('setlist_fm_url') ); ?>" 
+								target="_blank"
+								rel="noopener noreferrer"
+								title="View setlist on setlist.fm"
+							>
+								Setlist.fm
+								<span class="dashicons dashicons-external"></span>
+							</a>
+						</div>
+					<?php endif; ?>
+				</div>
 			</div>
 		</div>
 
@@ -261,17 +290,19 @@ if ( $show_artist ) {
 	</div>
 <?php endif; ?>
 
-<?php if ( $show_notes ): ?>
-	<!-- Show Notes Section -->
-	<div class="wp-block-group is-style-default has-base-background-color has-background is-layout-constrained has-global-padding" style="margin-top:0;margin-bottom:0">
-		<div class="wp-block-post-content">
-			<h3 class="wp-block-heading">Show Notes</h3>
-			<div class="show-notes-content has-medium-font-size">
-				<?php echo wp_kses_post( $show_notes ); ?>
-			</div>
+<!-- Show Notes Section -->
+<div class="wp-block-group is-style-default has-base-background-color has-background is-layout-constrained has-global-padding" style="margin-top:0;margin-bottom:0">
+	<div class="wp-block-post-content">
+		<h3 class="wp-block-heading">Show Notes</h3>
+		<div class="show-notes-content has-medium-font-size">
+			<?php if ( $show_notes ): ?>
+			<?php echo wp_kses_post( $show_notes ); ?>
+			<?php else: ?>
+				<p>Sorry, no show review or notes yet. Have some to suggest? Let us know in the comments!</p>
+			<?php endif; ?>
 		</div>
 	</div>
-<?php endif; ?>
+</div>
 
 <?php if ( $setlist || $tour_id || $location_id ) : ?>
 	<section class="show-setlist-data-section wp-block-group alignwide has-global-padding" aria-labelledby="show-setlist-data-heading">
@@ -284,8 +315,12 @@ if ( $show_artist ) {
 				<?php get_template_part( 'template-parts/show-insight-tour-gap' ); ?>
 			<?php endif; ?>
 			<?php if ( $location_id ) : ?>
-				<?php get_template_part( 'template-parts/show-insight-venue-count' ); ?>
+				<?php get_template_part( 'template-parts/show-insight-state-count' ); ?>
+				<?php get_template_part( 'template-parts/show-insight-shows-in-state' ); ?>
 				<?php get_template_part( 'template-parts/show-insight-city-count' ); ?>
+				<?php get_template_part( 'template-parts/show-insight-shows-in-city' ); ?>
+				<?php get_template_part( 'template-parts/show-insight-venue-count' ); ?>
+				<?php get_template_part( 'template-parts/show-insight-shows-in-venue' ); ?>
 			<?php endif; ?>
 			<?php if ( $setlist ) : ?>
 				<?php get_template_part( 'template-parts/show-insight-live-debuts' ); ?>
@@ -309,8 +344,8 @@ if ( $show_artist ) {
 <div class="nav-link-container wp-block-group alignwide">
 	<?php
 	the_post_navigation(array(
-		'prev_text' => '<span class="nav-subtitle">' . esc_html__('Previous:', 'jww-theme') . '</span> <span class="nav-title">%title</span>',
-		'next_text' => '<span class="nav-subtitle">' . esc_html__('Next:', 'jww-theme') . '</span> <span class="nav-title">%title</span>',
+		'prev_text' => '<span class="nav-subtitle">' . esc_html__('Previous Show:', 'jww-theme') . '</span> <span class="nav-title">%title</span>',
+		'next_text' => '<span class="nav-subtitle">' . esc_html__('Next Show:', 'jww-theme') . '</span> <span class="nav-title">%title</span>',
 	));
 	?>
 </div>

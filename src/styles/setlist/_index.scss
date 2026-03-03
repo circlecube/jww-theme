@@ -184,8 +184,8 @@
 }
 
 .show-setlist-data-heading {
-  font-size: 1.25rem;
-  margin-bottom: 0.75rem;
+  display: inline;
+  margin: 0;
 }
 
 /* Base container for Setlist Data cards; use one layout modifier: -flex or -masonry */
@@ -233,6 +233,7 @@
   position: relative !important;
   width: 100% !important;
   min-width: 0;
+  margin-top: 1rem;
   /* gap applied by JS (1.25rem) */
 }
 
@@ -250,7 +251,14 @@
 .show-stats-cards-masonry>.show-insight-song-count,
 .show-stats-cards-masonry>.show-insight-tour-gap,
 .show-stats-cards-masonry>.show-insight-venue-count,
-.show-stats-cards-masonry>.show-insight-city-count {
+.show-stats-cards-masonry>.show-insight-shows-in-venue,
+.show-stats-cards-masonry>.show-insight-city-count,
+.show-stats-cards-masonry>.show-insight-state-count,
+.show-stats-cards-masonry>.show-insight-shows-in-city,
+.show-stats-cards-masonry>.show-insight-shows-in-state,
+.show-stats-cards-masonry>.archive-insight-longest-set,
+.show-stats-cards-masonry>.archive-insight-tours-list-card,
+.show-stats-cards-masonry>.archive-insight-festivals-list-card {
   margin-bottom: 1.5rem;
   width: 100%;
   min-width: 0 !important;
@@ -290,19 +298,79 @@
 }
 
 .show-insight-venue-count-link,
-.show-insight-city-count-link {
+.show-insight-city-count-link,
+.show-insight-state-count-link {
   font-size: 0.85rem;
   margin: 0.25rem 0 0 0;
 }
 
 .show-insight-venue-count-link a,
-.show-insight-city-count-link a {
+.show-insight-city-count-link a,
+.show-insight-state-count-link a {
   text-decoration: none;
 }
 
 .show-insight-venue-count-link a:hover,
-.show-insight-city-count-link a:hover {
+.show-insight-city-count-link a:hover,
+.show-insight-state-count-link a:hover {
   text-decoration: underline;
+}
+
+/* Archive insight: Tours list and Festivals list cards */
+.archive-insight-tours-list,
+.archive-insight-festivals-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 0.5rem 0 0 0;
+}
+
+.archive-insight-tour-item,
+.archive-insight-festival-item {
+  margin-bottom: 0.5rem;
+}
+
+.archive-insight-count {
+  margin-left: 0.25em;
+  color: var(--wp--preset--color--contrast-2, #64748b);
+  font-weight: 500;
+}
+
+.archive-insight-date-range,
+.archive-insight-festival-date {
+  display: block;
+  font-size: 0.875em;
+  color: var(--wp--preset--color--contrast-2, #64748b);
+  margin-top: 0.15em;
+}
+
+/* Longest set card: large number, small link to show */
+.archive-insight-longest-set .archive-insight-longest-set-number {
+  font-size: 1.5rem;
+  line-height: 1.2;
+  margin-bottom: 0.25rem;
+}
+.archive-insight-longest-set .archive-insight-longest-set-number strong {
+  font-size: 2rem;
+  font-weight: 700;
+}
+.archive-insight-longest-set .archive-insight-longest-set-label {
+  font-weight: 500;
+  color: var(--wp--preset--color--contrast-2, #64748b);
+  margin-left: 0.2em;
+}
+.archive-insight-longest-set .archive-insight-longest-set-show-link {
+  font-size: 0.9rem;
+  margin-top: 0;
+}
+.archive-insight-longest-set .archive-insight-longest-set-show-link a {
+  text-decoration: none;
+}
+.archive-insight-longest-set .archive-insight-longest-set-show-link a:hover {
+  text-decoration: underline;
+}
+.archive-insight-longest-set .archive-insight-longest-set-show-link .archive-insight-date-range {
+  display: inline;
+  margin-left: 0.35em;
 }
 
 /* Column count and stacking are handled by show-stats-masonry.js (2 cols ≤900px, 3 cols >900px; half cards stay 2 per row on mobile) */

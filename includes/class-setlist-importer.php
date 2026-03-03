@@ -21,6 +21,26 @@ class Setlist_Importer {
 	const API_BASE_URL = 'https://api.setlist.fm/rest/1.0';
 
 	/**
+	 * Country codes for which the location taxonomy uses a state/province level (fallback when not set in CMS).
+	 * When location terms have "Country has states" and "Country code" set, jww_get_countries_with_state_level_codes() is used instead.
+	 *
+	 * @var array
+	 */
+	const COUNTRIES_WITH_STATE_LEVEL = array( 'US', 'CA', 'AU' );
+
+	/**
+	 * Get country codes that use state/province level (from CMS when set, else fallback constant).
+	 *
+	 * @return array Uppercase codes, e.g. array( 'US', 'CA', 'AU' ).
+	 */
+	private function get_countries_with_state_level_codes() {
+		if ( function_exists( 'jww_get_countries_with_state_level_codes' ) ) {
+			return jww_get_countries_with_state_level_codes();
+		}
+		return self::COUNTRIES_WITH_STATE_LEVEL;
+	}
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
@@ -404,15 +424,23 @@ class Setlist_Importer {
 		}
 
 		// Set show notes if provided
-		// On update/sync, merge new info with existing if both exist
+		// On update/sync, merge new info with existing if both exist and content actually differs
 		if ( ! empty( $api_data['info'] ) ) {
 			$existing_notes = get_field( 'show_notes', $show_id );
-			if ( $is_update && ! empty( $existing_notes ) && $existing_notes !== $api_data['info'] ) {
-				// Append new info if different
-				update_field( 'show_notes', $existing_notes . "\n\n[Updated from setlist.fm]\n" . $api_data['info'], $show_id );
-			} else {
-				update_field( 'show_notes', $api_data['info'], $show_id );
+			$new_info       = $api_data['info'];
+			$is_same        = $this->normalize_notes_for_compare( $existing_notes ) === $this->normalize_notes_for_compare( $new_info );
+			if ( $is_update && ! empty( $existing_notes ) && ! $is_same ) {
+				// Append new info only when it's actually different (avoids dupes from formatting/HTML)
+				update_field( 'show_notes', $existing_notes . "\n\n" . $new_info, $show_id );
+			} elseif ( ! $is_same ) {
+				update_field( 'show_notes', $new_info, $show_id );
 			}
+		}
+
+		// Set times (doors, start, end) if provided in data (setlist.fm API doesn't include these; JSON/other sources can)
+		$set_times = $this->parse_set_times_from_data( $api_data );
+		if ( ! empty( $set_times ) ) {
+			update_field( 'set_times', $set_times, $show_id );
 		}
 
 		// Clear statistics cache when show is created/updated
@@ -433,6 +461,117 @@ class Setlist_Importer {
 			'message'  => $is_update ? 'Show updated successfully' : 'Show imported successfully',
 			'updated'  => $is_update,
 		);
+	}
+
+	/**
+	 * Normalize show notes text for comparison (ignore HTML and whitespace differences)
+	 *
+	 * ACF show_notes is WYSIWYG so it may contain HTML; API info is plain text.
+	 *
+	 * @param string|null $text Raw notes (may be HTML or plain text)
+	 * @return string Trimmed, single-space-normalized plain text
+	 */
+	private function normalize_notes_for_compare( $text ) {
+		if ( $text === null || $text === '' ) {
+			return '';
+		}
+		$text = wp_strip_all_tags( (string) $text );
+		$text = preg_replace( '/\s+/', ' ', $text );
+		return trim( $text );
+	}
+
+	/**
+	 * Parse set times from API/import data into ACF format (H:i:s)
+	 *
+	 * Uses (in order): (1) structured set_times/doors_time/start_time/end_time in data,
+	 * (2) times parsed from the setlist.fm "info" field (e.g. "Doors: 7pm. Show: 8pm.").
+	 * The setlist.fm API docs do not list doors/start/end as separate fields; editors
+	 * often put times in the free-text info. If the API adds structured times later,
+	 * they will be picked up automatically.
+	 *
+	 * @param array $data Import data (e.g. API response or JSON)
+	 * @return array Keys doors_time, start_time, end_time (only non-empty, in H:i:s)
+	 */
+	private function parse_set_times_from_data( $data ) {
+		$set_times = array();
+		$keys      = array( 'doors_time', 'start_time', 'end_time' );
+
+		// 1) Structured keys: nested set_times or top-level doors_time/start_time/end_time
+		$source = isset( $data['set_times'] ) && is_array( $data['set_times'] ) ? $data['set_times'] : $data;
+		foreach ( $keys as $key ) {
+			$raw = isset( $source[ $key ] ) ? trim( (string) $source[ $key ] ) : '';
+			if ( $raw === '' ) {
+				continue;
+			}
+			$normalized = $this->normalize_time_to_his( $raw );
+			if ( $normalized !== '' ) {
+				$set_times[ $key ] = $normalized;
+			}
+		}
+
+		// 2) If no structured times, try to parse from setlist.fm "info" text
+		if ( empty( $set_times ) && ! empty( $data['info'] ) && is_string( $data['info'] ) ) {
+			$set_times = $this->parse_set_times_from_info_text( $data['info'] );
+		}
+
+		return $set_times;
+	}
+
+	/**
+	 * Parse doors/start/end times from setlist.fm "info" free text (e.g. "Doors: 7pm. Show: 8pm.")
+	 *
+	 * @param string $info Info field content
+	 * @return array Keys doors_time, start_time, end_time (only when matched, in H:i:s)
+	 */
+	private function parse_set_times_from_info_text( $info ) {
+		$set_times = array();
+		$info      = trim( (string) $info );
+		if ( $info === '' ) {
+			return $set_times;
+		}
+		// Match patterns like "Doors: 7pm", "Doors 7:00 PM", "doors 19:00", "Start: 8pm", "Show: 8:30pm", "End: 11pm"
+		$patterns = array(
+			'doors_time' => '/\bdoors?\s*:?\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?|\d{1,2}:\d{2})/i',
+			'start_time' => '/\b(?:start|show|curtain)\s*:?\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?|\d{1,2}:\d{2})/i',
+			'end_time'   => '/\bend\s*:?\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?|\d{1,2}:\d{2})/i',
+		);
+		foreach ( $patterns as $key => $regex ) {
+			if ( preg_match( $regex, $info, $m ) ) {
+				$t = $this->normalize_time_to_his( trim( $m[1] ) );
+				if ( $t !== '' ) {
+					$set_times[ $key ] = $t;
+				}
+			}
+		}
+		return $set_times;
+	}
+
+	/**
+	 * Convert a time string to H:i:s for ACF time_picker (return_format H:i:s)
+	 *
+	 * @param string $time Time in various formats (e.g. "19:00", "7:00 PM", "19:00:00")
+	 * @return string H:i:s or empty string if unparseable
+	 */
+	private function normalize_time_to_his( $time ) {
+		$time = trim( (string) $time );
+		if ( $time === '' ) {
+			return '';
+		}
+		// Already H:i or H:i:s
+		if ( preg_match( '/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/', $time, $m ) ) {
+			$h = (int) $m[1];
+			$i = (int) $m[2];
+			$s = isset( $m[3] ) ? (int) $m[3] : 0;
+			if ( $h >= 0 && $h <= 23 && $i >= 0 && $i <= 59 && $s >= 0 && $s <= 59 ) {
+				return sprintf( '%02d:%02d:%02d', $h, $i, $s );
+			}
+		}
+		// Try strtotime for "7:00 PM", "19:00", etc. (relative to a fixed date to avoid DST issues)
+		$ts = strtotime( '2000-01-01 ' . $time );
+		if ( $ts !== false ) {
+			return date( 'H:i:s', $ts );
+		}
+		return '';
 	}
 
 	/**
@@ -710,6 +849,8 @@ class Setlist_Importer {
 		$country_data = $city_data['country'] ?? array();
 		$country_name = $country_data['name'] ?? '';
 		$country_code = $country_data['code'] ?? '';
+		$state_name   = $city_data['state'] ?? '';
+		$state_code   = $city_data['stateCode'] ?? '';
 
 		// Create country term first (if provided)
 		$country_id = 0;
@@ -726,15 +867,40 @@ class Setlist_Importer {
 			}
 		}
 
-		// Create city term (if provided)
-		$city_id = $country_id;
-		if ( $city_name && $country_id ) {
-			$city_term = term_exists( $city_name, 'location', $country_id );
+		// For countries that use state/province level (from CMS or fallback list), use state when API provides it
+		$parent_for_city = $country_id;
+		$codes_with_state = $this->get_countries_with_state_level_codes();
+		$use_state_level = $country_id
+			&& in_array( strtoupper( (string) $country_code ), $codes_with_state, true )
+			&& ( $state_name !== '' || $state_code !== '' );
+
+		if ( $use_state_level ) {
+			$state_label = $state_name !== '' ? $state_name : $state_code;
+			$state_term  = term_exists( $state_label, 'location', $country_id );
+			if ( ! $state_term ) {
+				$state_term = wp_insert_term( $state_label, 'location', array( 'parent' => $country_id ) );
+				if ( is_wp_error( $state_term ) ) {
+					$parent_for_city = $country_id;
+				} else {
+					$parent_for_city = $state_term['term_id'];
+					update_term_meta( $parent_for_city, 'location_type', 'state_province' );
+					if ( function_exists( 'update_field' ) ) {
+						update_field( 'location_type', 'state_province', 'location_' . $parent_for_city );
+					}
+				}
+			} else {
+				$parent_for_city = is_array( $state_term ) ? $state_term['term_id'] : $state_term;
+			}
+		}
+
+		// Create city term (if provided); parent is state when available, else country
+		$city_id = $parent_for_city;
+		if ( $city_name && $parent_for_city ) {
+			$city_term = term_exists( $city_name, 'location', $parent_for_city );
 			if ( ! $city_term ) {
-				$city_term = wp_insert_term( $city_name, 'location', array( 'parent' => $country_id ) );
+				$city_term = wp_insert_term( $city_name, 'location', array( 'parent' => $parent_for_city ) );
 				if ( is_wp_error( $city_term ) ) {
-					// If city creation fails, use country as parent
-					$city_id = $country_id;
+					$city_id = $parent_for_city;
 				} else {
 					$city_id = $city_term['term_id'];
 				}

@@ -37,6 +37,12 @@ add_action( 'wp_enqueue_scripts', 'jww_ensure_interactivity_api', 1 );
  */
 function jww_enqueue() {
 
+	// Enqueue Navigation block view script module on every front-end page so the mobile menu toggle works
+	// regardless of whether the header was rendered via block template (page/home) or header.php (archive/single).
+	if ( ! is_admin() && function_exists( 'wp_enqueue_script_module' ) ) {
+		wp_enqueue_script_module( '@wordpress/block-library/navigation/view' );
+	}
+
 	// Get parent theme stylesheet
 	$parent_style = 'twentytwentyfive-style';
 	

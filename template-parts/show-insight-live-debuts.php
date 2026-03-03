@@ -14,6 +14,9 @@ $show_id = get_the_ID();
 if ( ! $show_id || get_post_type() !== 'show' ) {
 	return;
 }
+if ( is_singular( 'show' ) ) {
+	$show_id = get_queried_object_id();
+}
 
 if ( ! function_exists( 'jww_get_show_setlist_highlights_debuts' ) ) {
 	return;

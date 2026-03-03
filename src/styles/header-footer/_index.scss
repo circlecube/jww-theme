@@ -1,12 +1,21 @@
 /* Header Template Specific Styles */
-header .wp-block-site-title a[rel="home"] {
+/* Large site title: fluid size with clamp so it doesn’t get too large on desktop */
+header .header-content-inner-container a[rel="home"],
+.header-container .header-large-text {
   color: var(--wp--preset--color--base);
+  font-size: clamp(1.25rem, 7vw, 3.25rem);
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  text-decoration: none;
+  text-transform: capitalize;
 }
 
 .header-container {
   border-bottom-color: var(--wp--preset--color--accent-2);
   border-bottom-width: 2px;
   background-color: var(--wp--preset--color--contrast);
+  position: relative;
+  z-index: 1000;
 }
 
 .header-content-inner-container {
@@ -19,12 +28,67 @@ header .wp-block-site-title a[rel="home"] {
   padding-left: 0;
 }
 
-.header-normal-text,
-.header-large-text {
-  color: var(--wp--preset--color--base);
-  font-weight: 700;
-  letter-spacing: -0.5px;
-  text-transform: capitalize;
+/* Mobile nav overlay: ensure it appears above page content and has a background */
+.header-container .wp-block-navigation__responsive-container {
+  position: relative;
+  z-index: 1000;
+}
+
+/* Override block's overlayBackgroundColor (base) so overlay is solid and on top */
+.header-container .wp-block-navigation__responsive-container.is-menu-open,
+.header-container .wp-block-navigation__responsive-container.is-menu-open.has-base-background-color {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 100000 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  background-color: var(--wp--preset--color--contrast, #1e293b) !important;
+  overflow: auto;
+  padding: 0 !important;
+}
+
+/* Ensure overlay content wrapper also fills viewport and blocks page content behind */
+.header-container .wp-block-navigation__responsive-container.is-menu-open .wp-block-navigation__responsive-container-content {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  background-color: var(--wp--preset--color--contrast, #1e293b) !important;
+  overflow: auto;
+}
+
+.wp-block-navigation__responsive-container-close {
+  right: 2rem !important;
+  top: 3rem !important;
+  color: var(--wp--preset--color--base, #fff) !important;
+  font-size: 2rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.header-container .wp-block-navigation__responsive-container.is-menu-open .wp-block-navigation__container {
+  padding: var(--wp--preset--spacing--50, 2rem);
+  margin-right: 3rem;
+}
+
+/* Overlay link/label color: light text on dark overlay (override block's overlayTextColor) */
+.header-container .wp-block-navigation__responsive-container.is-menu-open a,
+.header-container .wp-block-navigation__responsive-container.is-menu-open .wp-block-navigation-item__label {
+  color: var(--wp--preset--color--base, #fff) !important;
+}
+
+.header-container .wp-block-navigation__responsive-container.is-menu-open a:hover {
+  color: var(--wp--preset--color--accent-4, #94a3b8) !important;
 }
 
 /* Footer Styles */
@@ -32,6 +96,7 @@ header .wp-block-site-title a[rel="home"] {
   .social-links-official {
     padding-right: 1rem;
   }
+
   .social-links-unofficial {
     padding-left: 1rem;
   }
@@ -74,4 +139,16 @@ header .wp-block-site-title a[rel="home"] {
 
 .wp-block-comments {
   margin: var(--wp--preset--spacing--70) 0;
+}
+
+
+/* Mobile tweaks */
+@media (max-width: 600px) {
+  .footer-links-container {
+
+    .social-links-official,
+    .social-links-unofficial {
+      width: 100%;
+    }
+  }
 }

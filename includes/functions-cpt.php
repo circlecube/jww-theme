@@ -315,6 +315,47 @@ function jww_include_scheduled_shows_in_archives( $query ) {
 add_action( 'pre_get_posts', 'jww_include_scheduled_shows_in_archives' );
 
 /**
+ * Allow scheduled show posts to be viewed on the frontend (single show only).
+ *
+ * Show date is the post date; if a show exists in the system with a future date,
+ * we still want the single show page to be publicly viewable. This only affects
+ * the show post type; other post types remain default (scheduled = not public).
+ */
+function jww_allow_public_view_scheduled_shows( $query ) {
+	if ( is_admin() || ! $query->is_main_query() ) {
+		return;
+	}
+
+	$post_type = $query->get( 'post_type' );
+	$name      = $query->get( 'name' );
+	$p         = $query->get( 'p' );
+	$show_slug = $query->get( 'show' );
+
+	// Single show request: by slug (name or show query var) or by ID (p)
+	if ( ! $name && ! $p && ! $show_slug ) {
+		return;
+	}
+	if ( $post_type !== 'show' ) {
+		if ( $show_slug ) {
+			$query->set( 'post_type', 'show' );
+		} else {
+			return;
+		}
+	}
+
+	$current_status = $query->get( 'post_status' );
+	if ( empty( $current_status ) ) {
+		$query->set( 'post_status', array( 'publish', 'future' ) );
+	} elseif ( $current_status === 'publish' ) {
+		$query->set( 'post_status', array( 'publish', 'future' ) );
+	} elseif ( is_array( $current_status ) && ! in_array( 'future', $current_status, true ) ) {
+		$current_status[] = 'future';
+		$query->set( 'post_status', $current_status );
+	}
+}
+add_action( 'pre_get_posts', 'jww_allow_public_view_scheduled_shows', 5 );
+
+/**
  * Ensure /songs/ archive works with query parameters (display, sort, etc.)
  */
 function jww_fix_song_archive_request( $query_vars ) {

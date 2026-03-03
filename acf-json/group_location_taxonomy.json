@@ -3,6 +3,91 @@
     "title": "Location Taxonomy Fields",
     "fields": [
         {
+            "key": "field_location_type",
+            "label": "Location type",
+            "name": "location_type",
+            "aria-label": "",
+            "type": "select",
+            "instructions": "Explicit type for this term. Used to distinguish states from cities and to drive filters.",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "choices": {
+                "": "— Infer from hierarchy —",
+                "country": "Country",
+                "state_province": "State / Province",
+                "city": "City",
+                "venue": "Venue"
+            },
+            "default_value": "",
+            "return_format": "value",
+            "multiple": 0,
+            "allow_null": 1,
+            "ui": 1,
+            "ajax": 0,
+            "placeholder": ""
+        },
+        {
+            "key": "field_country_has_states",
+            "label": "Country has states/provinces",
+            "name": "country_has_states",
+            "aria-label": "",
+            "type": "true_false",
+            "instructions": "Enable if this country uses a state/province level (e.g. US, Canada, Australia). Affects archive filter and setlist importer.",
+            "required": 0,
+            "conditional_logic": [
+                [
+                    {
+                        "field": "field_location_type",
+                        "operator": "==",
+                        "value": "country"
+                    }
+                ]
+            ],
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "message": "",
+            "default_value": 0,
+            "ui": 1,
+            "ui_on_text": "Yes",
+            "ui_off_text": "No"
+        },
+        {
+            "key": "field_country_code",
+            "label": "Country code",
+            "name": "country_code",
+            "aria-label": "",
+            "type": "text",
+            "instructions": "ISO-style code (e.g. US, CA, AU) for setlist.fm API matching. Only used when \"Country has states\" is Yes.",
+            "required": 0,
+            "conditional_logic": [
+                [
+                    {
+                        "field": "field_location_type",
+                        "operator": "==",
+                        "value": "country"
+                    }
+                ]
+            ],
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "maxlength": "",
+            "placeholder": "e.g. US",
+            "prepend": "",
+            "append": ""
+        },
+        {
             "key": "field_location_address",
             "label": "Address",
             "name": "address",
@@ -67,5 +152,5 @@
     "description": "",
     "show_in_rest": 0,
     "display_title": "",
-    "modified": 1738022400
+    "modified": 1738195200
 }

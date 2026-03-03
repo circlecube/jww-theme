@@ -39,14 +39,14 @@ if ( empty( $performances ) ) {
 if ( $display_mode === 'table' ) {
 	if ( function_exists( 'jww_render_play_history_table_card' ) ) {
 		jww_render_play_history_table_card( $performances, array(
-			'title'        => __( 'Play history', 'jww-theme' ),
+			'title'        => __( 'Song Performances', 'jww-theme' ),
 			'default_open' => true,
 		) );
 	}
 } else {
 	// List (same structure as old Recent Shows)
 	echo '<div class="stat-item stat-recent-shows">';
-	echo '<div class="stat-label">' . esc_html__( 'Play History', 'jww-theme' ) . '</div>';
+	echo '<div class="stat-label">' . esc_html__( 'Song Performances', 'jww-theme' ) . '</div>';
 	echo '<div class="recent-shows-card">';
 	echo '<ul class="recent-shows-list">';
 	foreach ( $performances as $p ) {

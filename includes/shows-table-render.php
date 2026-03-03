@@ -242,7 +242,7 @@ function jww_render_play_history_table_card( array $performances, array $args = 
 	}
 
 	$args = wp_parse_args( $args, array(
-		'title'        => __( 'Play history', 'jww-theme' ),
+		'title'        => __( 'Song Performances', 'jww-theme' ),
 		'default_open' => true,
 	) );
 

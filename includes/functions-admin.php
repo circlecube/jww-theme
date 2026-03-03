@@ -368,3 +368,39 @@ function jww_show_orderby_song_count( $query ) {
 	$query->set( 'orderby', 'meta_value_num' );
 }
 add_action( 'pre_get_posts', 'jww_show_orderby_song_count' );
+
+/**
+ * Add Location type column to the Location taxonomy term list (edit-tags.php?taxonomy=location).
+ */
+function jww_add_location_taxonomy_columns( $columns ) {
+	$new_columns = array();
+	foreach ( $columns as $key => $value ) {
+		$new_columns[ $key ] = $value;
+		if ( $key === 'name' ) {
+			$new_columns['location_type'] = _x( 'Location type', 'Taxonomy column header', 'jww-theme' );
+		}
+	}
+	return $new_columns;
+}
+add_filter( 'manage_edit-location_columns', 'jww_add_location_taxonomy_columns' );
+
+/**
+ * Populate Location type column in the Location term list.
+ */
+function jww_location_taxonomy_column_content( $content, $column_name, $term_id ) {
+	if ( $column_name !== 'location_type' ) {
+		return $content;
+	}
+	$type = function_exists( 'jww_get_location_type' ) ? jww_get_location_type( $term_id ) : get_term_meta( $term_id, 'location_type', true );
+	$labels = array(
+		'country'        => _x( 'Country', 'Location type', 'jww-theme' ),
+		'state_province' => _x( 'State / Province', 'Location type', 'jww-theme' ),
+		'city'           => _x( 'City', 'Location type', 'jww-theme' ),
+		'venue'          => _x( 'Venue', 'Location type', 'jww-theme' ),
+	);
+	if ( isset( $labels[ $type ] ) ) {
+		return esc_html( $labels[ $type ] );
+	}
+	return '<span class="description">—</span>';
+}
+add_filter( 'manage_location_custom_column', 'jww_location_taxonomy_column_content', 10, 3 );

@@ -200,25 +200,23 @@ get_header();
 	</div>
 </div>
 
-<?php
-	$annotations = get_field( 'lyric_annotations' ); // ACF field name
-	if ( $annotations ): ?>
-		<!-- Annotations Section -->
-		<div class="wp-block-group is-style-default has-base-background-color has-background is-layout-constrained has-global-padding" style="margin-top:0;margin-bottom:0">
-			<div class="wp-block-post-content">
-			<h3 class="wp-block-heading">Annotations and Notes on Lyrics</h3>
-			
-			
-				<div class="annotations-content has-medium-font-size">
-					<?php echo wp_kses_post( $annotations ); ?>
-				</div>
-				
+<!-- Annotations Section -->
+<div class="wp-block-group is-style-default has-base-background-color has-background is-layout-constrained has-global-padding" style="margin-top:0;margin-bottom:0">
+	<div class="wp-block-post-content alignwide">
+		<h3 class="wp-block-heading">Annotations and Notes on Lyrics</h3>
+		<?php $annotations = get_field( 'lyric_annotations' ); ?>
+		<?php if ( $annotations ) { ?>
+			<div class="annotations-content has-medium-font-size">
+				<?php echo wp_kses_post( $annotations ); ?>
 			</div>
-		</div>
-	<?php else: ?>
-		<p>Sorry, no lyrics annotations or notes yet. Have some to suggest? Let us know in the comments!</p>
-	<?php endif; ?>
-
+		<?php } else { ?>
+			<div class="annotations-content annotations-no-content has-medium-font-size">
+				<p>Sorry, no lyrics annotations or notes yet.</p>
+				<p>Have some to suggest? Let us know in the comments!</p>
+			</div>
+		<?php } ?>
+	</div>
+</div>
 <!-- Appears on Section -->
 <div class="wp-block-group is-style-default has-base-background-color has-background is-layout-constrained has-global-padding" style="margin-top:0;margin-bottom:0">
 
@@ -292,8 +290,8 @@ get_header();
 <div class="nav-link-container wp-block-group alignwide">
 		<?php
 		the_post_navigation(array(
-			'prev_text' => '<span class="nav-subtitle">' . esc_html__('Previous:', 'jww-theme') . '</span> <span class="nav-title">%title</span>',
-			'next_text' => '<span class="nav-subtitle">' . esc_html__('Next:', 'jww-theme') . '</span> <span class="nav-title">%title</span>',
+			'prev_text' => '<span class="nav-subtitle">' . esc_html__('Previous Song:', 'jww-theme') . '</span> <span class="nav-title">%title</span>',
+			'next_text' => '<span class="nav-subtitle">' . esc_html__('Next Song:', 'jww-theme') . '</span> <span class="nav-title">%title</span>',
 		));
 		?>
 	</nav>

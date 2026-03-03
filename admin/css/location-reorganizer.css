@@ -1,0 +1,26 @@
+/* Organize Locations admin page */
+.jww-location-reorganizer .jww-reorganizer-select-country {
+	margin: 1em 0 2em;
+}
+.jww-location-reorganizer .jww-reorganizer-select-country label {
+	margin-right: 0.5em;
+}
+.jww-location-reorganizer .jww-reorganizer-select-country select {
+	min-width: 200px;
+	margin-right: 0.5em;
+}
+.jww-location-reorganizer .jww-reorganizer-section {
+	margin-top: 2em;
+}
+.jww-location-reorganizer .jww-reorganizer-section h3 {
+	margin-top: 0;
+}
+.jww-location-reorganizer .jww-reorganizer-section .description {
+	margin-bottom: 0.75em;
+}
+.jww-location-reorganizer .submit .description {
+	margin-left: 0.5em;
+}
+.jww-location-reorganizer .submit select {
+	margin-right: 0.5em;
+}

@@ -60,7 +60,7 @@ $align_classes = ( $display === 'grid' || $display === 'live-stats' ) ? 'alignfu
 ?>
 
 <main class="wp-block-group songs-template song-archive">
-	<div class="wp-block-group is-layout-flow wp-block-group-is-layout-flow is-layout-constrained" style="padding-top:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--50);">
+	<div class="wp-block-group is-layout-flow wp-block-group-is-layout-flow is-layout-constrained" style="padding:var(--wp--preset--spacing--50);">
 		<h1 class="wp-block-post-title alignwide has-xxx-large-font-size"><?php esc_html_e( 'Songs', 'jww-theme' ); ?></h1>
 
 		<?php get_template_part( 'template-parts/song-archive-filters' ); ?>

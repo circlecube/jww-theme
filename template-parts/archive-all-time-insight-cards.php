@@ -62,6 +62,32 @@ foreach ( $simple_cards as $card ) :
 	<?php
 endforeach;
 
+// --- Longest set (songs in longest setlist + link to that show) ---
+$longest_set = get_query_var( 'archive_all_time_longest_set', null );
+if ( $longest_set && ! empty( $longest_set['show_id'] ) && (int) $longest_set['song_count'] > 0 ) :
+	?>
+	<div class="<?php echo esc_attr( $card_class ); ?> archive-insight-longest-set" id="archive-all-time-longest-set" aria-labelledby="archive-all-time-longest-set-heading">
+		<div class="show-setlist-data-card-header-wrapper">
+			<h2 id="archive-all-time-longest-set-heading" class="wp-block-heading show-tour-stats-heading"><?php esc_html_e( 'Longest set', 'jww-theme' ); ?></h2>
+			<span class="show-setlist-data-card-info" title="<?php esc_attr_e( 'The show with the most songs in its setlist.', 'jww-theme' ); ?>">
+				<span class="dashicons dashicons-playlist-audio" aria-hidden="true"></span>
+			</span>
+		</div>
+		<p class="show-tour-stats-meta tour-overview-value tour-insight-stat-value archive-insight-longest-set-number">
+			<strong><?php echo (int) $longest_set['song_count']; ?></strong>
+			<span class="archive-insight-longest-set-label"><?php esc_html_e( 'songs', 'jww-theme' ); ?></span>
+		</p>
+		<?php if ( ! empty( $longest_set['show_link'] ) ) : ?>
+			<p class="show-tour-stats-meta archive-insight-longest-set-show-link">
+				<a href="<?php echo esc_url( $longest_set['show_link'] ); ?>"><?php echo esc_html( ! empty( $longest_set['show_title'] ) ? $longest_set['show_title'] : ( ! empty( $longest_set['show_date'] ) ? $longest_set['show_date'] : __( 'View show', 'jww-theme' ) ) ); ?></a>
+				<?php if ( ! empty( $longest_set['show_date'] ) && ! empty( $longest_set['show_title'] ) ) : ?>
+				<?php endif; ?>
+			</p>
+		<?php endif; ?>
+	</div>
+	<?php
+endif;
+
 // --- Popular Openers (top 3 in <ol>) ---
 $openers = get_query_var( 'archive_all_time_openers', array() );
 if ( ! empty( $openers ) ) :
@@ -120,6 +146,35 @@ if ( ! empty( $closers ) ) :
 	<?php
 endif;
 
+// --- Most played songs (top 5 by performance count) ---
+$most_played = get_query_var( 'archive_all_time_most_played_songs', array() );
+if ( ! empty( $most_played ) ) :
+	?>
+	<div class="<?php echo esc_attr( $card_class_full ); ?>" id="archive-all-time-most-played" aria-labelledby="archive-all-time-most-played-heading">
+		<div class="show-setlist-data-card-header-wrapper">
+			<h2 id="archive-all-time-most-played-heading" class="wp-block-heading show-tour-stats-heading"><?php esc_html_e( 'Most played songs', 'jww-theme' ); ?></h2>
+			<span class="show-setlist-data-card-info" title="<?php esc_attr_e( 'Top 5 songs by number of times performed (all time).', 'jww-theme' ); ?>">
+				<span class="dashicons dashicons-playlist-audio" aria-hidden="true"></span>
+			</span>
+		</div>
+		<ol class="show-tour-stats-meta tour-overview-value tour-insight-stat-value archive-insight-ranked-list">
+			<?php foreach ( $most_played as $item ) : ?>
+				<li>
+					<?php if ( ! empty( $item['link'] ) ) : ?>
+						<a href="<?php echo esc_url( $item['link'] ); ?>"><?php echo esc_html( $item['title'] ); ?></a>
+					<?php else : ?>
+						<?php echo esc_html( $item['title'] ); ?>
+					<?php endif; ?>
+					<?php if ( ! empty( $item['count'] ) ) : ?>
+						<span class="archive-insight-count">(<?php echo (int) $item['count']; ?>×)</span>
+					<?php endif; ?>
+				</li>
+			<?php endforeach; ?>
+		</ol>
+	</div>
+	<?php
+endif;
+
 // --- Latest debut ---
 $latest_debut = get_query_var( 'archive_all_time_latest_debut', null );
 if ( $latest_debut && ! empty( $latest_debut['song_title'] ) ) :
@@ -160,7 +215,9 @@ endif;
 </div>
 
 <?php
-// --- One-off, Standout, Release representation (full-width list cards) ---
+// --- One-off, Standout, Release representation, Tours list, Festivals list (full-width list cards) ---
 get_template_part( 'template-parts/archive-all-time-one-offs' );
 get_template_part( 'template-parts/archive-all-time-standout' );
 get_template_part( 'template-parts/archive-all-time-release-representation' );
+get_template_part( 'template-parts/archive-insight-tours-list' );
+get_template_part( 'template-parts/archive-insight-festivals-list' );

@@ -9,6 +9,7 @@ get_header();
 $filter_tour = isset( $_GET['tour'] ) ? intval( $_GET['tour'] ) : 0;
 $filter_location = isset( $_GET['location'] ) ? intval( $_GET['location'] ) : 0; // This is the venue (final selection)
 $filter_location_country = isset( $_GET['location_country'] ) ? intval( $_GET['location_country'] ) : 0;
+$filter_location_state = isset( $_GET['location_state'] ) ? intval( $_GET['location_state'] ) : 0;
 $filter_location_city = isset( $_GET['location_city'] ) ? intval( $_GET['location_city'] ) : 0;
 $filter_type = isset( $_GET['type'] ) ? sanitize_text_field( $_GET['type'] ) : 'all'; // all, upcoming, past
 
@@ -47,8 +48,8 @@ if ( $filter_tour ) {
 	);
 }
 
-// Filter by location (venue, city, or country)
-// Priority: venue > city > country
+// Filter by location (venue, city, state, or country)
+// Priority: venue > city > state > country
 if ( $filter_location ) {
 	// Filter by specific venue
 	$args['tax_query'][] = array(
@@ -64,13 +65,21 @@ if ( $filter_location ) {
 		'terms'    => $filter_location_city,
 		'include_children' => true, // Include all venues under this city
 	);
+} elseif ( $filter_location_state ) {
+	// Filter by state (includes all cities and venues in that state)
+	$args['tax_query'][] = array(
+		'taxonomy' => 'location',
+		'field'    => 'term_id',
+		'terms'    => $filter_location_state,
+		'include_children' => true, // Include all cities and venues under this state
+	);
 } elseif ( $filter_location_country ) {
-	// Filter by country (includes all cities and venues in that country)
+	// Filter by country (includes all states, cities and venues in that country)
 	$args['tax_query'][] = array(
 		'taxonomy' => 'location',
 		'field'    => 'term_id',
 		'terms'    => $filter_location_country,
-		'include_children' => true, // Include all cities and venues under this country
+		'include_children' => true, // Include all states, cities and venues under this country
 	);
 }
 
@@ -133,49 +142,99 @@ if ( $all_locations === false ) {
 	set_transient( $cache_key_locations, $all_locations, 6 * HOUR_IN_SECONDS );
 }
 
-// Organize locations by hierarchy level (Country > City > Venue)
+// Organize locations by hierarchy depth: 0 = country, 1 = state, 2 = city, 3 = venue
 $countries = array();
+$states = array();
 $cities = array();
 $venues = array();
 
+$parent_map = array();
+foreach ( $all_locations as $loc ) {
+	$parent_map[ $loc->term_id ] = (int) $loc->parent;
+}
 foreach ( $all_locations as $location ) {
-	if ( ! $location->parent ) {
-		// Top level = Country
+	$depth = 0;
+	$tid = $location->term_id;
+	while ( isset( $parent_map[ $tid ] ) && $parent_map[ $tid ] ) {
+		$depth++;
+		$tid = $parent_map[ $tid ];
+	}
+	if ( $depth === 0 ) {
 		$countries[] = $location;
+	} elseif ( $depth === 1 ) {
+		$states[] = $location;
+	} elseif ( $depth === 2 ) {
+		$cities[] = $location;
 	} else {
-		$parent = get_term( $location->parent, 'location' );
-		if ( $parent && ! $parent->parent ) {
-			// Second level = City
-			$cities[] = $location;
-		} else {
-			// Third level = Venue
-			$venues[] = $location;
-		}
+		$venues[] = $location;
 	}
 }
 
-// Get selected location and determine which country/city/venue is selected
+// Get selected location and determine which country/state/city/venue is selected
 $selected_country = $filter_location_country;
-$selected_city = $filter_location_city;
-$selected_venue = $filter_location;
+$selected_state   = $filter_location_state;
+$selected_city    = $filter_location_city;
+$selected_venue   = $filter_location;
 
-// If a venue is selected, determine its parent city and country
-if ( $selected_venue && ! $selected_city ) {
+// If a venue is selected, walk up to set city, state, and country
+if ( $selected_venue && ( ! $selected_city || ! $selected_country ) ) {
 	$venue_term = get_term( $selected_venue, 'location' );
 	if ( $venue_term && ! is_wp_error( $venue_term ) && $venue_term->parent ) {
-		$selected_city = $venue_term->parent;
+		$selected_city = (int) $venue_term->parent;
 		$city_term = get_term( $selected_city, 'location' );
 		if ( $city_term && ! is_wp_error( $city_term ) && $city_term->parent ) {
-			$selected_country = $city_term->parent;
+			$parent_id = (int) $city_term->parent;
+			$parent_term = get_term( $parent_id, 'location' );
+			if ( $parent_term && ! is_wp_error( $parent_term ) ) {
+				if ( $parent_term->parent ) {
+					// 4-level: parent of city is state
+					$selected_state = $parent_id;
+					$selected_country = (int) $parent_term->parent;
+				} else {
+					// 3-level: parent of city is country
+					$selected_country = $parent_id;
+				}
+			}
 		}
 	}
 }
 
-// Filter cities by selected country
+// If a city is selected but state/country not set, walk up
+if ( $selected_city && ( ! $selected_state || ! $selected_country ) ) {
+	$city_term = get_term( $selected_city, 'location' );
+	if ( $city_term && ! is_wp_error( $city_term ) && $city_term->parent ) {
+		$parent_id = (int) $city_term->parent;
+		$parent_term = get_term( $parent_id, 'location' );
+		if ( $parent_term && ! is_wp_error( $parent_term ) ) {
+			if ( $parent_term->parent ) {
+				$selected_state = $parent_id;
+				$selected_country = (int) $parent_term->parent;
+			} else {
+				$selected_country = $parent_id;
+			}
+		}
+	}
+}
+
+// If a state is selected but country not set
+if ( $selected_state && ! $selected_country ) {
+	$state_term = get_term( $selected_state, 'location' );
+	if ( $state_term && ! is_wp_error( $state_term ) && $state_term->parent ) {
+		$selected_country = (int) $state_term->parent;
+	}
+}
+
+// Filter cities: by state when state selected, else by country
 $filtered_cities = array();
-if ( $selected_country ) {
+if ( $selected_state ) {
 	foreach ( $cities as $city ) {
-		if ( $city->parent == $selected_country ) {
+		if ( (int) $city->parent === $selected_state ) {
+			$filtered_cities[] = $city;
+		}
+	}
+} elseif ( $selected_country ) {
+	foreach ( $cities as $city ) {
+		if ( (int) $city->parent === $selected_country ) {
 			$filtered_cities[] = $city;
 		}
 	}
@@ -187,12 +246,38 @@ if ( $selected_country ) {
 $filtered_venues = array();
 if ( $selected_city ) {
 	foreach ( $venues as $venue ) {
-		if ( $venue->parent == $selected_city ) {
+		if ( (int) $venue->parent === $selected_city ) {
 			$filtered_venues[] = $venue;
 		}
 	}
 } else {
 	$filtered_venues = $venues;
+}
+
+// Does the selected country have state-level children or use state level? (show state dropdown)
+$selected_country_has_states = false;
+if ( $selected_country ) {
+	if ( function_exists( 'jww_country_has_states' ) && jww_country_has_states( $selected_country ) ) {
+		$selected_country_has_states = true;
+	}
+	if ( ! $selected_country_has_states ) {
+		foreach ( $states as $state ) {
+			if ( (int) $state->parent === $selected_country ) {
+				$selected_country_has_states = true;
+				break;
+			}
+		}
+	}
+}
+$filtered_states = array();
+if ( $selected_country ) {
+	foreach ( $states as $state ) {
+		if ( (int) $state->parent === $selected_country ) {
+			$filtered_states[] = $state;
+		}
+	}
+} else {
+	$filtered_states = $states;
 }
 
 // Calculate statistics
@@ -217,6 +302,9 @@ if ( ! $is_taxonomy_archive && function_exists( 'jww_get_all_time_opener_closer'
 	set_query_var( 'archive_all_time_openers', $oc['openers'] ?? array() );
 	set_query_var( 'archive_all_time_closers', $oc['closers'] ?? array() );
 }
+if ( ! $is_taxonomy_archive && function_exists( 'jww_get_all_time_most_played_songs' ) ) {
+	set_query_var( 'archive_all_time_most_played_songs', jww_get_all_time_most_played_songs( 5, true ) );
+}
 if ( ! $is_taxonomy_archive && function_exists( 'jww_get_all_time_latest_debut' ) ) {
 	set_query_var( 'archive_all_time_latest_debut', jww_get_all_time_latest_debut( true ) );
 }
@@ -226,8 +314,17 @@ if ( ! $is_taxonomy_archive && function_exists( 'jww_get_all_time_one_offs' ) ) 
 if ( ! $is_taxonomy_archive && function_exists( 'jww_get_all_time_standout_songs' ) ) {
 	set_query_var( 'archive_all_time_standout_songs', jww_get_all_time_standout_songs( true ) );
 }
+if ( ! $is_taxonomy_archive && function_exists( 'jww_get_all_time_tours_list' ) ) {
+	set_query_var( 'archive_all_time_tours_list', jww_get_all_time_tours_list( true ) );
+}
+if ( ! $is_taxonomy_archive && function_exists( 'jww_get_all_time_festivals_list' ) ) {
+	set_query_var( 'archive_all_time_festivals_list', jww_get_all_time_festivals_list( true ) );
+}
+if ( ! $is_taxonomy_archive && function_exists( 'jww_get_all_time_longest_set' ) ) {
+	set_query_var( 'archive_all_time_longest_set', jww_get_all_time_longest_set( true ) );
+}
 
-// Query vars for overview cards (used when taxonomy archive uses show-stats-overview-cards; main archive uses all-time cards)
+// Query vars for overview cards
 set_query_var( 'show_stats_total', $total_shows );
 set_query_var( 'show_stats_upcoming', $upcoming_count );
 set_query_var( 'show_stats_past', $past_count );
@@ -296,8 +393,20 @@ set_query_var( 'show_stats_past', $past_count );
 								<?php endforeach; ?>
 							</select>
 							
-							<!-- City Select (shown when country is selected) -->
-							<select name="location_city" id="filter-location-city" class="location-select" data-level="city" data-parent="country" <?php echo $selected_country ? '' : 'style="display:none;"'; ?>>
+							<?php if ( ! empty( $states ) ) : ?>
+							<!-- State Select (shown when country has state-level terms) -->
+							<select name="location_state" id="filter-location-state" class="location-select" data-level="state" data-parent="country" <?php echo ( $selected_country && $selected_country_has_states ) ? '' : 'style="display:none;"'; ?>>
+								<option value=""><?php esc_html_e( 'All States/Provinces', 'jww-theme' ); ?></option>
+								<?php foreach ( $states as $state ) : ?>
+									<option value="<?php echo esc_attr( $state->term_id ); ?>" data-parent-id="<?php echo esc_attr( $state->parent ); ?>" <?php selected( $selected_state, $state->term_id ); ?>>
+										<?php echo esc_html( $state->name ); ?>
+									</option>
+								<?php endforeach; ?>
+							</select>
+							<?php endif; ?>
+							
+							<!-- City Select (shown when country is selected; when country has states, after state is selected) -->
+							<select name="location_city" id="filter-location-city" class="location-select" data-level="city" data-parent="<?php echo $selected_country_has_states ? 'state' : 'country'; ?>" <?php echo ( $selected_country && ( ! $selected_country_has_states || $selected_state ) ) ? '' : 'style="display:none;"'; ?>>
 								<option value="">All Cities</option>
 								<?php foreach ( $cities as $city ): ?>
 									<option value="<?php echo esc_attr( $city->term_id ); ?>" data-parent-id="<?php echo esc_attr( $city->parent ); ?>" <?php selected( $selected_city, $city->term_id ); ?>>
@@ -319,8 +428,8 @@ set_query_var( 'show_stats_past', $past_count );
 					</div>
 				<?php endif; ?>
 				<button type="submit" class="filter-submit wp-block-button__link wp-element-button">Filter</button>
-				<?php if ( $filter_tour || $filter_location || $filter_location_country || $filter_location_city || $filter_type !== 'all' ): ?>
-					<a href="<?php echo esc_url( get_post_type_archive_link( 'show' ) ); ?>" class="wp-block-button__link wp-element-button">Clear Filters</a>
+				<?php if ( $filter_tour || $filter_location || $filter_location_country || $filter_location_state || $filter_location_city || $filter_type !== 'all' ): ?>
+					<a href="<?php echo esc_url( get_post_type_archive_link( 'show' ) ); ?>" class="filter-clear wp-block-button__link wp-element-button">Clear Filters</a>
 				<?php endif; ?>
 			</form>
 			</div>
@@ -376,7 +485,7 @@ set_query_var( 'show_stats_past', $past_count );
 				<div class="wp-block-group alignwide shows-table-card" style="margin-top:var(--wp--preset--spacing--50);margin-bottom:var(--wp--preset--spacing--50);">
 					<details class="shows-accordion" id="archive-song-live-stats-accordion"<?php echo $song_live_open ? ' open' : ''; ?> aria-labelledby="archive-song-live-stats-heading">
 						<summary class="shows-accordion-summary">
-							<h2 id="archive-song-live-stats-heading" class="wp-block-heading show-setlist-data-heading" style="margin:0;display:inline;"><?php esc_html_e( 'Song live stats', 'jww-theme' ); ?></h2>
+							<h2 id="archive-song-live-stats-heading" class="wp-block-heading show-setlist-data-heading"><?php esc_html_e( 'Song Performances', 'jww-theme' ); ?></h2>
 							<span class="shows-accordion-count"><?php echo esc_html( '(' . $song_stats_count . ')' ); ?></span>
 						</summary>
 						<div class="shows-table-wrapper">

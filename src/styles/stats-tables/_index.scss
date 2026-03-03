@@ -865,13 +865,19 @@ th {
   justify-content: space-between;
 }
 
-.filter-form .filter-submit {
+.filter-form .filter-submit,
+.filter-form .filter-clear {
   border-radius: 4px;
   transition: background-color 0.2s;
   padding: 0.5rem 1.25rem;
   margin-top: 1.5rem;
   background-color: var(--wp--preset--color--accent-5);
   color: var(--wp--preset--color--contrast);
+}
+
+.filter-form .filter-clear {
+  background-color: var(--wp--preset--color--accent-3);
+  color: var(--wp--preset--color--base);
 }
 
 .filter-form .filter-group {

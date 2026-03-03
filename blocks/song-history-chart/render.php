@@ -95,7 +95,7 @@ $song_title = get_the_title( $song_id );
 $wrapper_class = 'song-history-chart-block chart-type-' . esc_attr( $chart_type );
 
 echo '<div class="' . esc_attr( $wrapper_class ) . '">';
-echo '<h2 class="wp-block-heading">Play History: ' . esc_html( $song_title ) . '</h2>';
+echo '<h2 class="wp-block-heading">Song Performances ' . esc_html( $song_title ) . '</h2>';
 
 if ( $chart_type === 'timeline' ) {
 	// Timeline view
