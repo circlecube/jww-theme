@@ -1036,6 +1036,8 @@ class Show_Importer {
 			wp_send_json_error( array( 'message' => $result->get_error_message(), 'code' => $result->get_error_code() ) );
 		}
 		$result['resync_nonce'] = wp_create_nonce( 'sync_setlist_' . $show_id );
+		$result['setlist_fm_url'] = get_field( 'setlist_fm_url', $show_id );
+		$result['show_permalink'] = get_permalink( $show_id );
 		wp_send_json_success( $result );
 	}
 	

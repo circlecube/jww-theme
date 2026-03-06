@@ -1,0 +1,134 @@
+/* Chord Library admin page */
+.jww-chord-library-wrap {
+	margin-top: 1em;
+}
+
+.jww-chord-library-summary {
+	margin: 1em 0;
+	padding: 12px 16px;
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.jww-chord-library-summary ul {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1.5rem 2rem;
+}
+
+.jww-chord-library-summary li {
+	margin: 0;
+}
+
+.jww-chord-library-custom-section {
+	margin: 1.5em 0;
+	padding: 16px;
+	background: #f9f9f9;
+	border: 1px solid #ccd0d4;
+	border-radius: 4px;
+}
+
+.jww-chord-library-custom-title {
+	margin-top: 0;
+	margin-bottom: 8px;
+	font-size: 1.1em;
+}
+
+.jww-custom-chord-library-textarea {
+	display: block;
+	width: 100%;
+	max-width: 800px;
+	margin: 8px 0;
+	font-family: Consolas, Monaco, monospace;
+	font-size: 13px;
+	line-height: 1.4;
+}
+
+.jww-custom-chord-library-message {
+	margin-left: 10px;
+}
+
+.jww-custom-chord-library-message.notice-success {
+	color: #00a32a;
+}
+
+.jww-custom-chord-library-message.notice-error {
+	color: #d63638;
+}
+
+.jww-chord-library-toolbar {
+	margin: 1em 0;
+}
+
+.jww-chord-library-toolbar label {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	font-weight: 500;
+}
+
+.jww-chord-library-toolbar input[type="checkbox"] {
+	margin: 0;
+}
+
+.jww-chord-library-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+	gap: 12px 16px;
+	margin-top: 1em;
+}
+
+.jww-chord-library-card {
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	border-radius: 4px;
+	box-shadow: 0 1px 1px rgba(0,0,0,.04);
+	overflow: hidden;
+}
+
+.jww-chord-library-card.jww-chord-missing {
+	background: #f9f9f9;
+	border-color: #ddd;
+}
+
+.jww-chord-library-card-inner {
+	padding: 10px;
+	text-align: center;
+	min-height: 160px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.jww-chord-library-card-name {
+	font-weight: 600;
+	margin-bottom: 8px;
+	font-size: 14px;
+}
+
+.jww-chord-library-card-diagram {
+	min-height: 120px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.jww-chord-library-card-diagram svg {
+	max-width: 100%;
+	height: auto;
+}
+
+.jww-chord-library-card-placeholder {
+	font-size: 12px;
+	color: #666;
+	margin-top: 4px;
+}
+
+.jww-chord-library-card.jww-chord-missing .jww-chord-library-card-placeholder {
+	color: #999;
+}

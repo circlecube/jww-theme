@@ -1,0 +1,362 @@
+/**
+ * Song chords and tabs – compiled from SCSS.
+ * Source: src/styles/song-chords/
+ */
+
+/* -------------------------------------------------------------------------
+   Controls
+   ------------------------------------------------------------------------- */
+.jww-chords-controls {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 1rem;
+	margin-bottom: 1rem;
+	padding: 0.5rem 0;
+}
+
+.jww-show-chords-toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	padding: 0.35rem 0.6rem;
+	background: var(--wp--preset--color--accent-5, #333);
+	color: #fff;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 0.95rem;
+	position: absolute;
+	top: 2rem;
+	right: 2rem;
+
+	&:hover {
+		opacity: 0.9;
+	}
+
+	.jww-guitar-icon {
+		width: 1.25rem;
+		height: 1.25rem;
+		fill: currentColor;
+	}
+
+	&.jww-chords-hidden {
+		background: #666;
+	}
+}
+
+.jww-transpose-capo {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.75rem 1.25rem;
+}
+
+.jww-stepper-wrap {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.35rem 0.5rem;
+}
+
+.jww-stepper-label {
+	font-weight: 500;
+	margin-right: 0.25rem;
+}
+
+.jww-stepper {
+	display: inline-flex;
+	align-items: center;
+	border: 1px solid rgba(0, 0, 0, 0.2);
+	border-radius: 4px;
+	background: rgba(255, 255, 255, 0.5);
+}
+
+.jww-stepper-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 2rem;
+	height: 2rem;
+	padding: 0;
+	font-size: 1.25rem;
+	line-height: 1;
+	font-weight: 600;
+	border: none;
+	background: transparent;
+	cursor: pointer;
+	color: inherit;
+	border-radius: 2px;
+
+	&:hover {
+		background: rgba(0, 0, 0, 0.08);
+	}
+
+	&:focus {
+		outline: 2px solid currentColor;
+		outline-offset: 2px;
+	}
+}
+
+.jww-stepper-value {
+	display: inline-block;
+	min-width: 2.5rem;
+	text-align: center;
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+}
+
+/* -------------------------------------------------------------------------
+   Chord sheet – div-based flex layout
+   ------------------------------------------------------------------------- */
+.jww-chord-sheet-wrapper {
+	margin: 0.5rem 0;
+}
+
+.jww-cs-sheet {
+	font-size: 1rem;
+	line-height: 1.6;
+}
+
+.jww-cs-paragraph {
+	margin-bottom: 1em;
+
+	&:last-child {
+		margin-bottom: 0;
+	}
+}
+
+.jww-cs-line {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	align-content: flex-end;
+	margin-bottom: 0.35em;
+	gap: 0 0.15em;
+}
+
+/* Chord+lyric pair: chord stacked above lyric */
+.jww-cs-line-pairs .jww-cs-pair {
+	display: inline-flex;
+	flex-direction: column;
+	align-items: flex-start;
+	vertical-align: bottom;
+}
+
+/* Collapse gap between pairs that form one word (chord mid-word: "syl-[C]-lable") */
+.jww-cs-pair-mid-word+.jww-cs-pair-mid-word {
+	margin-left: -0.15em;
+}
+
+.jww-cs-pair {
+	.jww-cs-chord {
+		order: 1;
+		line-height: 1.2;
+	}
+
+	.jww-cs-lyrics {
+		order: 2;
+		line-height: 1.5;
+		min-height: 1.5rem;
+	}
+}
+
+/* Empty chord slot */
+.jww-cs-line-empty .jww-cs-chord,
+.jww-cs-chord-empty {
+	background: none;
+	padding: 0;
+	min-height: 1em;
+	height: auto;
+	overflow: hidden;
+
+	&:empty {
+		min-height: 0;
+		background: transparent;
+	}
+}
+
+.jww-cs-chord {
+	display: inline-block;
+	font-weight: 700;
+	color: #1a1a1a;
+	background: rgba(0, 0, 0, 0.08);
+	padding: 0.15em 0.4em;
+	border-radius: 4px;
+	font-size: 0.95em;
+	white-space: nowrap;
+}
+
+.jww-cs-lyrics {
+	line-height: 1.65;
+	/* Preserve spaces between words so they display instead of relying only on flex gap */
+	white-space: pre-wrap;
+}
+
+.jww-cs-label {
+	font-weight: 600;
+	font-size: 0.95em;
+	margin-bottom: 0.2em;
+}
+
+.jww-cs-line-label .jww-cs-label {
+	margin-bottom: 0;
+}
+
+.jww-cs-literal {
+	white-space: pre-wrap;
+}
+
+.jww-chord-sheet-fallback {
+	white-space: pre-wrap;
+	font-family: inherit;
+	line-height: 1.6;
+}
+
+/* Plain lyrics view (when "Show guitar chords" is off) */
+.jww-lyrics-plain-wrapper {
+	margin-top: 0.5rem;
+
+	.lyrics-content {
+		line-height: 1.6;
+	}
+}
+
+.jww-cs-label {
+	margin-top: 2rem;
+}
+
+/* -------------------------------------------------------------------------
+   Chord diagrams
+   ------------------------------------------------------------------------- */
+.jww-chord-diagrams-section {
+	margin: 1.5rem 0;
+
+	h3 {
+		margin-bottom: 0.75rem;
+	}
+}
+
+/* Chord sound troubleshooting (PluckSynth sliders) */
+.jww-chord-sound-controls {
+	margin-bottom: 1rem;
+	padding: 0.75rem 1rem;
+	background: rgba(0, 0, 0, 0.04);
+	border-radius: 6px;
+	border: 1px solid rgba(0, 0, 0, 0.08);
+	font-size: 0.9rem;
+}
+
+.jww-chord-sound-controls-heading {
+	font-weight: 600;
+	margin-bottom: 0.5rem;
+}
+
+.jww-chord-sound-control-row {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin-top: 0.35rem;
+
+	label {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		flex: 1;
+		min-width: 0;
+	}
+
+	input[type="range"] {
+		flex: 1;
+		min-width: 80px;
+		max-width: 180px;
+	}
+
+	.jww-chord-sound-control-value {
+		font-variant-numeric: tabular-nums;
+		min-width: 3.5em;
+		text-align: right;
+	}
+}
+
+.jww-chord-diagrams-container {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1rem;
+	align-items: flex-start;
+}
+
+.jww-chord-diagram-wrap {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	cursor: pointer;
+	transition: transform 0.15s ease, background-color 0.15s ease;
+	border-radius: 6px;
+	padding: 4px;
+
+	&:hover {
+		transform: scale(1.04);
+		background-color: rgba(0, 0, 0, 0.04);
+	}
+
+	&:focus {
+		outline: 2px solid var(--wp--preset--color--accent-5, #333);
+		outline-offset: 2px;
+	}
+
+	/* Improve alignment of string labels (e.g. open E) with their circles; VexChords places them a bit high */
+	svg text {
+		transform: translateY(2px);
+	}
+}
+
+.jww-chord-diagram-name {
+	display: block;
+	margin-top: 0.25rem;
+	font-weight: 600;
+	font-size: 0.9rem;
+}
+
+/* -------------------------------------------------------------------------
+   Tabs section
+   ------------------------------------------------------------------------- */
+.jww-tabs-section {
+	margin: 1.5rem 0;
+
+	h3 {
+		margin-bottom: 0.75rem;
+	}
+}
+
+.jww-tabs-container {
+	min-height: 80px;
+
+	svg {
+		max-width: 100%;
+		height: auto;
+	}
+
+	// Slightly larger fret numbers on tab staff
+	svg .vf-tabnote text {
+		font-size: 1.25em !important;
+	}
+}
+
+.jww-tabs-container.jww-tabs-clickable {
+	cursor: pointer;
+	transition: background-color 0.2s ease, box-shadow 0.2s ease;
+	border-radius: 6px;
+
+	&:hover {
+		background-color: rgba(0, 0, 0, 0.03);
+		box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06);
+	}
+}
+
+.jww-tabs-fallback {
+	white-space: pre-wrap;
+	font-family: monospace;
+	font-size: 0.9rem;
+	overflow-x: auto;
+}

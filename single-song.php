@@ -186,17 +186,80 @@ get_header();
 <div class="wp-block-group has-accent-6-background-color has-background is-layout-constrained has-global-padding" style="border-style:none;border-width:0px">
 	<div class="wp-block-post-content">
 	<h2 class="wp-block-heading">Lyrics</h2>
-	
+
 	<?php
 	$lyrics = get_field( 'lyrics' );
-	if ( $lyrics ): ?>
+	$chord_sheet = get_field( 'chord_sheet' );
+	$tabs = get_field( 'tabs' );
+	$chord_sheet = is_string( $chord_sheet ) ? trim( $chord_sheet ) : '';
+	$tabs = is_string( $tabs ) ? trim( $tabs ) : '';
+	$has_chord_or_tab = $chord_sheet !== '' || $tabs !== '';
+
+	if ( $has_chord_or_tab ) :
+		// Guitar toggle, Transpose, Capo – only when song has chord sheet or tabs
+		$guitar_icon_url = get_stylesheet_directory_uri() . '/assets/guitar.svg';
+		$capo_default = get_field( 'capo' );
+		if ( ! is_numeric( $capo_default ) || (int) $capo_default < 0 || (int) $capo_default > 12 ) {
+			$capo_default = 0;
+		} else {
+			$capo_default = (int) $capo_default;
+		}
+		?>
+		<div id="jww-chords-controls" class="jww-chords-controls">
+			<button type="button" id="jww-show-chords-toggle" class="jww-show-chords-toggle" aria-pressed="true" title="<?php esc_attr_e( 'Show or hide guitar chords and tabs', 'jww-theme' ); ?>">
+				<img src="<?php echo esc_url( $guitar_icon_url ); ?>" al	t="" class="jww-guitar-icon" width="20" height="20" aria-hidden="true">
+				<span class="jww-show-chords-label"><?php esc_html_e( 'Hide guitar chords', 'jww-theme' ); ?></span>
+			</button>
+			<div class="jww-transpose-capo">
+				<div class="jww-stepper-wrap">
+					<label class="jww-stepper-label"><?php esc_html_e( 'Transpose:', 'jww-theme' ); ?></label>
+					<div class="jww-stepper" role="group" aria-label="<?php esc_attr_e( 'Transpose by semitones', 'jww-theme' ); ?>">
+						<button type="button" class="jww-stepper-btn jww-stepper-minus" id="jww-transpose-minus" aria-label="<?php esc_attr_e( 'Decrease transpose', 'jww-theme' ); ?>">−</button>
+						<span class="jww-stepper-value" id="jww-transpose-display" aria-live="polite">0</span>
+						<button type="button" class="jww-stepper-btn jww-stepper-plus" id="jww-transpose-plus" aria-label="<?php esc_attr_e( 'Increase transpose', 'jww-theme' ); ?>">+</button>
+					</div>
+					<input type="hidden" id="jww-transpose" name="jww-transpose" value="0">
+				</div>
+				<div class="jww-stepper-wrap">
+					<label class="jww-stepper-label"><?php esc_html_e( 'Capo:', 'jww-theme' ); ?></label>
+					<div class="jww-stepper" role="group" aria-label="<?php esc_attr_e( 'Capo fret', 'jww-theme' ); ?>">
+						<button type="button" class="jww-stepper-btn jww-stepper-minus" id="jww-capo-minus" aria-label="<?php esc_attr_e( 'Decrease capo', 'jww-theme' ); ?>">−</button>
+						<span class="jww-stepper-value" id="jww-capo-display" aria-live="polite"><?php echo $capo_default === 0 ? esc_html__( 'None', 'jww-theme' ) : (string) $capo_default; ?></span>
+						<button type="button" class="jww-stepper-btn jww-stepper-plus" id="jww-capo-plus" aria-label="<?php esc_attr_e( 'Increase capo', 'jww-theme' ); ?>">+</button>
+					</div>
+					<input type="hidden" id="jww-capo" name="jww-capo" value="<?php echo (int) $capo_default; ?>">
+				</div>
+			</div>
+		</div>
+		<?php if ( $lyrics ) : ?>
+		<div id="jww-lyrics-plain-wrapper" class="jww-lyrics-plain-wrapper">
+			<div class="lyrics-content"><?php echo wp_kses_post( $lyrics ); ?></div>
+		</div>
+		<?php endif; ?>
+		<?php if ( $chord_sheet !== '' ) : ?>
+		<div id="jww-chord-diagrams-section" class="jww-chord-diagrams-section">
+			<h3 class="wp-block-heading"><?php esc_html_e( 'Chord diagrams', 'jww-theme' ); ?></h3>
+			<div id="jww-chord-diagrams-container" class="jww-chord-diagrams-container"></div>
+		</div>
+		<div id="jww-chord-sheet-wrapper" class="jww-chord-sheet-wrapper">
+			<div id="jww-chord-sheet-content" class="jww-chord-sheet-content"></div>
+		</div>
+		<?php endif; ?>
+		<?php if ( $tabs !== '' ) : ?>
+		<div id="jww-tabs-section" class="jww-tabs-section">
+			<h3 class="wp-block-heading"><?php esc_html_e( 'Tabs', 'jww-theme' ); ?></h3>
+			<div id="jww-tabs-container" class="jww-tabs-container"></div>
+		</div>
+		<?php endif; ?>
+	<?php endif; ?>
+	<?php if ( ! $has_chord_or_tab && $lyrics ) : ?>
 		<div class="lyrics-content">
 			<?php echo wp_kses_post( $lyrics ); ?>
 		</div>
-	<?php else: ?>
+	<?php elseif ( ! $has_chord_or_tab ) : ?>
 		<p>Sorry, no lyrics yet. Have some to suggest? Let us know in the comments!</p>
 	<?php endif; ?>
-	
+
 	</div>
 </div>
 

@@ -34,3 +34,6 @@ require_once( get_stylesheet_directory() . '/includes/class-show-importer.php' )
 require_once( get_stylesheet_directory() . '/includes/class-song-duplicate-detector.php' );
 require_once( get_stylesheet_directory() . '/includes/class-song-video-migrator.php' );
 require_once( get_stylesheet_directory() . '/includes/class-song-export-import.php' );
+require_once( get_stylesheet_directory() . '/includes/class-song-chords-tabs.php' );
+require_once( get_stylesheet_directory() . '/includes/class-song-chord-library-admin.php' );
+require_once( get_stylesheet_directory() . '/includes/class-song-import-chords-tabs-admin.php' );

@@ -1,0 +1,227 @@
+/* Monospace for chord/tab content so spacing lines up */
+.jww-monospace,
+.jww-import-chords-modal-textarea,
+.jww-import-chords-modal .jww-monospace,
+#jww-import-tab-paste {
+	font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+	font-size: 13px;
+	line-height: 1.45;
+}
+
+/* ACF Chord sheet and Tabs textareas */
+[data-key="field_68cad0001"] textarea,
+[data-key="field_68cad0002"] textarea,
+textarea[name="acf[field_68cad0001]"],
+textarea[name="acf[field_68cad0002]"] {
+	font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+	font-size: 13px;
+	line-height: 1.45;
+}
+
+/* Import chord sheet modal */
+.jww-import-chords-modal {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 100000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 20px;
+	box-sizing: border-box;
+	visibility: hidden;
+	opacity: 0;
+	transition: visibility 0.2s, opacity 0.2s;
+}
+
+.jww-import-chords-modal.jww-modal-open {
+	visibility: visible;
+	opacity: 1;
+}
+
+.jww-import-chords-modal-backdrop {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.6);
+	cursor: pointer;
+}
+
+.jww-import-chords-modal-content {
+	position: relative;
+	background: #fff;
+	box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+	border-radius: 4px;
+	max-width: 900px;
+	width: 100%;
+	max-height: calc(100vh - 40px);
+	display: flex;
+	flex-direction: column;
+}
+
+.jww-import-chords-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 20px;
+	border-bottom: 1px solid #c3c4c7;
+}
+
+.jww-import-chords-modal-title {
+	margin: 0;
+	font-size: 1.25rem;
+}
+
+.jww-import-chords-modal-close {
+	background: none;
+	border: none;
+	font-size: 24px;
+	line-height: 1;
+	color: #50575e;
+	cursor: pointer;
+	padding: 0 4px;
+}
+
+.jww-import-chords-modal-close:hover {
+	color: #1d2327;
+}
+
+.jww-import-chords-modal-desc {
+	margin: 0;
+	padding: 12px 20px;
+	border-bottom: 1px solid #c3c4c7;
+	background: #f6f7f7;
+}
+
+.jww-import-chords-modal-columns {
+	display: flex;
+	gap: 20px;
+	padding: 20px;
+	flex: 1;
+	min-height: 0;
+}
+
+.jww-import-chords-modal-col {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.jww-import-chords-modal-label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 6px;
+}
+
+.jww-import-chords-modal-textarea {
+	width: 100%;
+	flex: 1;
+	min-height: 200px;
+	padding: 10px;
+	border: 1px solid #8c8f94;
+	border-radius: 3px;
+	box-sizing: border-box;
+	resize: vertical;
+}
+
+.jww-import-chords-modal-textarea:focus {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
+	outline: none;
+}
+
+.jww-import-chords-modal-textarea.jww-parse-error {
+	border-color: #d63638;
+	background: #fcf0f1;
+}
+
+.jww-import-chords-modal-footer {
+	display: flex;
+	gap: 10px;
+	padding: 16px 20px;
+	border-top: 1px solid #c3c4c7;
+	background: #f6f7f7;
+	border-radius: 0 0 4px 4px;
+}
+
+/* Import tabs modal: preview area below VexTab notation */
+.jww-import-tabs-preview-wrap {
+	margin-top: 12px;
+	flex: 0 0 auto;
+}
+
+.jww-import-tabs-preview-wrap .jww-import-chords-modal-label {
+	margin-bottom: 6px;
+}
+
+.jww-import-tabs-preview {
+	min-height: 80px;
+	max-height: 280px;
+	padding: 12px;
+	background: #f6f7f7;
+	border: 1px solid #c3c4c7;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+.jww-import-tabs-preview .jww-tabs-fallback {
+	white-space: pre-wrap;
+	font-size: 12px;
+	margin: 0;
+}
+
+.jww-import-tabs-preview .vextab-auto {
+	margin: 0;
+}
+
+/* Slightly larger fret numbers on tab staff in admin preview */
+.jww-import-tabs-preview svg text {
+	font-size: 1.25em !important;
+}
+
+/* Hide VexTab/VexFlow attribution link in admin preview */
+.jww-import-tabs-preview a[href*="vexflow"] {
+	display: none !important;
+}
+
+/* Import tab panel (legacy; Import tab now uses modal below Tabs field) */
+.jww-import-chords-tabs-panels .jww-import-panel {
+	margin-bottom: 24px;
+	padding-bottom: 16px;
+	border-bottom: 1px solid #ccc;
+}
+
+.jww-import-chords-tabs-panels .jww-import-panel:last-child {
+	border-bottom: 0;
+}
+
+.jww-import-preview {
+	margin-top: 12px;
+	padding: 12px;
+	background: #f6f7f7;
+	border: 1px solid #c3c4c7;
+	max-height: 400px;
+	overflow: auto;
+}
+
+.jww-chord-preview-content table {
+	width: 100%;
+	font-size: 14px;
+}
+
+.jww-chord-preview-content .chord {
+	font-weight: 600;
+	color: #50575e;
+}
+
+.jww-vextab-preview,
+.jww-import-tabs-preview .jww-tabs-fallback {
+	white-space: pre-wrap;
+	font-size: 12px;
+	margin: 0;
+}

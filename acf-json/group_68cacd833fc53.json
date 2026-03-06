@@ -230,6 +230,58 @@
             ]
         },
         {
+            "key": "field_68cad0001",
+            "label": "Chord sheet",
+            "name": "chord_sheet",
+            "aria-label": "",
+            "type": "textarea",
+            "instructions": "ChordPro or Ultimate Guitar style: chords + lyrics. When set, this drives the Lyrics display instead of the plain Lyrics field. Use \"Import chords\" below to paste from Ultimate Guitar.",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": { "width": "", "class": "", "id": "" },
+            "default_value": "",
+            "maxlength": "",
+            "allow_in_bindings": 0,
+            "rows": 20,
+            "placeholder": "",
+            "new_lines": ""
+        },
+        {
+            "key": "field_68cad0002",
+            "label": "Tabs",
+            "name": "tabs",
+            "aria-label": "",
+            "type": "textarea",
+            "instructions": "VexTab notation or paste plain ASCII tab and use \"Import tab\" to convert.",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": { "width": "", "class": "", "id": "" },
+            "default_value": "",
+            "maxlength": "",
+            "allow_in_bindings": 0,
+            "rows": 15,
+            "placeholder": "",
+            "new_lines": ""
+        },
+        {
+            "key": "field_68cad0003",
+            "label": "Capo (Jesse's fret)",
+            "name": "capo",
+            "aria-label": "",
+            "type": "number",
+            "instructions": "Optional. Fret Jesse uses a capo on for this song (e.g. 2, 3). The front end will default the capo control to this value.",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": { "width": "", "class": "", "id": "" },
+            "default_value": "",
+            "min": 0,
+            "max": 12,
+            "step": 1,
+            "placeholder": "",
+            "prepend": "",
+            "append": ""
+        },
+        {
             "key": "field_68cacd83ebd2c",
             "label": "Lyrics",
             "name": "lyrics",
@@ -374,5 +426,5 @@
     "description": "",
     "show_in_rest": 0,
     "display_title": "",
-    "modified": 1769625084
+    "modified": 1769720000
 }

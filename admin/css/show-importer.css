@@ -207,3 +207,36 @@
 #sync-now-result.error .notice {
     border-left-color: #d63638;
 }
+
+/* Shows with setlist changes: actions column — primary (blue) + secondary (outlined) */
+.jww-setlist-updates-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.jww-setlist-updates-actions .jww-resync-setlist-btn {
+    background: #2271b1;
+    border-color: #2271b1;
+    color: #fff;
+}
+
+.jww-setlist-updates-actions .jww-resync-setlist-btn:hover {
+    background: #135e96;
+    border-color: #135e96;
+    color: #fff;
+}
+
+.jww-setlist-updates-actions .jww-setlist-update-link {
+    background: transparent;
+    border: 1px solid #c3c4c7;
+    color: #2c3338;
+    text-decoration: none;
+}
+
+.jww-setlist-updates-actions .jww-setlist-update-link:hover {
+    background: #f6f7f7;
+    border-color: #8c8f94;
+    color: #1d2327;
+}

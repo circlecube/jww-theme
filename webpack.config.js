@@ -11,6 +11,11 @@ module.exports = {
             './src/js/archive-show-sort.js',
             './src/js/archive-show-location-cascade.js',
         ],
+        'build/theme-song-chords-tabs': [
+            './src/styles/song-chords/_index.scss',
+            './src/js/song-chords-tabs.js',
+        ],
+        'build/admin-chord-library': './src/js/admin-chord-library.js',
     },
     output: {
         path: __dirname,

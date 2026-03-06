@@ -190,6 +190,9 @@ class Song_Export_Import {
 		$embeds = get_field( 'embeds', $post_id );
 		$lyrics = get_field( 'lyrics', $post_id );
 		$lyric_annotations = get_field( 'lyric_annotations', $post_id );
+		$chord_sheet = get_field( 'chord_sheet', $post_id );
+		$tabs = get_field( 'tabs', $post_id );
+		$capo = get_field( 'capo', $post_id );
 		$song_links = get_field( 'song_links', $post_id );
 		$artist = get_field( 'artist', $post_id );
 		$album = get_field( 'album', $post_id );
@@ -241,6 +244,9 @@ class Song_Export_Import {
 			'post_name'          => $post->post_name,
 			'lyrics'             => $lyrics !== null && $lyrics !== false ? (string) $lyrics : '',
 			'lyric_annotations'  => $lyric_annotations !== null && $lyric_annotations !== false ? (string) $lyric_annotations : '',
+			'chord_sheet'        => $chord_sheet !== null && $chord_sheet !== false ? (string) $chord_sheet : '',
+			'tabs'               => $tabs !== null && $tabs !== false ? (string) $tabs : '',
+			'capo'               => is_numeric( $capo ) ? (int) $capo : '',
 			'embeds'             => $embeds_export,
 			'song_links'         => is_array( $song_links ) ? $song_links : array(),
 			'artist'             => $artist_ids,
@@ -342,6 +348,18 @@ class Song_Export_Import {
 			}
 			if ( array_key_exists( 'lyric_annotations', $data ) ) {
 				update_field( 'lyric_annotations', $data['lyric_annotations'], $post_id );
+			}
+			if ( array_key_exists( 'chord_sheet', $data ) ) {
+				update_field( 'chord_sheet', $data['chord_sheet'], $post_id );
+			}
+			if ( array_key_exists( 'tabs', $data ) ) {
+				update_field( 'tabs', $data['tabs'], $post_id );
+			}
+			if ( array_key_exists( 'capo', $data ) ) {
+				$capo = $data['capo'];
+				if ( $capo === '' || ( is_numeric( $capo ) && (int) $capo >= 0 && (int) $capo <= 12 ) ) {
+					update_field( 'capo', $capo === '' ? '' : (int) $capo, $post_id );
+				}
 			}
 			if ( array_key_exists( 'embeds', $data ) && is_array( $data['embeds'] ) ) {
 				update_field( 'embeds', $data['embeds'], $post_id );

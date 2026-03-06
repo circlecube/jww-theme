@@ -192,7 +192,9 @@ function jww_render_shows_table_row( $show, $table_type = 'past', $show_tour_col
 				<?php
 				$ticket_link = isset( $fields['ticket_link'] ) ? $fields['ticket_link'] : '';
 				if ( $ticket_link ) : ?>
-					<a href="<?php echo esc_url( $ticket_link ); ?>" target="_blank" rel="noopener" class="ticket-link">Get Tickets</a>
+					<div class="wp-block-button">
+						<a href="<?php echo esc_url( $ticket_link ); ?>" target="_blank" rel="noopener" class="wp-element-button wp-block-button__link ticket-link">Get Tickets</a>
+					</div>
 				<?php else : ?>
 					<span class="empty-cell">—</span>
 				<?php endif; ?>

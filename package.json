@@ -1,6 +1,6 @@
 {
   "name": "jww-theme",
-  "version": "3.4.0",
+  "version": "4.0.0",
   "description": "Jesse Welles World WordPress Theme",
   "main": "index.js",
   "scripts": {
@@ -25,6 +25,9 @@
     "@wordpress/components": "32.2.0",
     "@wordpress/data": "10.40.0",
     "@wordpress/element": "6.40.0",
-    "@wordpress/i18n": "6.13.0"
+    "@wordpress/i18n": "6.13.0",
+    "tonal": "^6.4.3",
+    "tone": "^15.1.22",
+    "vexchords": "1.2.0"
   }
 }

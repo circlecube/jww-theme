@@ -374,7 +374,15 @@ jQuery(document).ready(function($) {
             html += '<td>' + (r.title ? r.title.replace(/</g, '&lt;') : 'Show #' + r.show_id) + '</td>';
             html += '<td>' + formatLastUpdated(r.our_last_updated) + '</td>';
             html += '<td>' + formatLastUpdated(r.api_last_updated) + '</td>';
-            html += '<td><button type="button" class="button button-small jww-resync-setlist-btn" data-show-id="' + r.show_id + '" data-nonce="' + (r.resync_nonce || '') + '">Resync now</button></td>';
+            html += '<td class="jww-setlist-updates-actions">';
+            html += '<button type="button" class="button button-small button-primary jww-resync-setlist-btn" data-show-id="' + r.show_id + '" data-nonce="' + (r.resync_nonce || '') + '">Resync now</button>';
+            if (r.setlist_fm_url) {
+                html += ' <a href="' + r.setlist_fm_url.replace(/"/g, '&quot;') + '" target="_blank" rel="noopener" class="button button-small jww-setlist-update-link jww-setlist-update-link--external">View on setlist.fm</a>';
+            }
+            if (r.show_permalink) {
+                html += ' <a href="' + r.show_permalink.replace(/"/g, '&quot;') + '" target="_blank" rel="noopener" class="button button-small jww-setlist-update-link jww-setlist-update-link--site">View show</a>';
+            }
+            html += '</td>';
             html += '</tr>';
         });
         html += '</tbody></table>';
