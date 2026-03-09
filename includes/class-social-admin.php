@@ -19,6 +19,7 @@ class Social_Admin {
 	const NONCE_ACTION = 'jww_social_trigger';
 	const NONCE_ACTION_TOGGLE = 'jww_social_toggle';
 	const NONCE_ACTION_SETTINGS = 'jww_social_settings';
+	const NONCE_ACTION_CREDENTIALS = 'jww_social_credentials';
 
 	/**
 	 * Constructor.
@@ -191,6 +192,48 @@ class Social_Admin {
 	}
 
 	/**
+	 * Schema for credential fields per platform. Used for the credentials form and save handler.
+	 * Keys are option suffixes (prefixed with jww_social_). secret = use password input, don't overwrite with empty.
+	 *
+	 * @return array [ 'mastodon' => [ [ 'key' => 'mastodon_instance', 'label' => '...', 'secret' => false, 'required' => true ], ... ], ... ]
+	 */
+	public function get_credentials_schema() {
+		return array(
+			'mastodon' => array(
+				array( 'key' => 'mastodon_instance', 'label' => __( 'Instance (hostname, no https://)', 'jww-theme' ), 'secret' => false, 'required' => true ),
+				array( 'key' => 'mastodon_access_token', 'label' => __( 'Access token', 'jww-theme' ), 'secret' => true, 'required' => true ),
+			),
+			'bluesky' => array(
+				array( 'key' => 'bluesky_identifier', 'label' => __( 'Handle (e.g. user.bsky.social)', 'jww-theme' ), 'secret' => false, 'required' => true ),
+				array( 'key' => 'bluesky_app_password', 'label' => __( 'App password', 'jww-theme' ), 'secret' => true, 'required' => true ),
+			),
+			'pinterest' => array(
+				array( 'key' => 'pinterest_access_token', 'label' => __( 'OAuth access token', 'jww-theme' ), 'secret' => true, 'required' => true ),
+				array( 'key' => 'pinterest_board_id', 'label' => __( 'Default board ID', 'jww-theme' ), 'secret' => false, 'required' => true ),
+				array( 'key' => 'pinterest_board_id_song', 'label' => __( 'Board ID for songs (optional)', 'jww-theme' ), 'secret' => false, 'required' => false ),
+				array( 'key' => 'pinterest_board_id_show', 'label' => __( 'Board ID for shows (optional)', 'jww-theme' ), 'secret' => false, 'required' => false ),
+				array( 'key' => 'pinterest_board_id_lyric', 'label' => __( 'Board ID for lyrics (optional)', 'jww-theme' ), 'secret' => false, 'required' => false ),
+			),
+			'threads' => array(
+				array( 'key' => 'threads_app_id', 'label' => __( 'Threads App ID (for Re-authorize)', 'jww-theme' ), 'secret' => false, 'required' => false ),
+				array( 'key' => 'threads_app_secret', 'label' => __( 'Threads App Secret (for Re-authorize)', 'jww-theme' ), 'secret' => true, 'required' => false ),
+				array( 'key' => 'threads_user_id', 'label' => __( 'Threads User ID', 'jww-theme' ), 'secret' => false, 'required' => true ),
+				array( 'key' => 'threads_access_token', 'label' => __( 'Access token', 'jww-theme' ), 'secret' => true, 'required' => true ),
+			),
+			'facebook' => array(
+				array( 'key' => 'facebook_app_id', 'label' => __( 'Meta App ID (for Re-authorize)', 'jww-theme' ), 'secret' => false, 'required' => false ),
+				array( 'key' => 'facebook_app_secret', 'label' => __( 'Meta App Secret (for Re-authorize)', 'jww-theme' ), 'secret' => true, 'required' => false ),
+				array( 'key' => 'facebook_page_id', 'label' => __( 'Page ID', 'jww-theme' ), 'secret' => false, 'required' => true ),
+				array( 'key' => 'facebook_page_access_token', 'label' => __( 'Page access token', 'jww-theme' ), 'secret' => true, 'required' => true ),
+			),
+			'instagram' => array(
+				array( 'key' => 'instagram_account_id', 'label' => __( 'Instagram Business Account ID', 'jww-theme' ), 'secret' => false, 'required' => true ),
+				array( 'key' => 'instagram_access_token', 'label' => __( 'Access token', 'jww-theme' ), 'secret' => true, 'required' => true ),
+			),
+		);
+	}
+
+	/**
 	 * Get published posts for a post type for use in dropdowns.
 	 *
 	 * @param string $post_type Post type (song, show, post).
@@ -285,6 +328,31 @@ class Social_Admin {
 	public function render_page() {
 		$status = $this->get_status();
 		$user_can = current_user_can( 'manage_options' );
+
+		// Save credentials form (options take precedence over .env; survives theme deploy).
+		if ( $user_can && isset( $_POST['jww_social_save_credentials'] ) && isset( $_POST['_wpnonce'] ) && wp_verify_nonce( $_POST['_wpnonce'], self::NONCE_ACTION_CREDENTIALS ) ) {
+			$prefix = 'jww_social_';
+			$schema = $this->get_credentials_schema();
+			foreach ( $schema as $service => $fields ) {
+				foreach ( $fields as $field ) {
+					$key = $field['key'];
+					$opt_key = $prefix . $key;
+					$value = isset( $_POST[ 'jww_social_cred_' . $key ] ) ? sanitize_text_field( wp_unslash( $_POST[ 'jww_social_cred_' . $key ] ) ) : '';
+					if ( $field['secret'] && $value === '' ) {
+						continue; // Do not overwrite secret with empty; "leave blank to keep current"
+					}
+					update_option( $opt_key, $value, false );
+				}
+			}
+			wp_safe_redirect( add_query_arg( 'credentials_saved', '1', admin_url( 'options-general.php?page=' . self::PAGE_SLUG ) ) );
+			exit;
+		}
+
+		// Show credentials-saved notice.
+		if ( $user_can && isset( $_GET['credentials_saved'] ) && $_GET['credentials_saved'] === '1' ) {
+			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Credentials saved. They are stored in the database and will survive theme updates.', 'jww-theme' ) . '</p></div>';
+		}
+
 		// Show Threads OAuth callback result if present.
 		if ( $user_can && isset( $_GET['threads_oauth'] ) ) {
 			$oauth_msg = get_transient( 'jww_threads_oauth_message' );
@@ -325,7 +393,7 @@ class Social_Admin {
 			<div id="jww-social-tab-connections" class="jww-social-tab-panel" role="tabpanel" aria-labelledby="jww-social-tab-connections">
 			<section class="jww-social-section jww-social-status">
 				<h2><?php esc_html_e( 'Connection status', 'jww-theme' ); ?></h2>
-				<p class="description"><?php esc_html_e( 'Credentials are read from the theme .env file (or options). For Threads, Facebook, and Instagram, put the app ID and app secret in .env, then use the Authorize button to create access tokens (no existing token required). Toggle each platform on or off to include it in event triggers and cron; only enabled and configured services will post.', 'jww-theme' ); ?></p>
+				<p class="description"><?php esc_html_e( 'Credentials can be stored in the database below (recommended — survives theme updates) or in the theme .env file. For Threads, Facebook, and Instagram, add App ID and Secret (for Re-authorize), then use the Authorize button to create access tokens. Toggle each platform on or off to include it in event triggers and cron.', 'jww-theme' ); ?></p>
 				<ul class="jww-social-status-list">
 					<?php
 					$labels = array(
@@ -382,6 +450,59 @@ class Social_Admin {
 					<?php endforeach; ?>
 				</ul>
 			</section>
+
+			<?php if ( $user_can ) : ?>
+			<section class="jww-social-section jww-social-credentials">
+				<h2><?php esc_html_e( 'Credentials (stored in database)', 'jww-theme' ); ?></h2>
+				<p class="description"><?php esc_html_e( 'Values saved here are stored in WordPress options and persist across theme updates. Leave secret fields blank to keep the current value. Required fields are listed under each platform.', 'jww-theme' ); ?></p>
+				<form method="post" action="" class="jww-social-credentials-form">
+					<?php wp_nonce_field( self::NONCE_ACTION_CREDENTIALS, '_wpnonce' ); ?>
+					<input type="hidden" name="jww_social_save_credentials" value="1" />
+					<?php
+					$schema = $this->get_credentials_schema();
+					$labels = array(
+						'mastodon'  => __( 'Mastodon', 'jww-theme' ),
+						'bluesky'   => __( 'Bluesky', 'jww-theme' ),
+						'pinterest' => __( 'Pinterest', 'jww-theme' ),
+						'threads'   => __( 'Threads', 'jww-theme' ),
+						'facebook'  => __( 'Facebook', 'jww-theme' ),
+						'instagram' => __( 'Instagram', 'jww-theme' ),
+					);
+					$prefix = 'jww_social_';
+					foreach ( $schema as $service => $fields ) :
+						$required_names = array_filter( array_map( function ( $f ) {
+							return $f['required'] ? $f['label'] : null;
+						}, $fields ) );
+					?>
+					<div class="jww-social-credentials-platform" data-service="<?php echo esc_attr( $service ); ?>">
+						<h3 class="jww-social-credentials-platform-title"><?php echo esc_html( isset( $labels[ $service ] ) ? $labels[ $service ] : $service ); ?></h3>
+						<?php if ( ! empty( $required_names ) ) : ?>
+						<p class="jww-social-credentials-required"><?php esc_html_e( 'Required:', 'jww-theme' ); ?> <?php echo esc_html( implode( ', ', $required_names ) ); ?></p>
+						<?php endif; ?>
+						<div class="jww-social-credentials-fields">
+							<?php foreach ( $fields as $field ) :
+								$opt_key = $prefix . $field['key'];
+								$current = get_option( $opt_key, '' );
+								$input_name = 'jww_social_cred_' . $field['key'];
+								$input_type = $field['secret'] ? 'password' : 'text';
+								$placeholder = $field['secret'] && $current !== '' ? __( 'Leave blank to keep current', 'jww-theme' ) : '';
+								$value = $field['secret'] ? '' : $current; // Never prefill secrets in HTML
+							?>
+							<p class="jww-social-cred-field">
+								<label for="<?php echo esc_attr( $input_name ); ?>"><?php echo esc_html( $field['label'] ); ?></label>
+								<input type="<?php echo esc_attr( $input_type ); ?>" id="<?php echo esc_attr( $input_name ); ?>" name="<?php echo esc_attr( $input_name ); ?>" value="<?php echo esc_attr( $value ); ?>" class="regular-text" placeholder="<?php echo esc_attr( $placeholder ); ?>" autocomplete="<?php echo $field['secret'] ? 'off' : 'on'; ?>" />
+							</p>
+							<?php endforeach; ?>
+						</div>
+					</div>
+					<?php endforeach; ?>
+					<p class="submit">
+						<button type="submit" class="button button-primary"><?php esc_html_e( 'Save credentials', 'jww-theme' ); ?></button>
+					</p>
+				</form>
+			</section>
+			<?php endif; ?>
+
 			</div><!-- #jww-social-tab-connections -->
 
 			<div id="jww-social-tab-triggers" class="jww-social-tab-panel" role="tabpanel" aria-labelledby="jww-social-tab-triggers" hidden>

@@ -1,8 +1,10 @@
 <?php
 /**
- * Social sharing configuration – reads credentials from .env or WordPress options.
+ * Social sharing configuration – reads credentials from WordPress options or .env.
  *
- * Priority: .env file > WordPress options. Never commit real credentials; use .env (in .gitignore).
+ * Priority: options (saved in Settings → Social Sharing) > .env. Storing credentials in the
+ * database survives theme updates; .env in the theme directory is often overwritten when
+ * deploying a new theme zip.
  *
  * @package JWW_Theme
  * @subpackage Includes
@@ -27,12 +29,22 @@ function jww_social_get_config( $service ) {
 
 	$option_prefix = 'jww_social_';
 
+	// Prefer options (DB) over .env so credentials survive theme deploy.
+	$from_option = function( $key ) use ( $option_prefix ) {
+		return trim( (string) get_option( $option_prefix . $key, '' ) );
+	};
+	$from_env = function( $env_key ) use ( $env_cache ) {
+		return isset( $env_cache[ $env_key ] ) ? trim( (string) $env_cache[ $env_key ] ) : '';
+	};
+	$get = function( $option_key, $env_key ) use ( $from_option, $from_env ) {
+		$v = $from_option( $option_key );
+		return $v !== '' ? $v : $from_env( $env_key );
+	};
+
 	switch ( $service ) {
 		case 'mastodon':
-			$instance = isset( $env_cache['JWW_MASTODON_INSTANCE'] ) ? $env_cache['JWW_MASTODON_INSTANCE'] : get_option( $option_prefix . 'mastodon_instance', '' );
-			$token   = isset( $env_cache['JWW_MASTODON_ACCESS_TOKEN'] ) ? $env_cache['JWW_MASTODON_ACCESS_TOKEN'] : get_option( $option_prefix . 'mastodon_access_token', '' );
-			$instance = is_string( $instance ) ? trim( $instance ) : '';
-			$token   = is_string( $token ) ? trim( $token ) : '';
+			$instance = $get( 'mastodon_instance', 'JWW_MASTODON_INSTANCE' );
+			$token   = $get( 'mastodon_access_token', 'JWW_MASTODON_ACCESS_TOKEN' );
 			if ( $instance === '' || $token === '' ) {
 				return false;
 			}
@@ -42,10 +54,8 @@ function jww_social_get_config( $service ) {
 			);
 
 		case 'bluesky':
-			$identifier = isset( $env_cache['JWW_BLUESKY_IDENTIFIER'] ) ? $env_cache['JWW_BLUESKY_IDENTIFIER'] : get_option( $option_prefix . 'bluesky_identifier', '' );
-			$password  = isset( $env_cache['JWW_BLUESKY_APP_PASSWORD'] ) ? $env_cache['JWW_BLUESKY_APP_PASSWORD'] : get_option( $option_prefix . 'bluesky_app_password', '' );
-			$identifier = is_string( $identifier ) ? trim( $identifier ) : '';
-			$password  = is_string( $password ) ? trim( $password ) : '';
+			$identifier = $get( 'bluesky_identifier', 'JWW_BLUESKY_IDENTIFIER' );
+			$password  = $get( 'bluesky_app_password', 'JWW_BLUESKY_APP_PASSWORD' );
 			if ( $identifier === '' || $password === '' ) {
 				return false;
 			}
@@ -55,16 +65,11 @@ function jww_social_get_config( $service ) {
 			);
 
 		case 'pinterest':
-			$token    = isset( $env_cache['JWW_PINTEREST_ACCESS_TOKEN'] ) ? $env_cache['JWW_PINTEREST_ACCESS_TOKEN'] : get_option( $option_prefix . 'pinterest_access_token', '' );
-			$board_id = isset( $env_cache['JWW_PINTEREST_BOARD_ID'] ) ? $env_cache['JWW_PINTEREST_BOARD_ID'] : get_option( $option_prefix . 'pinterest_board_id', '' );
-			$board_song = isset( $env_cache['JWW_PINTEREST_BOARD_ID_SONG'] ) ? $env_cache['JWW_PINTEREST_BOARD_ID_SONG'] : get_option( $option_prefix . 'pinterest_board_id_song', '' );
-			$board_show = isset( $env_cache['JWW_PINTEREST_BOARD_ID_SHOW'] ) ? $env_cache['JWW_PINTEREST_BOARD_ID_SHOW'] : get_option( $option_prefix . 'pinterest_board_id_show', '' );
-			$board_lyric = isset( $env_cache['JWW_PINTEREST_BOARD_ID_LYRIC'] ) ? $env_cache['JWW_PINTEREST_BOARD_ID_LYRIC'] : get_option( $option_prefix . 'pinterest_board_id_lyric', '' );
-			$token    = is_string( $token ) ? trim( $token ) : '';
-			$board_id = is_string( $board_id ) ? trim( $board_id ) : '';
-			$board_song = is_string( $board_song ) ? trim( $board_song ) : '';
-			$board_show = is_string( $board_show ) ? trim( $board_show ) : '';
-			$board_lyric = is_string( $board_lyric ) ? trim( $board_lyric ) : '';
+			$token    = $get( 'pinterest_access_token', 'JWW_PINTEREST_ACCESS_TOKEN' );
+			$board_id = $get( 'pinterest_board_id', 'JWW_PINTEREST_BOARD_ID' );
+			$board_song = $get( 'pinterest_board_id_song', 'JWW_PINTEREST_BOARD_ID_SONG' );
+			$board_show = $get( 'pinterest_board_id_show', 'JWW_PINTEREST_BOARD_ID_SHOW' );
+			$board_lyric = $get( 'pinterest_board_id_lyric', 'JWW_PINTEREST_BOARD_ID_LYRIC' );
 			if ( $token === '' || $board_id === '' ) {
 				return false;
 			}
@@ -84,10 +89,8 @@ function jww_social_get_config( $service ) {
 			return $out;
 
 		case 'threads':
-			$user_id = isset( $env_cache['JWW_THREADS_USER_ID'] ) ? $env_cache['JWW_THREADS_USER_ID'] : get_option( $option_prefix . 'threads_user_id', '' );
-			$token   = isset( $env_cache['JWW_THREADS_ACCESS_TOKEN'] ) ? $env_cache['JWW_THREADS_ACCESS_TOKEN'] : get_option( $option_prefix . 'threads_access_token', '' );
-			$user_id = is_string( $user_id ) ? trim( $user_id ) : '';
-			$token   = is_string( $token ) ? trim( $token ) : '';
+			$user_id = $get( 'threads_user_id', 'JWW_THREADS_USER_ID' );
+			$token   = $get( 'threads_access_token', 'JWW_THREADS_ACCESS_TOKEN' );
 			if ( $user_id === '' || $token === '' ) {
 				return false;
 			}
@@ -97,10 +100,8 @@ function jww_social_get_config( $service ) {
 			);
 
 		case 'facebook':
-			$page_id = isset( $env_cache['JWW_FACEBOOK_PAGE_ID'] ) ? $env_cache['JWW_FACEBOOK_PAGE_ID'] : get_option( $option_prefix . 'facebook_page_id', '' );
-			$token   = isset( $env_cache['JWW_FACEBOOK_PAGE_ACCESS_TOKEN'] ) ? $env_cache['JWW_FACEBOOK_PAGE_ACCESS_TOKEN'] : get_option( $option_prefix . 'facebook_page_access_token', '' );
-			$page_id = is_string( $page_id ) ? trim( $page_id ) : '';
-			$token   = is_string( $token ) ? trim( $token ) : '';
+			$page_id = $get( 'facebook_page_id', 'JWW_FACEBOOK_PAGE_ID' );
+			$token   = $get( 'facebook_page_access_token', 'JWW_FACEBOOK_PAGE_ACCESS_TOKEN' );
 			if ( $page_id === '' || $token === '' ) {
 				return false;
 			}
@@ -110,10 +111,8 @@ function jww_social_get_config( $service ) {
 			);
 
 		case 'instagram':
-			$ig_user_id = isset( $env_cache['JWW_INSTAGRAM_ACCOUNT_ID'] ) ? $env_cache['JWW_INSTAGRAM_ACCOUNT_ID'] : get_option( $option_prefix . 'instagram_account_id', '' );
-			$token      = isset( $env_cache['JWW_INSTAGRAM_ACCESS_TOKEN'] ) ? $env_cache['JWW_INSTAGRAM_ACCESS_TOKEN'] : get_option( $option_prefix . 'instagram_access_token', '' );
-			$ig_user_id = is_string( $ig_user_id ) ? trim( $ig_user_id ) : '';
-			$token      = is_string( $token ) ? trim( $token ) : '';
+			$ig_user_id = $get( 'instagram_account_id', 'JWW_INSTAGRAM_ACCOUNT_ID' );
+			$token      = $get( 'instagram_access_token', 'JWW_INSTAGRAM_ACCESS_TOKEN' );
 			if ( $ig_user_id === '' || $token === '' ) {
 				return false;
 			}
@@ -155,10 +154,14 @@ function jww_social_get_threads_app_credentials() {
 		$env_cache = jww_social_parse_env();
 	}
 	$option_prefix = 'jww_social_';
-	$app_id     = isset( $env_cache['JWW_THREADS_APP_ID'] ) ? $env_cache['JWW_THREADS_APP_ID'] : get_option( $option_prefix . 'threads_app_id', '' );
-	$app_secret = isset( $env_cache['JWW_THREADS_APP_SECRET'] ) ? $env_cache['JWW_THREADS_APP_SECRET'] : get_option( $option_prefix . 'threads_app_secret', '' );
-	$app_id     = is_string( $app_id ) ? trim( $app_id ) : '';
-	$app_secret = is_string( $app_secret ) ? trim( $app_secret ) : '';
+	$app_id     = trim( (string) get_option( $option_prefix . 'threads_app_id', '' ) );
+	$app_secret = trim( (string) get_option( $option_prefix . 'threads_app_secret', '' ) );
+	if ( $app_id === '' && isset( $env_cache['JWW_THREADS_APP_ID'] ) ) {
+		$app_id = trim( (string) $env_cache['JWW_THREADS_APP_ID'] );
+	}
+	if ( $app_secret === '' && isset( $env_cache['JWW_THREADS_APP_SECRET'] ) ) {
+		$app_secret = trim( (string) $env_cache['JWW_THREADS_APP_SECRET'] );
+	}
 	if ( $app_id === '' || $app_secret === '' ) {
 		return false;
 	}
@@ -181,10 +184,14 @@ function jww_social_get_facebook_app_credentials() {
 		$env_cache = jww_social_parse_env();
 	}
 	$option_prefix = 'jww_social_';
-	$app_id     = isset( $env_cache['JWW_FACEBOOK_APP_ID'] ) ? $env_cache['JWW_FACEBOOK_APP_ID'] : get_option( $option_prefix . 'facebook_app_id', '' );
-	$app_secret = isset( $env_cache['JWW_FACEBOOK_APP_SECRET'] ) ? $env_cache['JWW_FACEBOOK_APP_SECRET'] : get_option( $option_prefix . 'facebook_app_secret', '' );
-	$app_id     = is_string( $app_id ) ? trim( $app_id ) : '';
-	$app_secret = is_string( $app_secret ) ? trim( $app_secret ) : '';
+	$app_id     = trim( (string) get_option( $option_prefix . 'facebook_app_id', '' ) );
+	$app_secret = trim( (string) get_option( $option_prefix . 'facebook_app_secret', '' ) );
+	if ( $app_id === '' && isset( $env_cache['JWW_FACEBOOK_APP_ID'] ) ) {
+		$app_id = trim( (string) $env_cache['JWW_FACEBOOK_APP_ID'] );
+	}
+	if ( $app_secret === '' && isset( $env_cache['JWW_FACEBOOK_APP_SECRET'] ) ) {
+		$app_secret = trim( (string) $env_cache['JWW_FACEBOOK_APP_SECRET'] );
+	}
 	if ( $app_id === '' || $app_secret === '' ) {
 		return false;
 	}
