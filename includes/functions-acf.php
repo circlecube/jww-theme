@@ -404,3 +404,33 @@ function jww_get_random_lyrics_data() {
 		'featured_image_url' => $featured_image_url ? $featured_image_url : null,
 	);
 }
+
+/**
+ * Get lyrics lines for a specific song (for social share "share a lyric" selector).
+ * Same filtering as jww_get_random_lyrics_data: strip tags, split by newline, trim, exclude empty and very short lines.
+ *
+ * @param int $song_id Song post ID.
+ * @return array List of lyric lines (strings). Empty if no lyrics or song not found.
+ */
+function jww_social_get_lyrics_lines_for_song( $song_id ) {
+	if ( ! function_exists( 'get_field' ) ) {
+		return array();
+	}
+	$song_id = (int) $song_id;
+	if ( $song_id <= 0 || get_post_type( $song_id ) !== 'song' ) {
+		return array();
+	}
+	$lyrics = get_field( 'lyrics', $song_id );
+	if ( $lyrics === null || $lyrics === false || $lyrics === '' ) {
+		return array();
+	}
+	$lyrics = is_string( $lyrics ) ? $lyrics : (string) $lyrics;
+	$lyrics = wp_strip_all_tags( $lyrics );
+	$lines = array_filter(
+		array_map( 'trim', explode( "\n", $lyrics ) ),
+		function ( $line ) {
+			return $line !== '' && strlen( $line ) > 10;
+		}
+	);
+	return array_values( $lines );
+}

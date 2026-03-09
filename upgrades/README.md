@@ -39,4 +39,6 @@ error_log("Theme Upgrade 1.0.2: Completed successfully");
 
 ## Current Upgrade Routines
 
-- **1.2.0.php**: Migrates 'attibution' field to 'attribution' field (fixes typo)
+- **1.3.0.php**: Migrates `attibution` → `attribution` (typo fix) on songs.
+- **3.0.0.php**: Migrates legacy song video fields into the `embeds` repeater (uses Song_Video_Migrator).
+- **3.4.0.php**: Sets `location_type` term meta on all location terms from hierarchy (country/state/city/venue).

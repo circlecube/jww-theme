@@ -14,6 +14,7 @@ $ticket_link = get_field( 'ticket_link' );
 $show_notes = get_field( 'show_notes' );
 $show_artist = get_field( 'show_artist' );
 $is_upcoming = ( get_the_date( 'U' ) > current_time( 'timestamp' ) );
+$show_has_thumbnail = has_post_thumbnail();
 
 // Get location hierarchy (reversed: Venue > City > Country)
 $location_term = $location_id ? get_term( $location_id, 'location' ) : null;
@@ -113,9 +114,24 @@ if ( $show_artist ) {
 				</div>
 			</div>
 			<div class="show-meta-right">
-				<?php if ( has_post_thumbnail() ): ?>
+				<?php if ( has_post_thumbnail() ) :
+					$thumb_id   = get_post_thumbnail_id();
+					$full_src   = wp_get_attachment_image_url( $thumb_id, 'full' );
+					$image_alt  = get_post_meta( $thumb_id, '_wp_attachment_image_alt', true );
+					?>
 					<div class="wp-block-group alignwide show-featured-image" style="margin-bottom:var(--wp--preset--spacing--40)">
-						<?php the_post_thumbnail( 'medium', array( 'class' => 'show-image' ) ); ?>
+						<button type="button" class="show-featured-image-trigger" aria-label="<?php esc_attr_e( 'View full size image', 'jww-theme' ); ?>" data-show-image-modal="open">
+							<?php the_post_thumbnail( 'medium', array( 'class' => 'show-image' ) ); ?>
+						</button>
+					</div>
+					<div id="show-featured-image-modal" class="jww-image-modal" role="dialog" aria-modal="true" aria-label="<?php esc_attr_e( 'Show image', 'jww-theme' ); ?>" aria-hidden="true">
+						<div class="jww-image-modal-backdrop"></div>
+						<div class="jww-image-modal-content">
+							<button type="button" class="jww-image-modal-close" aria-label="<?php esc_attr_e( 'Close', 'jww-theme' ); ?>">&times;</button>
+							<?php if ( $full_src ) : ?>
+								<img src="<?php echo esc_url( $full_src ); ?>" alt="<?php echo esc_attr( $image_alt ?: get_the_title() ); ?>" class="jww-image-modal-img" loading="lazy" decoding="async">
+							<?php endif; ?>
+						</div>
 					</div>
 				<?php endif; ?>
 				<div class="wp-block-buttons is-content-justification-center is-layout-flex wp-block-buttons-is-layout-flex show-meta-buttons">
@@ -355,5 +371,35 @@ if ( $show_artist ) {
 	<h2 id="show-comments-heading" class="wp-block-heading"><?php esc_html_e( 'Comments', 'jww-theme' ); ?></h2>
 	<?php comments_template(); ?>
 </section>
+
+<?php if ( $show_has_thumbnail ) : ?>
+<script>
+(function() {
+	var modal = document.getElementById('show-featured-image-modal');
+	var trigger = document.querySelector('.show-featured-image-trigger');
+	if (!modal || !trigger) return;
+	// Move modal to body so it isn't clipped or positioned relative to a parent with position/transform
+	document.body.appendChild(modal);
+	function openModal() {
+		modal.setAttribute('aria-hidden', 'false');
+		modal.classList.add('jww-image-modal-open');
+		document.body.style.overflow = 'hidden';
+		modal.querySelector('.jww-image-modal-close').focus();
+	}
+	function closeModal() {
+		modal.setAttribute('aria-hidden', 'true');
+		modal.classList.remove('jww-image-modal-open');
+		document.body.style.overflow = '';
+		trigger.focus();
+	}
+	trigger.addEventListener('click', openModal);
+	modal.querySelector('.jww-image-modal-backdrop').addEventListener('click', closeModal);
+	modal.querySelector('.jww-image-modal-close').addEventListener('click', closeModal);
+	document.addEventListener('keydown', function(e) {
+		if (e.key === 'Escape' && modal.classList.contains('jww-image-modal-open')) closeModal();
+	});
+})();
+</script>
+<?php endif; ?>
 
 <?php get_footer(); ?>

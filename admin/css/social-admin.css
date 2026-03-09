@@ -1,0 +1,418 @@
+/* Social Sharing admin page */
+.jww-social-admin-wrap {
+	max-width: 720px;
+}
+
+/* Tabs */
+.jww-social-nav-tabs {
+	margin: 16px 0 0;
+}
+
+.jww-social-nav-tabs .nav-tab {
+	cursor: pointer;
+}
+
+.jww-social-tab-panel {
+	display: block;
+	padding-top: 16px;
+}
+
+.jww-social-tab-panel[hidden] {
+	display: none !important;
+}
+
+.jww-social-section {
+	margin-top: 24px;
+	padding: 16px 0;
+	border-top: 1px solid #c3c4c7;
+}
+
+.jww-social-section:first-of-type {
+	border-top: 0;
+	padding-top: 0;
+}
+
+.jww-social-section h2 {
+	margin-top: 0;
+	font-size: 1.1em;
+}
+
+/* Connection status */
+.jww-social-status-list {
+	list-style: none;
+	margin: 8px 0 0;
+	padding: 0;
+}
+
+.jww-social-status-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 6px 0;
+}
+
+.jww-social-status-dot {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+
+.jww-social-status-item.jww-social-status-configured .jww-social-status-dot {
+	background: #00a32a;
+}
+
+.jww-social-status-item.jww-social-status-not-configured .jww-social-status-dot {
+	background: #dba617;
+}
+
+.jww-social-status-text {
+	flex: 1;
+	min-width: 0;
+}
+
+.jww-social-toggle-wrap {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin-left: auto;
+	flex-shrink: 0;
+	cursor: pointer;
+	position: relative;
+}
+
+/* Visually hide checkbox; track and knob are on the label via ::before and ::after */
+.jww-social-channel-toggle {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.jww-social-toggle-wrap .jww-social-channel-toggle + .jww-social-toggle-label {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 20px;
+	min-height: 20px;
+}
+
+.jww-social-toggle-wrap .jww-social-channel-toggle + .jww-social-toggle-label::before {
+	content: '';
+	display: inline-block;
+	width: 36px;
+	height: 20px;
+	border-radius: 10px;
+	background: #c3c4c7;
+	flex-shrink: 0;
+	transition: background-color 0.2s;
+}
+
+.jww-social-toggle-wrap .jww-social-channel-toggle:focus + .jww-social-toggle-label::before {
+	box-shadow: 0 0 0 1px #2271b1;
+}
+
+.jww-social-toggle-wrap .jww-social-channel-toggle:hover + .jww-social-toggle-label::before {
+	background: #a7aaad;
+}
+
+.jww-social-toggle-wrap .jww-social-channel-toggle:checked + .jww-social-toggle-label::before {
+	background: #2271b1;
+}
+
+.jww-social-toggle-wrap .jww-social-channel-toggle:checked:hover + .jww-social-toggle-label::before {
+	background: #135e96;
+}
+
+.jww-social-toggle-wrap .jww-social-channel-toggle + .jww-social-toggle-label::after {
+	content: '';
+	position: absolute;
+	left: 2px;
+	top: 2px;
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+	background: #fff;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+	transition: left 0.2s ease;
+	pointer-events: none;
+}
+
+.jww-social-toggle-wrap .jww-social-channel-toggle:checked + .jww-social-toggle-label::after {
+	left: 18px;
+}
+
+.jww-social-channel-toggle {
+	margin: 0;
+}
+
+.jww-social-toggle-label {
+	font-weight: normal;
+	color: #646970;
+	font-size: 12px;
+}
+
+.jww-social-toggle-saved {
+	font-size: 12px;
+	color: #00a32a;
+	opacity: 0;
+	transition: opacity 0.2s;
+}
+
+.jww-social-toggle-saved.is-visible {
+	opacity: 1;
+}
+
+.jww-social-channel-toggle:disabled {
+	cursor: wait;
+}
+
+/* Trigger buttons */
+.jww-social-trigger-buttons {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin-top: 8px;
+}
+
+.jww-social-trigger-rows {
+	margin-top: 12px;
+}
+
+.jww-social-trigger-row {
+	margin-bottom: 16px;
+	padding-bottom: 16px;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.jww-social-trigger-row:last-child {
+	margin-bottom: 0;
+	padding-bottom: 0;
+	border-bottom: 0;
+}
+
+.jww-social-trigger-random {
+	margin-bottom: 8px;
+}
+
+.jww-social-trigger-specific {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin-left: 0;
+}
+
+.jww-social-trigger-specific .jww-social-select-post,
+.jww-social-trigger-specific .jww-social-select-lyric {
+	min-width: 200px;
+	max-width: 320px;
+}
+
+.jww-social-cron-table {
+	margin-top: 8px;
+}
+
+.jww-social-cron-table select {
+	min-width: 160px;
+}
+
+.jww-social-cron-saved {
+	font-size: 12px;
+	color: #00a32a;
+	margin-left: 10px;
+	opacity: 0;
+	transition: opacity 0.2s;
+}
+
+.jww-social-cron-saved.is-visible {
+	opacity: 1;
+}
+
+.jww-social-on-publish-list {
+	list-style: none;
+	margin: 8px 0 0;
+	padding: 0;
+}
+
+.jww-social-on-publish-item {
+	margin: 8px 0;
+}
+
+.jww-social-on-publish-item .jww-social-toggle-wrap {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
+}
+
+.jww-social-on-publish-item .jww-social-channel-toggle,
+.jww-social-on-publish-item .jww-social-on-publish-toggle {
+	margin: 0;
+}
+
+/* On-publish: same hidden checkbox + label track/knob pattern */
+.jww-social-on-publish-toggle {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.jww-social-on-publish-item .jww-social-toggle-wrap .jww-social-on-publish-toggle + .jww-social-toggle-label {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	height: 20px;
+	min-height: 20px;
+}
+
+.jww-social-on-publish-item .jww-social-toggle-wrap .jww-social-on-publish-toggle + .jww-social-toggle-label::before {
+	content: '';
+	display: inline-block;
+	width: 36px;
+	height: 20px;
+	border-radius: 10px;
+	background: #c3c4c7;
+	flex-shrink: 0;
+	transition: background-color 0.2s;
+}
+
+.jww-social-on-publish-item .jww-social-toggle-wrap .jww-social-on-publish-toggle:hover + .jww-social-toggle-label::before {
+	background: #a7aaad;
+}
+
+.jww-social-on-publish-item .jww-social-toggle-wrap .jww-social-on-publish-toggle:checked + .jww-social-toggle-label::before {
+	background: #2271b1;
+}
+
+.jww-social-on-publish-item .jww-social-toggle-wrap .jww-social-on-publish-toggle + .jww-social-toggle-label::after {
+	content: '';
+	position: absolute;
+	left: 2px;
+	top: 2px;
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+	background: #fff;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+	transition: left 0.2s ease;
+	pointer-events: none;
+}
+
+.jww-social-on-publish-item .jww-social-toggle-wrap .jww-social-on-publish-toggle:checked + .jww-social-toggle-label::after {
+	left: 18px;
+}
+
+.jww-social-trigger.is-loading {
+	pointer-events: none;
+	opacity: 0.7;
+}
+
+/* Event log */
+.jww-social-log-section {
+	margin-bottom: 24px;
+}
+
+.jww-social-log {
+	background: #f6f7f7;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 12px 14px;
+	min-height: 120px;
+	max-height: 400px;
+	overflow-y: auto;
+	font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
+	font-size: 12px;
+	line-height: 1.5;
+	color: #1d2327;
+}
+
+.jww-social-log .jww-social-log-empty {
+	margin: 0;
+	color: #646970;
+}
+
+.jww-social-log .jww-social-log-line {
+	margin: 2px 0;
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+.jww-social-log .jww-social-log-line.jww-social-log-error {
+	color: #d63638;
+}
+
+#jww-social-log-clear {
+	margin-top: 8px;
+}
+
+/* Message templates: only visible when the related trigger/schedule is enabled */
+.jww-social-message-template {
+	display: none;
+	margin-top: 12px;
+	padding-top: 12px;
+	border-top: 1px solid #dcdcde;
+}
+
+.jww-social-message-template.jww-social-message-template-visible {
+	display: block;
+}
+
+.jww-social-message-template-label {
+	display: block;
+	margin-bottom: 4px;
+	font-weight: 600;
+}
+
+.jww-social-message-template-help {
+	margin-top: 6px;
+	margin-bottom: 0;
+}
+
+.jww-social-status-textarea {
+	width: 100%;
+	max-width: 640px;
+}
+
+.jww-social-cron-table .jww-social-cron-template-row {
+	display: none;
+}
+
+.jww-social-cron-table .jww-social-cron-template-row.jww-social-cron-template-row-visible {
+	display: table-row !important;
+}
+
+.jww-social-cron-template-row td {
+	padding-top: 0;
+	padding-bottom: 16px;
+	vertical-align: top;
+}
+
+.jww-social-message-template-inline .jww-social-message-template-label {
+	margin-bottom: 4px;
+}
+
+.jww-social-status-text-saved {
+	display: block;
+	margin-top: 4px;
+	color: #00a32a;
+	opacity: 0;
+	transition: opacity 0.2s;
+}
+
+.jww-social-status-text-saved.is-visible {
+	opacity: 1;
+}

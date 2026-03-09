@@ -139,10 +139,16 @@ function jww_render_shows_table_row( $show, $table_type = 'past', $show_tour_col
 	}
 
 	$venue_image_id = function_exists( 'jww_get_venue_image_id' ) ? jww_get_venue_image_id( $location_id ) : 0;
+	$featured_image_id = get_post_thumbnail_id( $show_id );
 	?>
 	<tr>
 		<td data-sort-value="<?php echo esc_attr( strtolower( $show_title ) ); ?>">
-			<a href="<?php echo esc_url( $show_link ); ?>"><?php echo esc_html( $show_title ); ?></a>
+			<span class="shows-table-venue-cell">
+				<?php if ( $featured_image_id ) :
+					echo wp_get_attachment_image( $featured_image_id, 'thumbnail', false, array( 'class' => 'shows-table-venue-img', 'loading' => 'lazy', 'decoding' => 'async' ) );
+				endif; ?>
+				<a href="<?php echo esc_url( $show_link ); ?>"><?php echo esc_html( $show_title ); ?></a>
+			</span>
 		</td>
 		<td data-sort-value="<?php echo esc_attr( $show_date_raw ); ?>">
 			<a href="<?php echo esc_url( $show_link ); ?>"><?php echo esc_html( $show_date ); ?></a>

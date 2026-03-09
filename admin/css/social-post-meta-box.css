@@ -1,0 +1,67 @@
+/* Social Share meta box (post edit sidebar) */
+.jww-social-share-panel {
+	margin: 0;
+}
+
+.jww-social-share-unpublished,
+.jww-social-share-none {
+	margin: 0;
+	color: #646970;
+	font-size: 13px;
+}
+
+.jww-social-share-section {
+	margin-bottom: 14px;
+	padding-bottom: 14px;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.jww-social-share-section:last-child {
+	margin-bottom: 0;
+	padding-bottom: 0;
+	border-bottom: 0;
+}
+
+.jww-social-share-section-title {
+	margin: 0 0 8px;
+	font-weight: 600;
+	font-size: 12px;
+}
+
+.jww-social-share-buttons {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-bottom: 8px;
+}
+
+.jww-social-share-btn {
+	flex: 0 0 auto;
+}
+
+.jww-social-share-all-wrap {
+	margin-top: 4px;
+}
+
+.jww-social-share-all-wrap .jww-social-share-all {
+	width: 100%;
+}
+
+.jww-social-lyric-line-select {
+	width: 100%;
+	max-width: 100%;
+	margin-bottom: 8px;
+	font-size: 12px;
+}
+
+.jww-social-share-no-lyrics {
+	margin: 0;
+	color: #646970;
+	font-size: 12px;
+}
+
+.jww-social-share-btn.is-loading,
+.jww-social-share-all.is-loading {
+	pointer-events: none;
+	opacity: 0.7;
+}

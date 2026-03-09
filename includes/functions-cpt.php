@@ -73,6 +73,34 @@ function jww_register_show_post_type() {
 add_action( 'init', 'jww_register_show_post_type', 0 );
 
 /**
+ * Add featured image column to Shows list table in admin.
+ * Uses post featured image only; no fallback to venue image.
+ */
+function jww_show_add_featured_image_column( $columns ) {
+	$new = array();
+	foreach ( $columns as $key => $label ) {
+		$new[ $key ] = $label;
+		if ( $key === 'title' ) {
+			$new['show_featured_image'] = __( 'Featured Image', 'jww-theme' );
+		}
+	}
+	return $new;
+}
+add_filter( 'manage_show_posts_columns', 'jww_show_add_featured_image_column' );
+
+function jww_show_render_featured_image_column( $column, $post_id ) {
+	if ( $column !== 'show_featured_image' ) {
+		return;
+	}
+	$thumb_id = get_post_thumbnail_id( $post_id );
+	if ( ! $thumb_id ) {
+		return;
+	}
+	echo wp_get_attachment_image( $thumb_id, array( 50, 50 ), false, array( 'style' => 'max-width:50px;height:auto;' ) );
+}
+add_action( 'manage_show_posts_custom_column', 'jww_show_render_featured_image_column', 10, 2 );
+
+/**
  * Enable comments on Show post type (for reviews and discussion).
  * Runs after ACF may have registered the post type so we add support either way.
  */
