@@ -28,7 +28,7 @@ if (!empty($artist_field)) {
 ?>
 
 <blockquote class="random-lyrics-quote">
-    <p class="random-lyrics-text"><?php echo esc_html($lyrics_line); ?></p>
+    <p class="random-lyrics-text"><?php echo nl2br( esc_html( $lyrics_line ) ); ?></p>
     
     <?php if ($show_song_title || $show_artist): ?>
     <cite class="random-lyrics-attribution">

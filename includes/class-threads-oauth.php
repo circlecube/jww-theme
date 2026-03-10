@@ -148,9 +148,14 @@ class Threads_OAuth {
 			return;
 		}
 
-		// Save to options (theme config reads .env first, then options).
+		$expires_in = isset( $long_data['expires_in'] ) ? (int) $long_data['expires_in'] : ( 60 * 24 * 60 * 60 ); // Default 60 days in seconds.
+		$expires_at = time() + $expires_in;
+
+		// Save to options (theme config reads options first, then .env).
 		update_option( 'jww_social_threads_user_id', $user_id, false );
 		update_option( 'jww_social_threads_access_token', $long_lived_token, false );
+		update_option( 'jww_social_threads_token_expires_at', $expires_at, false );
+		delete_transient( 'jww_social_token_email_threads' );
 
 		$this->redirect_with_message( 'success', __( 'Threads token updated. Saved to WordPress options; if you use .env for Threads, update JWW_THREADS_ACCESS_TOKEN there or remove it to use the saved option.', 'jww-theme' ) );
 	}

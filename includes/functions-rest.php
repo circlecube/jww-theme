@@ -69,7 +69,7 @@ function jww_register_song_lyrics_rest_field() {
 add_action( 'rest_api_init', 'jww_register_song_lyrics_rest_field' );
 
 /**
- * Register REST route: GET random lyrics line
+ * Register REST route: GET random lyrics (one random section, typically 3–4 lines).
  * Uses jww_get_random_lyrics_data() from functions-acf.php.
  */
 function jww_register_random_lyrics_rest_route() {
@@ -98,7 +98,8 @@ function jww_register_random_lyrics_ping_route() {
 add_action( 'rest_api_init', 'jww_register_random_lyrics_ping_route' );
 
 /**
- * REST callback: return one random lyrics line (for block and API consumers).
+ * REST callback: return one random lyrics section (for block and API consumers).
+ * lyrics_line may contain newlines (multiple lines per section).
  *
  * @param WP_REST_Request $request Request object
  * @return WP_REST_Response|WP_Error
@@ -189,6 +190,39 @@ function jww_rest_register_decode_title_entities() {
 	}
 }
 add_action( 'rest_api_init', 'jww_rest_register_decode_title_entities', 20 );
+
+/**
+ * Remove author from REST API responses for all post types
+ *
+ * The theme does not display or expose post author (no author meta in head,
+ * no post-author blocks). This keeps REST responses consistent.
+ *
+ * @param WP_REST_Response $response Response object
+ * @param WP_Post          $post     Post object
+ * @param WP_REST_Request   $request  Request object
+ * @return WP_REST_Response
+ */
+function jww_rest_remove_author_from_response( $response, $post, $request ) {
+	if ( ! $response instanceof WP_REST_Response ) {
+		return $response;
+	}
+	unset( $response->data['author'] );
+	if ( isset( $response->data['_links']['author'] ) ) {
+		unset( $response->data['_links']['author'] );
+	}
+	if ( isset( $response->data['_embedded']['author'] ) ) {
+		unset( $response->data['_embedded']['author'] );
+	}
+	return $response;
+}
+
+function jww_rest_register_remove_author() {
+	$post_types = get_post_types( array( 'show_in_rest' => true ), 'names' );
+	foreach ( $post_types as $post_type ) {
+		add_filter( "rest_prepare_{$post_type}", 'jww_rest_remove_author_from_response', 10, 3 );
+	}
+}
+add_action( 'rest_api_init', 'jww_rest_register_remove_author', 15 );
 
 /**
  * Add show-specific fields to REST API response

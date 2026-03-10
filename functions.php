@@ -10,6 +10,9 @@ require_once( get_stylesheet_directory() . '/includes/class-youtube-importer.php
 
 // Link Functions (Music streaming and purchase links)
 require_once( get_stylesheet_directory() . '/includes/link-functions.php' );
+// Share link helpers (X, Facebook, Mastodon, Bluesky – URL-based share buttons)
+require_once( get_stylesheet_directory() . '/includes/share-link-functions.php' );
+require_once( get_stylesheet_directory() . '/includes/share-link-icons.php' );
 
 // Template Tags
 require_once( get_stylesheet_directory() . '/includes/template-tags.php' );
@@ -30,6 +33,7 @@ require_once( get_stylesheet_directory() . '/includes/shows-table-render.php' );
 require_once( get_stylesheet_directory() . '/includes/tour-functions.php' );
 require_once( get_stylesheet_directory() . '/includes/rest-api-show-endpoints.php' );
 require_once( get_stylesheet_directory() . '/includes/class-social-config.php' );
+require_once( get_stylesheet_directory() . '/includes/class-social-token-refresh.php' );
 require_once( get_stylesheet_directory() . '/includes/class-threads-oauth.php' );
 require_once( get_stylesheet_directory() . '/includes/class-facebook-oauth.php' );
 require_once( get_stylesheet_directory() . '/includes/class-instagram-oauth.php' );

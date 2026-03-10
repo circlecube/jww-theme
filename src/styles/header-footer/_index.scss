@@ -3,7 +3,7 @@
 header .header-content-inner-container a[rel="home"],
 .header-container .header-large-text {
   color: var(--wp--preset--color--base);
-  font-size: clamp(1.25rem, 7vw, 3.25rem);
+  font-size: var(--header-title-size);
   font-weight: 700;
   letter-spacing: -0.5px;
   text-decoration: none;
@@ -19,6 +19,7 @@ header .header-content-inner-container a[rel="home"],
 }
 
 .header-content-inner-container {
+  --header-title-size: clamp(1.25rem, 7vw, 3.25rem);
   padding-top: var(--wp--preset--spacing--30);
   padding-bottom: var(--wp--preset--spacing--30);
 }
@@ -28,7 +29,28 @@ header .header-content-inner-container a[rel="home"],
   padding-left: 0;
 }
 
-/* Mobile nav overlay: ensure it appears above page content and has a background */
+/* Site icon + title group (icon to the left of site title) */
+.header-title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.header-site-icon-link {
+  display: block;
+  flex-shrink: 0;
+  line-height: 0;
+  text-decoration: none;
+}
+
+.header-site-icon {
+  display: block;
+  width: var(--header-title-size);
+  height: var(--header-title-size);
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 .header-container .wp-block-navigation__responsive-container {
   position: relative;
   z-index: 1000;
@@ -92,6 +114,25 @@ header .header-content-inner-container a[rel="home"],
 }
 
 /* Footer Styles */
+
+.footer-search {
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+
+  .wp-block-search__input {
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+    border-radius: 4px 0 0 4px;
+    min-width: 280px;
+  }
+
+  .wp-block-search__button {
+    border-radius: 0 4px 4px 0;
+  }
+
+}
+
 @media (min-width: 768px) {
   .social-links-official {
     padding-right: 1rem;

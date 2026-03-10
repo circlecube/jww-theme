@@ -51,14 +51,33 @@ function jww_random_lyrics_inline_shortcode() {
 add_shortcode('random_lyrics_inline', 'jww_random_lyrics_inline_shortcode');
 
 /**
- * Shortcode for header site title (unified large title site-wide)
+ * Shortcode for header site title (unified large title site-wide).
+ * Outputs site icon (when set) to the left of the site title.
  * Usage: [header_site_title]
  *
  * @return string HTML output
  */
 function jww_header_site_title_shortcode() {
-	$site_title = '<!-- wp:site-title {"level":0,"className":"header-large-text","style":{"typography":{"lineHeight":"1.2"},"layout":{"selfStretch":"fill","flexSize":null},"elements":{"link":{"color":{"text":"var:preset|color|base"}}}},"textColor":"base"} /-->';
-	return do_blocks( $site_title );
+	$site_icon_url = get_site_icon_url( 48 );
+	$site_title_block = '<!-- wp:site-title {"level":0,"className":"header-large-text","style":{"typography":{"lineHeight":"1.2"},"layout":{"selfStretch":"fill","flexSize":null},"elements":{"link":{"color":{"text":"var:preset|color|base"}}}},"textColor":"base"} /-->';
+
+	if ( $site_icon_url ) {
+		$home_url = esc_url( home_url( '/' ) );
+		$icon_img = '<img src="' . esc_url( $site_icon_url ) . '" width="40" height="40" alt="" class="header-site-icon" loading="eager" />';
+		$icon_html = '<a href="' . $home_url . '" class="header-site-icon-link" aria-hidden="true">' . $icon_img . '</a>';
+		$blocks = '<!-- wp:group {"className":"header-title-with-icon","layout":{"type":"flex","flexWrap":"nowrap"}} -->
+<div class="wp-block-group header-title-with-icon is-layout-flex">
+	<!-- wp:html -->
+	' . $icon_html . '
+	<!-- /wp:html -->
+	' . $site_title_block . '
+</div>
+<!-- /wp:group -->';
+	} else {
+		$blocks = $site_title_block;
+	}
+
+	return do_blocks( $blocks );
 }
 add_shortcode('header_site_title', 'jww_header_site_title_shortcode');
 

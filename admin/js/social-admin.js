@@ -83,8 +83,8 @@
 			$sel.append($('<option value="random">').text(window.jwwSocialAdmin.i18n.random || 'Random'));
 			if (res.success && res.data && res.data.lines && res.data.lines.length) {
 				res.data.lines.forEach(function (item) {
-					var text = (item.text || '').length > 60 ? (item.text || '').substring(0, 57) + '…' : (item.text || '');
-					$sel.append($('<option>').attr('value', item.index).text('Line ' + (item.index + 1) + ': ' + text));
+					var label = item.label != null ? item.label : ((item.text || '').length > 60 ? (item.text || '').substring(0, 57) + '…' : (item.text || ''));
+					$sel.append($('<option>').attr('value', item.index).text('Section ' + (item.index + 1) + ': ' + label));
 				});
 			}
 			$sel.prop('disabled', false);

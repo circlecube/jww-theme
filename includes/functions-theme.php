@@ -97,6 +97,23 @@ function jww_enqueue() {
 		);
 	}
 
+	// Share buttons: on single song (share row + floating lyrics share) and wherever random lyrics block appears
+	wp_enqueue_style(
+		'jww-share-buttons',
+		get_stylesheet_directory_uri() . '/assets/css/share-buttons.css',
+		array(),
+		wp_get_theme()->get( 'Version' )
+	);
+	if ( is_singular( 'song' ) ) {
+		wp_enqueue_script(
+			'jww-lyrics-share-float',
+			get_stylesheet_directory_uri() . '/assets/js/lyrics-share-float.js',
+			array(),
+			wp_get_theme()->get( 'Version' ),
+			true
+		);
+	}
+
 	// Enqueue sortable table script on show archives, song archive, and single song (Play history table)
 	if ( is_post_type_archive( 'show' ) || is_post_type_archive( 'song' ) || is_singular( 'song' ) || is_tax( array( 'tour', 'location' ) ) ) {
 		$archives_src = get_stylesheet_directory() . '/build/theme-archives.js';
@@ -264,6 +281,23 @@ function jww_ajax_song_live_stats_fragment() {
 }
 add_action( 'wp_ajax_jww_song_live_stats_fragment', 'jww_ajax_song_live_stats_fragment' );
 add_action( 'wp_ajax_nopriv_jww_song_live_stats_fragment', 'jww_ajax_song_live_stats_fragment' );
+
+/**
+ * Decode HTML entities in post titles so "Happy Mother&#8217;s Day" displays as "Happy Mother's Day".
+ * Applied everywhere get_the_title() or the_title() is used (front-end, REST, social payloads).
+ * Output is still escaped with esc_html() where needed for safe display.
+ *
+ * @param string $title   Post title (may contain entities like &#8217;).
+ * @param int    $post_id Post ID (optional).
+ * @return string Decoded title.
+ */
+function jww_decode_title_entities( $title, $post_id = 0 ) {
+	if ( ! is_string( $title ) || $title === '' ) {
+		return $title;
+	}
+	return html_entity_decode( $title, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+}
+add_filter( 'the_title', 'jww_decode_title_entities', 11, 2 );
 
 /**
  * Prepend festival name to show title when the show has a festival name set.

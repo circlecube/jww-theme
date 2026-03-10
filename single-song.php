@@ -172,18 +172,26 @@ get_header();
 		} ?>
 		
 		<?php
-		// Get song and artist info for music service links
-		$song_title = get_the_title() ?? '';
-		// Get ACF song links repeater field
-		$song_links = get_field('song_links');
-		// Generate all music service links for the song (ACF links will override generated ones)
-		echo get_song_music_service_links($song_title, $artist_name, '', array(), $song_links);
+		// Share buttons: directly below videos
+		if ( function_exists( 'jww_render_share_buttons' ) ) {
+			$share_url  = get_permalink();
+			$share_text = function_exists( 'jww_share_song_default_text' ) ? jww_share_song_default_text( get_the_ID() ) : get_the_title();
+			echo '<div class="jww-share-song-wrap aligncenter has-global-padding" style="margin-top:var(--wp--preset--spacing--40);margin-bottom:0">';
+			echo jww_render_share_buttons( 
+				$share_url,
+				$share_text,
+				array( 'x', 'facebook', 'mastodon', 'bluesky', 'threads', 'linkedin', 'reddit', 'pinterest' ),
+				'song',
+				'Share'
+			);
+			echo '</div>';
+		}
 		?>
 	</div>
 </main>
 
-<!-- Lyrics Section -->
-<div class="wp-block-group has-accent-6-background-color has-background is-layout-constrained has-global-padding" style="border-style:none;border-width:0px">
+<!-- Lyrics Section (selectable text shows floating share) -->
+<div id="jww-lyrics-section" class="wp-block-group has-accent-6-background-color has-background is-layout-constrained has-global-padding jww-lyrics-selectable-wrap" style="border-style:none;border-width:0px" data-share-url="<?php echo esc_url( get_permalink() ); ?>" data-share-context="<?php echo esc_attr( function_exists( 'jww_share_song_default_text' ) ? jww_share_song_default_text( get_the_ID() ) : get_the_title() ); ?>">
 	<div class="wp-block-post-content">
 	<h2 class="wp-block-heading">Lyrics</h2>
 
@@ -347,6 +355,17 @@ get_header();
 	<?php
 		}
 	?>
+</div>
+
+<!-- Music service links -->
+<div class="wp-block-group alignwide has-global-padding jww-song-listen-wrap" style="padding-top:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--50)">
+	<?php
+	$song_title = get_the_title() ?? '';
+	$song_links = get_field( 'song_links' );
+	?>
+	<div class="jww-song-listen-section">
+		<?php echo get_song_music_service_links( $song_title, $artist_name, '', array(), $song_links, 'Listen' ); ?>
+	</div>
 </div>
 
 <!-- Navigation -->

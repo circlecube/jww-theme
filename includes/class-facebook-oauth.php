@@ -203,6 +203,7 @@ class Facebook_OAuth {
 
 		update_option( 'jww_social_facebook_page_id', $chosen['id'], false );
 		update_option( 'jww_social_facebook_page_access_token', $chosen['access_token'], false );
+		delete_transient( 'jww_social_token_email_facebook' );
 
 		$this->redirect_with_message( 'success', __( 'Facebook Page token updated. Saved to WordPress options; if you use .env for Facebook, update JWW_FACEBOOK_PAGE_ACCESS_TOKEN there or remove it to use the saved option.', 'jww-theme' ) );
 	}

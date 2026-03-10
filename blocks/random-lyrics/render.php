@@ -20,6 +20,9 @@ if ( $data === null ) {
 
 $refresh_class = $refresh_on_load ? 'refresh-on-load' : '';
 $rest_url      = rest_url( 'jww/v1/lyrics/random' );
+
+$share_url  = $data['song_link'];
+$share_text = function_exists( 'jww_share_song_default_text' ) ? jww_share_song_default_text( $data['song_id'] ) : ( $data['song_title'] . ' – ' . $data['artist_name'] );
 ?>
 
 <div class="wp-block-jww-theme-random-lyrics <?php echo esc_attr( $refresh_class ); ?>"
@@ -37,6 +40,12 @@ $rest_url      = rest_url( 'jww/v1/lyrics/random' );
 	get_template_part( 'template-parts/random-lyrics-quote', null, $args );
 	echo '</div>';
 	?>
+	<?php if ( function_exists( 'jww_render_share_buttons' ) ) : ?>
+	<div class="random-lyrics-share-wrap jww-share-buttons-wrap" data-share-url="<?php echo esc_url( $share_url ); ?>" data-share-text="<?php echo esc_attr( $share_text ); ?>">
+		<p class="jww-song-section-label"><?php esc_html_e( 'Share', 'jww-theme' ); ?></p>
+		<?php echo jww_render_share_buttons( $share_url, $share_text, array( 'x', 'facebook', 'mastodon', 'bluesky', 'threads', 'linkedin', 'reddit', 'pinterest' ), 'song' ); ?>
+	</div>
+	<?php endif; ?>
 	<?php if ( $refresh_on_load ) : ?>
 	<div class="random-lyrics-controls">
 		<button type="button" class="random-lyrics-refresh-btn" aria-label="<?php esc_attr_e( 'Get new random lyrics', 'jww-theme' ); ?>">
@@ -50,10 +59,14 @@ $rest_url      = rest_url( 'jww/v1/lyrics/random' );
 <?php if ( $refresh_on_load ) : ?>
 <script>
 (function() {
-	function buildQuoteHtml(item, showTitle, showArtist) {
+		function buildQuoteHtml(item, showTitle, showArtist) {
 		var parts = [];
+		function escapeHtml(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+		function escapeAttr(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 		parts.push('<blockquote class="random-lyrics-quote">');
-		parts.push('<p class="random-lyrics-text">' + escapeHtml(item.lyrics_line) + '</p>');
+		var text = (item.lyrics_line != null ? String(item.lyrics_line) : '');
+		var textHtml = text.split('\n').map(function(line) { return escapeHtml(line); }).join('<br>');
+		parts.push('<p class="random-lyrics-text">' + textHtml + '</p>');
 		if (showTitle || showArtist) {
 			parts.push('<cite class="random-lyrics-attribution">');
 			if (showArtist) parts.push('<span class="random-lyrics-artist">' + escapeHtml(item.artist_name) + '</span>');
@@ -66,34 +79,66 @@ $rest_url      = rest_url( 'jww/v1/lyrics/random' );
 		parts.push('</blockquote>');
 		return parts.join('');
 	}
-	function escapeHtml(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-	function escapeAttr(s) { return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+	function buildShareUrl(platform, url, text) {
+		var enc = encodeURIComponent;
+		url = url || '';
+		text = text || '';
+		var combined = text ? text + '\n' + url : url;
+		switch (platform) {
+			case 'x': return 'https://x.com/intent/tweet?url=' + enc(url) + (text ? '&text=' + enc(text) : '');
+			case 'facebook': return 'https://www.facebook.com/sharer/sharer.php?u=' + enc(url);
+			case 'mastodon': return 'https://mastodonshare.com/?url=' + enc(url) + (text ? '&text=' + enc(text) : '');
+			case 'bluesky': return 'https://bsky.app/intent/compose?text=' + enc(combined);
+			case 'threads': return 'https://www.threads.net/intent/post?url=' + enc(url) + (text ? '&text=' + enc(text) : '');
+			case 'linkedin': return 'https://www.linkedin.com/sharing/share-offsite/?url=' + enc(url);
+			case 'reddit': return 'https://www.reddit.com/submit?url=' + enc(url) + (text ? '&title=' + enc(text) : '');
+			case 'pinterest': return 'https://www.pinterest.com/pin/create/button/?url=' + enc(url) + (text ? '&description=' + enc(text) : '');
+			default: return url;
+		}
+	}
+
+	function updateShareWrap(block, url, text) {
+		var wrap = block.querySelector('.random-lyrics-share-wrap');
+		if (!wrap) return;
+		wrap.dataset.shareUrl = url;
+		wrap.dataset.shareText = text;
+		var btns = wrap.querySelectorAll('.jww-share-btn');
+		btns.forEach(function(a) {
+			var m = a.className.match(/jww-share-btn--(\w+)/);
+			if (m) a.href = buildShareUrl(m[1], url, text);
+		});
+	}
 
 	document.addEventListener('DOMContentLoaded', function() {
-		document.querySelectorAll('.wp-block-jww-theme-random-lyrics.refresh-on-load').forEach(function(block) {
-			var btn = block.querySelector('.random-lyrics-refresh-btn');
+		// Event delegation: one listener on document so refresh works every time (button is never replaced).
+		document.addEventListener('click', function(e) {
+			var btn = e.target && e.target.closest && e.target.closest('.random-lyrics-refresh-btn');
 			if (!btn) return;
-			btn.addEventListener('click', function() {
-				var container = block.querySelector('.random-lyrics-quote-container');
-				var restUrl = block.dataset.restUrl || block.getAttribute('data-rest-url');
-				var showTitle = block.dataset.showTitle === 'true';
-				var showArtist = block.dataset.showArtist === 'true';
-				var originalHtml = container.innerHTML;
-				container.innerHTML = '<p class="random-lyrics-loading"><?php echo esc_js( __( 'Loading new lyrics...', 'jww-theme' ) ); ?></p>';
-				btn.disabled = true;
-				var icon = block.querySelector('.refresh-icon');
-				if (icon) icon.classList.add('fa-spin');
-				fetch(restUrl)
-					.then(function(r) { return r.json(); })
-					.then(function(item) {
-						container.innerHTML = buildQuoteHtml(item, showTitle, showArtist);
-					})
-					.catch(function() { container.innerHTML = originalHtml; })
-					.finally(function() {
-						btn.disabled = false;
-						if (icon) icon.classList.remove('fa-spin');
-					});
-			});
+			var block = btn.closest('.wp-block-jww-theme-random-lyrics.refresh-on-load');
+			if (!block) return;
+			var container = block.querySelector('.random-lyrics-quote-container');
+			var restUrl = block.dataset.restUrl || block.getAttribute('data-rest-url');
+			var showTitle = block.dataset.showTitle === 'true';
+			var showArtist = block.dataset.showArtist === 'true';
+			if (!container || !restUrl) return;
+			var originalHtml = container.innerHTML;
+			container.innerHTML = '<p class="random-lyrics-loading"><?php echo esc_js( __( 'Loading new lyrics...', 'jww-theme' ) ); ?></p>';
+			btn.disabled = true;
+			var icon = block.querySelector('.refresh-icon');
+			if (icon) icon.classList.add('fa-spin');
+			fetch(restUrl)
+				.then(function(r) { return r.json(); })
+				.then(function(item) {
+					container.innerHTML = buildQuoteHtml(item, showTitle, showArtist);
+					var shareText = (item.song_title || '') + (item.artist_name ? ' – ' + item.artist_name : '');
+					updateShareWrap(block, item.song_link || '', shareText);
+				})
+				.catch(function() { container.innerHTML = originalHtml; })
+				.finally(function() {
+					btn.disabled = false;
+					if (icon) icon.classList.remove('fa-spin');
+				});
 		});
 	});
 })();

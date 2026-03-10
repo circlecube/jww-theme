@@ -25,4 +25,4 @@ if (empty($song_id) || empty($lyrics_line) || empty($song_title)) {
 	return;
 }
 ?>
-<p>“<?php echo esc_html($lyrics_line); ?>” — <a href="<?php echo esc_url(get_permalink($song_id)); ?>"><?php echo esc_html($song_title); ?></a> by <a href="<?php echo esc_url($artist_url); ?>"><?php echo esc_html($artist_name); ?></a></p>
+<p>“<?php echo nl2br( esc_html( $lyrics_line ) ); ?>” — <a href="<?php echo esc_url(get_permalink($song_id)); ?>"><?php echo esc_html($song_title); ?></a> by <a href="<?php echo esc_url($artist_url); ?>"><?php echo esc_html($artist_name); ?></a></p>

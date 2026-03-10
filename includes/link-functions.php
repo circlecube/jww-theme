@@ -528,10 +528,14 @@ function process_acf_song_links($acf_links) {
  * @param array $custom_links Array of service_key => url pairs to override generated links
  * @return string HTML output of all music service links
  */
-function get_all_music_service_links($title, $artist_name = ARTIST_NAME, $type = 'album', $excluded_services = array(), $custom_links = array()) {
+function get_all_music_service_links($title, $artist_name = ARTIST_NAME, $type = 'album', $excluded_services = array(), $custom_links = array(), $label = '') {
     $services = get_music_streaming_services();
     $links_html = '<div class="music-service-links">';
-    
+    $label_html = '';
+    if ( $label !== '' ) {
+        $label_html = '<span class="jww-links-label">' . esc_html( $label ) . '</span>';
+    }
+    $links_html .= $label_html;
     foreach ($services as $key => $service) {
         // Skip excluded services
         if (in_array($key, $excluded_services)) {
@@ -573,7 +577,7 @@ function get_all_music_service_links($title, $artist_name = ARTIST_NAME, $type =
  * @param array $acf_links Optional ACF repeater field data for song_links
  * @return string HTML output of all music service links
  */
-function get_song_music_service_links($song_title, $artist_name = ARTIST_NAME, $album_title = '', $excluded_services = array(), $acf_links = null) {
+function get_song_music_service_links($song_title, $artist_name = ARTIST_NAME, $album_title = '', $excluded_services = array(), $acf_links = null, $label = '') {
     // Use default artist name if none provided
     if (empty($artist_name)) {
         $artist_name = ARTIST_NAME;
@@ -597,7 +601,7 @@ function get_song_music_service_links($song_title, $artist_name = ARTIST_NAME, $
         $custom_links = process_acf_song_links($acf_links);
     }
     
-    return get_all_music_service_links($search_title, $artist_name, 'song', $excluded_services, $custom_links);
+    return get_all_music_service_links($search_title, $artist_name, 'song', $excluded_services, $custom_links, $label);
 }
 
 /**

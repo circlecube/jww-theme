@@ -1,0 +1,145 @@
+/**
+ * Social share buttons (X, Facebook, Mastodon, Bluesky) and lyrics floating share.
+ */
+.jww-share-song-wrap {
+	margin-top: 1rem;
+}
+
+.jww-song-section-label,
+.jww-links-label {
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: var(--wp--preset--color--contrast, #1e1e1e);
+	margin: 0 0 0.5rem 0;
+}
+
+.jww-song-listen-section .jww-song-section-label {
+	margin-bottom: 0.5rem;
+}
+
+.jww-share-song-wrap .jww-song-section-label {
+	margin-top: 1.25rem;
+	margin-bottom: 0.5rem;
+}
+
+.jww-share-song-wrap .jww-song-section-label:first-child {
+	margin-top: 0;
+}
+
+.jww-share-buttons {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem 1rem;
+	align-items: center;
+	justify-content: center;
+}
+
+.jww-share-buttons .jww-share-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	justify-content: center;
+	width: 2.75rem;
+	height: 2.75rem;
+	min-width: 44px;
+	min-height: 44px;
+	padding: 0;
+	text-decoration: none;
+	border-radius: 50%;
+	transition: opacity 0.15s ease, transform 0.2s ease;
+}
+
+.jww-share-buttons .jww-share-btn:hover {
+	opacity: 0.9;
+	transform: scale(1.08);
+}
+
+.jww-share-buttons .jww-share-btn .jww-share-btn-icon,
+.jww-share-buttons .jww-share-btn svg {
+	width: 1.25rem;
+	height: 1.25rem;
+	flex-shrink: 0;
+}
+
+.jww-share-buttons .jww-share-btn--x {
+	background: #000;
+	color: #fff;
+}
+
+.jww-share-buttons .jww-share-btn--facebook {
+	background: #1877f2;
+	color: #fff;
+}
+
+.jww-share-buttons .jww-share-btn--mastodon {
+	background: #6364ff;
+	color: #fff;
+}
+
+.jww-share-buttons .jww-share-btn--bluesky {
+	background: #0085ff;
+	color: #fff;
+}
+
+.jww-share-buttons .jww-share-btn--threads {
+	background: #000;
+	color: #fff;
+}
+
+.jww-share-buttons .jww-share-btn--linkedin {
+	background: #0a66c2;
+	color: #fff;
+}
+
+.jww-share-buttons .jww-share-btn--reddit {
+	background: #ff4500;
+	color: #fff;
+}
+
+.jww-share-buttons .jww-share-btn--pinterest {
+	background: #bd081c;
+	color: #fff;
+}
+
+/* Floating share bar (lyrics selection) */
+.jww-lyrics-share-float {
+	position: fixed;
+	z-index: 100000;
+	display: none;
+	min-width: 200px;
+	padding: 0.5rem 0.75rem;
+	background: var(--wp--preset--color--base, #1e1e1e);
+	color: var(--wp--preset--color--contrast, #fff);
+	border-radius: 8px;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+	font-size: 0.85rem;
+}
+
+.jww-lyrics-share-float.is-visible {
+	display: block;
+}
+
+.jww-lyrics-share-float-label {
+	display: block;
+	margin-bottom: 0.5rem;
+	font-weight: 600;
+}
+
+.jww-lyrics-share-float .jww-share-buttons {
+	gap: 0.35rem;
+}
+
+.jww-lyrics-share-float .jww-share-btn {
+	width: 2.25rem;
+	height: 2.25rem;
+	min-width: 36px;
+	min-height: 36px;
+	padding: 0;
+	font-size: 0.8rem;
+}
+
+.jww-lyrics-share-float .jww-share-btn .jww-share-btn-icon,
+.jww-lyrics-share-float .jww-share-btn svg {
+	width: 1rem;
+	height: 1rem;
+}

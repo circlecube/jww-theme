@@ -307,9 +307,66 @@ function jww_get_countries_with_state_level_codes() {
 }
 
 /**
- * Get random lyrics data for reuse across templates, block, and REST API.
+ * Get lyrics sections for a song: blocks of lines separated by blank lines, capped at a max line count.
+ * When lyrics have no blank lines (full lyrics as one block), they are split into chunks of max lines.
+ * Sections are typically 3–4 lines. Used for random lyric and share dropdown.
  *
- * @return array|null Associative array with song_id, song_title, song_link, lyrics_line, artist_name, featured_image_url; null on failure
+ * @param int $song_id Song post ID.
+ * @return array List of section strings (each may contain newlines, max 4 lines). Empty if no lyrics.
+ */
+function jww_get_lyrics_sections_for_song( $song_id ) {
+	$max_lines_per_section = 4;
+
+	if ( ! function_exists( 'get_field' ) ) {
+		return array();
+	}
+	$song_id = (int) $song_id;
+	if ( $song_id <= 0 || get_post_type( $song_id ) !== 'song' ) {
+		return array();
+	}
+	$lyrics = get_field( 'lyrics', $song_id );
+	if ( $lyrics === null || $lyrics === false || $lyrics === '' ) {
+		return array();
+	}
+	$lyrics = is_string( $lyrics ) ? $lyrics : (string) $lyrics;
+	$lyrics = wp_strip_all_tags( $lyrics );
+	// Split by one or more blank lines (double newline or lines that are only whitespace).
+	$raw_sections = preg_split( '/\n\s*\n/', $lyrics, -1, PREG_SPLIT_NO_EMPTY );
+	$sections = array();
+	foreach ( $raw_sections as $block ) {
+		$lines = array_values( array_filter(
+			array_map( 'trim', explode( "\n", $block ) ),
+			function ( $line ) {
+				return $line !== '';
+			}
+		) );
+		if ( empty( $lines ) ) {
+			continue;
+		}
+		// Cap size: split into chunks of max_lines_per_section so full lyrics without breaks become multiple sections.
+		$chunks = array_chunk( $lines, $max_lines_per_section );
+		foreach ( $chunks as $chunk ) {
+			$has_substance = false;
+			foreach ( $chunk as $line ) {
+				if ( strlen( $line ) > 10 ) {
+					$has_substance = true;
+					break;
+				}
+			}
+			if ( ! $has_substance ) {
+				continue;
+			}
+			$sections[] = implode( "\n", $chunk );
+		}
+	}
+	return array_values( $sections );
+}
+
+/**
+ * Get random lyrics data for reuse across templates, block, and REST API.
+ * Returns one random section (typically 3–4 lines between blank lines) as lyrics_line.
+ *
+ * @return array|null Associative array with song_id, song_title, song_link, lyrics_line (section, may contain newlines), artist_name, featured_image_url; null on failure
  */
 function jww_get_random_lyrics_data() {
 	if ( ! function_exists( 'get_field' ) ) {
@@ -350,25 +407,13 @@ function jww_get_random_lyrics_data() {
 	if ( $song_id <= 0 ) {
 		return null;
 	}
-	$lyrics = get_field( 'lyrics', $song_id );
-	if ( $lyrics === null || $lyrics === false || $lyrics === '' ) {
-		return null;
-	}
-	$lyrics = is_string( $lyrics ) ? $lyrics : (string) $lyrics;
-	$lyrics = wp_strip_all_tags( $lyrics );
 
-	$lyrics_lines = array_filter(
-		array_map( 'trim', explode( "\n", $lyrics ) ),
-		function ( $line ) {
-			return $line !== '' && strlen( $line ) > 10;
-		}
-	);
-	$lyrics_lines = array_values( $lyrics_lines );
-	if ( empty( $lyrics_lines ) ) {
+	$sections = jww_get_lyrics_sections_for_song( $song_id );
+	if ( empty( $sections ) ) {
 		return null;
 	}
 
-	$lyrics_line = $lyrics_lines[ array_rand( $lyrics_lines ) ];
+	$lyrics_line = $sections[ array_rand( $sections ) ];
 	$artist_name = 'Jesse Welles';
 	$artist      = get_field( 'artist', $song_id );
 	if ( ! empty( $artist ) ) {
@@ -406,31 +451,12 @@ function jww_get_random_lyrics_data() {
 }
 
 /**
- * Get lyrics lines for a specific song (for social share "share a lyric" selector).
- * Same filtering as jww_get_random_lyrics_data: strip tags, split by newline, trim, exclude empty and very short lines.
+ * Get lyrics sections for a specific song (for social share "share a lyric" selector).
+ * Same sections as jww_get_random_lyrics_data / jww_get_lyrics_sections_for_song.
  *
  * @param int $song_id Song post ID.
- * @return array List of lyric lines (strings). Empty if no lyrics or song not found.
+ * @return array List of section strings (each may contain newlines). Empty if no lyrics.
  */
 function jww_social_get_lyrics_lines_for_song( $song_id ) {
-	if ( ! function_exists( 'get_field' ) ) {
-		return array();
-	}
-	$song_id = (int) $song_id;
-	if ( $song_id <= 0 || get_post_type( $song_id ) !== 'song' ) {
-		return array();
-	}
-	$lyrics = get_field( 'lyrics', $song_id );
-	if ( $lyrics === null || $lyrics === false || $lyrics === '' ) {
-		return array();
-	}
-	$lyrics = is_string( $lyrics ) ? $lyrics : (string) $lyrics;
-	$lyrics = wp_strip_all_tags( $lyrics );
-	$lines = array_filter(
-		array_map( 'trim', explode( "\n", $lyrics ) ),
-		function ( $line ) {
-			return $line !== '' && strlen( $line ) > 10;
-		}
-	);
-	return array_values( $lines );
+	return jww_get_lyrics_sections_for_song( $song_id );
 }

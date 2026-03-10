@@ -72,6 +72,22 @@
     text-align: center;
 }
 
+.random-lyrics-share-wrap {
+    margin-top: 1.5rem;
+    text-align: center;
+}
+
+.random-lyrics-share-wrap .jww-song-section-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--wp--preset--color--base, #333);
+    margin-bottom: 0.5rem;
+}
+
+.random-lyrics-share-wrap .jww-share-buttons {
+    justify-content: center;
+}
+
 .random-lyrics-refresh-btn {
     background: var(--wp--preset--color--accent-4, #0073aa);
     color: white;

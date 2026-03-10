@@ -187,9 +187,21 @@ function jww_fallback_meta_description() {
 				$description = substr( $description, 0, 157 ) . '...';
 			}
 		}
-		
+
 		echo '<meta name="description" content="' . esc_attr( $description ) . '" />' . "\n";
 	}
+}
+
+/**
+ * Strip author meta and link from head HTML (used when buffering wp_head).
+ *
+ * @param string $head Raw head markup.
+ * @return string Head markup with meta name="author" and link rel="author" removed.
+ */
+function jww_strip_author_from_head( $head ) {
+	$head = preg_replace( '/<meta\s+name=["\']author["\'][^>]*>\s*/i', '', $head );
+	$head = preg_replace( '/<link\s+rel=["\']author["\'][^>]*>\s*/i', '', $head );
+	return $head;
 }
 add_action( 'wp_head', 'jww_fallback_meta_description', 1 );
 

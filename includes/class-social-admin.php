@@ -26,6 +26,7 @@ class Social_Admin {
 	 */
 	public function __construct() {
 		add_action( 'admin_menu', array( $this, 'add_menu_page' ), 25 );
+		add_action( 'admin_init', array( $this, 'maybe_save_credentials' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 		add_action( 'wp_ajax_jww_social_trigger_random_song', array( $this, 'ajax_trigger_random_song' ) );
 		add_action( 'wp_ajax_jww_social_trigger_random_lyric', array( $this, 'ajax_trigger_random_lyric' ) );
@@ -53,6 +54,36 @@ class Social_Admin {
 			self::PAGE_SLUG,
 			array( $this, 'render_page' )
 		);
+	}
+
+	/**
+	 * Handle credentials form POST on admin_init so we can redirect before any output.
+	 */
+	public function maybe_save_credentials() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		if ( ! isset( $_GET['page'] ) || $_GET['page'] !== self::PAGE_SLUG ) {
+			return;
+		}
+		if ( ! isset( $_POST['jww_social_save_credentials'] ) || ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), self::NONCE_ACTION_CREDENTIALS ) ) {
+			return;
+		}
+		$prefix = 'jww_social_';
+		$schema = $this->get_credentials_schema();
+		foreach ( $schema as $service => $fields ) {
+			foreach ( $fields as $field ) {
+				$key   = $field['key'];
+				$opt_key = $prefix . $key;
+				$value = isset( $_POST[ 'jww_social_cred_' . $key ] ) ? sanitize_text_field( wp_unslash( $_POST[ 'jww_social_cred_' . $key ] ) ) : '';
+				if ( $field['secret'] && $value === '' ) {
+					continue;
+				}
+				update_option( $opt_key, $value, false );
+			}
+		}
+		wp_safe_redirect( add_query_arg( array( 'page' => self::PAGE_SLUG, 'credentials_saved' => '1' ), admin_url( 'options-general.php' ) ) );
+		exit;
 	}
 
 	/**
@@ -234,6 +265,27 @@ class Social_Admin {
 	}
 
 	/**
+	 * Return a masked display string for a credential value (first 2–4 chars + bullets).
+	 *
+	 * @param string $value Raw value.
+	 * @return string Safe to output in HTML (e.g. "ab••••••").
+	 */
+	protected function mask_credential_display( $value ) {
+		$value = is_string( $value ) ? trim( $value ) : '';
+		if ( $value === '' ) {
+			return '';
+		}
+		$len = strlen( $value );
+		if ( $len <= 2 ) {
+			return str_repeat( '•', min( 3, $len ) ) . '•••';
+		}
+		if ( $len <= 4 ) {
+			return substr( $value, 0, 2 ) . '••••••';
+		}
+		return substr( $value, 0, 4 ) . '••••••••••';
+	}
+
+	/**
 	 * Get published posts for a post type for use in dropdowns.
 	 *
 	 * @param string $post_type Post type (song, show, post).
@@ -330,23 +382,7 @@ class Social_Admin {
 		$user_can = current_user_can( 'manage_options' );
 
 		// Save credentials form (options take precedence over .env; survives theme deploy).
-		if ( $user_can && isset( $_POST['jww_social_save_credentials'] ) && isset( $_POST['_wpnonce'] ) && wp_verify_nonce( $_POST['_wpnonce'], self::NONCE_ACTION_CREDENTIALS ) ) {
-			$prefix = 'jww_social_';
-			$schema = $this->get_credentials_schema();
-			foreach ( $schema as $service => $fields ) {
-				foreach ( $fields as $field ) {
-					$key = $field['key'];
-					$opt_key = $prefix . $key;
-					$value = isset( $_POST[ 'jww_social_cred_' . $key ] ) ? sanitize_text_field( wp_unslash( $_POST[ 'jww_social_cred_' . $key ] ) ) : '';
-					if ( $field['secret'] && $value === '' ) {
-						continue; // Do not overwrite secret with empty; "leave blank to keep current"
-					}
-					update_option( $opt_key, $value, false );
-				}
-			}
-			wp_safe_redirect( add_query_arg( 'credentials_saved', '1', admin_url( 'options-general.php?page=' . self::PAGE_SLUG ) ) );
-			exit;
-		}
+		// Handled in maybe_save_credentials() on admin_init so redirect happens before any output.
 
 		// Show credentials-saved notice.
 		if ( $user_can && isset( $_GET['credentials_saved'] ) && $_GET['credentials_saved'] === '1' ) {
@@ -487,10 +523,14 @@ class Social_Admin {
 								$input_type = $field['secret'] ? 'password' : 'text';
 								$placeholder = $field['secret'] && $current !== '' ? __( 'Leave blank to keep current', 'jww-theme' ) : '';
 								$value = $field['secret'] ? '' : $current; // Never prefill secrets in HTML
+								$masked = $this->mask_credential_display( $current );
 							?>
 							<p class="jww-social-cred-field">
 								<label for="<?php echo esc_attr( $input_name ); ?>"><?php echo esc_html( $field['label'] ); ?></label>
 								<input type="<?php echo esc_attr( $input_type ); ?>" id="<?php echo esc_attr( $input_name ); ?>" name="<?php echo esc_attr( $input_name ); ?>" value="<?php echo esc_attr( $value ); ?>" class="regular-text" placeholder="<?php echo esc_attr( $placeholder ); ?>" autocomplete="<?php echo $field['secret'] ? 'off' : 'on'; ?>" />
+								<?php if ( $masked !== '' ) : ?>
+								<span class="jww-social-cred-saved"><?php echo esc_html( __( 'Saved:', 'jww-theme' ) . ' ' . $masked ); ?></span>
+								<?php endif; ?>
 							</p>
 							<?php endforeach; ?>
 						</div>
@@ -763,7 +803,9 @@ class Social_Admin {
 		$lines = function_exists( 'jww_social_get_lyrics_lines_for_song' ) ? jww_social_get_lyrics_lines_for_song( $song_id ) : array();
 		$out = array();
 		foreach ( $lines as $i => $text ) {
-			$out[] = array( 'index' => $i, 'text' => $text );
+			$first_line = trim( strpos( $text, "\n" ) !== false ? substr( $text, 0, strpos( $text, "\n" ) ) : $text );
+			$label = strlen( $first_line ) > 60 ? substr( $first_line, 0, 57 ) . '…' : $first_line;
+			$out[] = array( 'index' => $i, 'text' => $text, 'label' => $label );
 		}
 		wp_send_json_success( array( 'lines' => $out ) );
 	}

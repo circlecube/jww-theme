@@ -208,6 +208,7 @@ class Instagram_OAuth {
 
 		update_option( 'jww_social_instagram_account_id', $chosen['ig_user_id'], false );
 		update_option( 'jww_social_instagram_access_token', $chosen['access_token'], false );
+		delete_transient( 'jww_social_token_email_instagram' );
 
 		$this->redirect_with_message( 'success', __( 'Instagram token updated. Saved to WordPress options; if you use .env for Instagram, update JWW_INSTAGRAM_ACCESS_TOKEN there or remove it to use the saved option.', 'jww-theme' ) );
 	}
