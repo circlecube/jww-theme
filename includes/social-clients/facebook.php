@@ -34,7 +34,7 @@ function jww_social_facebook_post( $payload ) {
 
 	$link = isset( $payload['link'] ) ? trim( (string) $payload['link'] ) : '';
 
-	$url = 'https://graph.facebook.com/v18.0/' . $page_id . '/feed';
+	$url = 'https://graph.facebook.com/v25.0/' . $page_id . '/feed';
 
 	$body = array(
 		'access_token' => $token,

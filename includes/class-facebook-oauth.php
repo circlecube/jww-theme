@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Facebook_OAuth {
 
 	const QUERY_VAR = 'facebook_oauth';
-	const GRAPH_VERSION = 'v18.0';
+	const GRAPH_VERSION = 'v25.0';
 
 	/**
 	 * Constructor.

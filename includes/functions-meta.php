@@ -12,6 +12,60 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Get the source URL for an attachment (e.g. link to Facebook/Reddit post).
+ * Stored per image in the Media Library modal (Source URL field next to Alt text, Caption) or on the attachment edit screen.
+ * Use anywhere you need to link to where an image was originally published.
+ *
+ * @param int $attachment_id Attachment post ID.
+ * @return string URL or empty string.
+ */
+function jww_get_attachment_source_url( $attachment_id ) {
+	if ( ! $attachment_id || ! is_numeric( $attachment_id ) ) {
+		return '';
+	}
+	$url = get_post_meta( (int) $attachment_id, 'image_source_url', true );
+	return is_string( $url ) && $url !== '' ? $url : '';
+}
+
+/**
+ * Add Source URL field to the media modal (attachment details where Alt text, Caption, etc. are set).
+ * Same meta key as jww_get_attachment_source_url(); saves when the user updates the attachment from the modal.
+ *
+ * @param array   $form_fields Existing form fields.
+ * @param WP_Post $post        Attachment post object.
+ * @return array
+ */
+function jww_attachment_fields_to_edit_source_url( $form_fields, $post ) {
+	$value = get_post_meta( $post->ID, 'image_source_url', true );
+	$form_fields['image_source_url'] = array(
+		'label'         => __( 'Source URL', 'jww-theme' ),
+		'input'         => 'text',
+		'value'         => is_string( $value ) ? $value : '',
+		'helps'         => __( 'Link to where this image was originally published (e.g. Facebook or Reddit post). Used for credit links.', 'jww-theme' ),
+		'show_in_modal' => true,
+	);
+	return $form_fields;
+}
+add_filter( 'attachment_fields_to_edit', 'jww_attachment_fields_to_edit_source_url', 10, 2 );
+
+/**
+ * Save Source URL when attachment is updated from the media modal.
+ *
+ * @param array $post      Attachment post data (array).
+ * @param array $attachment Submitted form data (e.g. $_REQUEST['attachments'][ $id ]).
+ * @return array Unchanged $post.
+ */
+function jww_attachment_fields_to_save_source_url( $post, $attachment ) {
+	if ( isset( $attachment['image_source_url'] ) ) {
+		$url = is_string( $attachment['image_source_url'] ) ? trim( $attachment['image_source_url'] ) : '';
+		$url = $url !== '' ? esc_url_raw( $url ) : '';
+		update_post_meta( (int) $post['ID'], 'image_source_url', $url );
+	}
+	return $post;
+}
+add_filter( 'attachment_fields_to_save', 'jww_attachment_fields_to_save_source_url', 10, 2 );
+
+/**
  * Fallback meta description for SEO
  * 
  * Outputs a meta description tag based on post type and content.

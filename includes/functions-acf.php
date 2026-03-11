@@ -32,6 +32,47 @@ function jww_add_acf_options_page() {
 add_action( 'acf/init', 'jww_add_acf_options_page' );
 
 /**
+ * Register the "Image source" field group for attachments so it appears on Media edit screens
+ * without requiring an ACF JSON sync. Uses same structure as acf-json/group_attachment_image_source.json.
+ */
+function jww_register_attachment_image_source_field_group() {
+	if ( ! function_exists( 'acf_add_local_field_group' ) ) {
+		return;
+	}
+	acf_add_local_field_group( array(
+		'key'                   => 'group_attachment_image_source',
+		'title'                 => 'Image source',
+		'fields'                => array(
+			array(
+				'key'           => 'field_attachment_image_source_url',
+				'label'         => 'Source URL',
+				'name'          => 'image_source_url',
+				'type'          => 'url',
+				'instructions'  => 'Link to where this image was originally published (e.g. Facebook or Reddit post). Used for credit links in show image modal and elsewhere.',
+				'required'      => 0,
+				'placeholder'   => 'https://...',
+			),
+		),
+		'location'              => array(
+			array(
+				array(
+					'param'    => 'post_type',
+					'operator' => '==',
+					'value'    => 'attachment',
+				),
+			),
+		),
+		'menu_order'            => 0,
+		'position'              => 'side',
+		'style'                 => 'default',
+		'label_placement'        => 'top',
+		'instruction_placement'  => 'label',
+		'active'                 => true,
+	));
+}
+add_action( 'acf/init', 'jww_register_attachment_image_source_field_group', 15 );
+
+/**
  * Auto-generate show title from location (city) and date
  * 
  * Format: {City} - {Month DD, YYYY}

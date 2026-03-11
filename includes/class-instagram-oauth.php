@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Instagram_OAuth {
 
 	const QUERY_VAR = 'instagram_oauth';
-	const GRAPH_VERSION = 'v18.0';
+	const GRAPH_VERSION = 'v25.0';
 
 	/**
 	 * Constructor.

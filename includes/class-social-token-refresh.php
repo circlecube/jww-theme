@@ -117,7 +117,7 @@ class Social_Token_Refresh {
 				'input_token'  => $token,
 				'access_token' => $app_token,
 			),
-			'https://graph.facebook.com/v18.0/debug_token'
+			'https://graph.facebook.com/v25.0/debug_token'
 		);
 		$response = wp_remote_get( $url, array( 'timeout' => 10 ) );
 		if ( is_wp_error( $response ) ) {
@@ -153,7 +153,7 @@ class Social_Token_Refresh {
 				'input_token'  => $token,
 				'access_token' => $app_token,
 			),
-			'https://graph.facebook.com/v18.0/debug_token'
+			'https://graph.facebook.com/v25.0/debug_token'
 		);
 		$response = wp_remote_get( $url, array( 'timeout' => 10 ) );
 		if ( is_wp_error( $response ) ) {

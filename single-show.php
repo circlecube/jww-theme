@@ -118,6 +118,9 @@ if ( $show_artist ) {
 					$thumb_id   = get_post_thumbnail_id();
 					$full_src   = wp_get_attachment_image_url( $thumb_id, 'full' );
 					$image_alt  = get_post_meta( $thumb_id, '_wp_attachment_image_alt', true );
+					$img_caption = wp_get_attachment_caption( $thumb_id );
+					$img_source_url = function_exists( 'jww_get_attachment_source_url' ) ? jww_get_attachment_source_url( $thumb_id ) : '';
+					$has_caption = ( $img_caption !== '' ) || ( $img_source_url !== '' );
 					?>
 					<div class="wp-block-group alignwide show-featured-image" style="margin-bottom:var(--wp--preset--spacing--40)">
 						<button type="button" class="show-featured-image-trigger" aria-label="<?php esc_attr_e( 'View full size image', 'jww-theme' ); ?>" data-show-image-modal="open">
@@ -128,9 +131,22 @@ if ( $show_artist ) {
 						<div class="jww-image-modal-backdrop"></div>
 						<div class="jww-image-modal-content">
 							<button type="button" class="jww-image-modal-close" aria-label="<?php esc_attr_e( 'Close', 'jww-theme' ); ?>">&times;</button>
-							<?php if ( $full_src ) : ?>
-								<img src="<?php echo esc_url( $full_src ); ?>" alt="<?php echo esc_attr( $image_alt ?: get_the_title() ); ?>" class="jww-image-modal-img" loading="lazy" decoding="async">
-							<?php endif; ?>
+							<div class="jww-image-modal-body">
+								<?php if ( $full_src ) : ?>
+									<img src="<?php echo esc_url( $full_src ); ?>" alt="<?php echo esc_attr( $image_alt ?: get_the_title() ); ?>" class="jww-image-modal-img" loading="lazy" decoding="async">
+								<?php endif; ?>
+								<?php if ( $has_caption ) : ?>
+									<p class="jww-image-modal-caption">
+										<?php if ( $img_source_url ) : ?>
+											<a href="<?php echo esc_url( $img_source_url ); ?>" target="_blank" rel="noopener noreferrer nofollow" class="jww-image-modal-caption-link">
+												<?php echo $img_caption !== '' ? esc_html( $img_caption ) : esc_html__( 'View original post', 'jww-theme' ); ?>
+											</a>
+										<?php else : ?>
+											<?php echo $img_caption ? esc_html( $img_caption ) : ''; ?>
+										<?php endif; ?>
+									</p>
+								<?php endif; ?>
+							</div>
 						</div>
 					</div>
 				<?php endif; ?>

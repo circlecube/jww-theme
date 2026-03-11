@@ -70,7 +70,7 @@ function jww_social_instagram_post( $payload ) {
 	$image_url = apply_filters( 'jww_social_instagram_image_url', $image_url, $payload );
 
 	// Step 1: Create media container (feed photo: image_url + caption; no media_type for simple image).
-	$create_url = 'https://graph.facebook.com/v18.0/' . $ig_user_id . '/media';
+	$create_url = 'https://graph.facebook.com/v25.0/' . $ig_user_id . '/media';
 
 	// Send as JSON to avoid form-encoding issues when image_url or caption contains & or other special characters.
 	$create_body = array(
@@ -116,7 +116,7 @@ function jww_social_instagram_post( $payload ) {
 	$creation_id = $data['id'];
 
 	// Step 2: Publish the container.
-	$publish_url = 'https://graph.facebook.com/v18.0/' . $ig_user_id . '/media_publish';
+	$publish_url = 'https://graph.facebook.com/v25.0/' . $ig_user_id . '/media_publish';
 
 	$publish_body = array(
 		'access_token' => $token,
