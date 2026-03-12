@@ -25,7 +25,8 @@
 		min-width: 0;
 	}
 
-	/* YouTube, comment, submit full width */
+	/* YouTube (wrapper + rows), comment, submit full width */
+	.comment-form-youtube-urls,
 	.comment-form-youtube-url,
 	.comment-form-comment,
 	.form-submit {

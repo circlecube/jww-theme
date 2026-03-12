@@ -204,9 +204,17 @@ get_header();
 	$has_chord_or_tab = $chord_sheet !== '' || $tabs !== '';
 
 	if ( $has_chord_or_tab ) :
-		// Guitar toggle, Transpose, Capo – only when song has chord sheet or tabs
+		// Lyrics first, then guitar fields (controls, chord sheet, tabs, chords source).
+		if ( $lyrics ) :
+			?>
+		<div id="jww-lyrics-plain-wrapper" class="jww-lyrics-plain-wrapper">
+			<div class="lyrics-content"><?php echo wp_kses_post( $lyrics ); ?></div>
+		</div>
+			<?php
+		endif;
+
 		$guitar_icon_url = get_stylesheet_directory_uri() . '/assets/guitar.svg';
-		$capo_default = get_field( 'capo' );
+		$capo_default   = get_field( 'capo' );
 		if ( ! is_numeric( $capo_default ) || (int) $capo_default < 0 || (int) $capo_default > 12 ) {
 			$capo_default = 0;
 		} else {
@@ -215,7 +223,7 @@ get_header();
 		?>
 		<div id="jww-chords-controls" class="jww-chords-controls">
 			<button type="button" id="jww-show-chords-toggle" class="jww-show-chords-toggle" aria-pressed="true" title="<?php esc_attr_e( 'Show or hide guitar chords and tabs', 'jww-theme' ); ?>">
-				<img src="<?php echo esc_url( $guitar_icon_url ); ?>" al	t="" class="jww-guitar-icon" width="20" height="20" aria-hidden="true">
+				<img src="<?php echo esc_url( $guitar_icon_url ); ?>" alt="" class="jww-guitar-icon" width="20" height="20" aria-hidden="true">
 				<span class="jww-show-chords-label"><?php esc_html_e( 'Hide guitar chords', 'jww-theme' ); ?></span>
 			</button>
 			<div class="jww-transpose-capo">
@@ -239,11 +247,6 @@ get_header();
 				</div>
 			</div>
 		</div>
-		<?php if ( $lyrics ) : ?>
-		<div id="jww-lyrics-plain-wrapper" class="jww-lyrics-plain-wrapper">
-			<div class="lyrics-content"><?php echo wp_kses_post( $lyrics ); ?></div>
-		</div>
-		<?php endif; ?>
 		<?php if ( $chord_sheet !== '' ) : ?>
 		<div id="jww-chord-diagrams-section" class="jww-chord-diagrams-section">
 			<h3 class="wp-block-heading"><?php esc_html_e( 'Chord diagrams', 'jww-theme' ); ?></h3>
@@ -258,6 +261,17 @@ get_header();
 			<h3 class="wp-block-heading"><?php esc_html_e( 'Tabs', 'jww-theme' ); ?></h3>
 			<div id="jww-tabs-container" class="jww-tabs-container"></div>
 		</div>
+		<?php endif; ?>
+		<?php
+		$chords_source_url = get_field( 'chords_source_url' );
+		if ( ! empty( $chords_source_url ) && is_string( $chords_source_url ) ) :
+			$chords_source_host = wp_parse_url( $chords_source_url, PHP_URL_HOST );
+			$chords_source_label = ( $chords_source_host !== null && $chords_source_host !== '' ) ? $chords_source_host : __( 'Chords source', 'jww-theme' );
+			?>
+		<p class="jww-chords-source alignwide">
+			<?php esc_html_e( 'Guitar thanks to', 'jww-theme' ); ?>
+			<a href="<?php echo esc_url( $chords_source_url ); ?>" target="_blank" rel="noopener noreferrer nofollow"><?php echo esc_html( $chords_source_label ); ?></a>
+		</p>
 		<?php endif; ?>
 	<?php endif; ?>
 	<?php if ( ! $has_chord_or_tab && $lyrics ) : ?>

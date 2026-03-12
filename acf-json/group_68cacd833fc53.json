@@ -230,6 +230,48 @@
             ]
         },
         {
+            "key": "field_68cacd83ebd2c",
+            "label": "Lyrics",
+            "name": "lyrics",
+            "aria-label": "",
+            "type": "textarea",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "maxlength": "",
+            "allow_in_bindings": 0,
+            "rows": 40,
+            "placeholder": "",
+            "new_lines": "wpautop"
+        },
+        {
+            "key": "field_68cace44ebd30",
+            "label": "Lyric Annotations",
+            "name": "lyric_annotations",
+            "aria-label": "",
+            "type": "wysiwyg",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "allow_in_bindings": 0,
+            "tabs": "all",
+            "toolbar": "full",
+            "media_upload": 1,
+            "delay": 0
+        },
+        {
             "key": "field_68cad0001",
             "label": "Chord sheet",
             "name": "chord_sheet",
@@ -282,46 +324,18 @@
             "append": ""
         },
         {
-            "key": "field_68cacd83ebd2c",
-            "label": "Lyrics",
-            "name": "lyrics",
+            "key": "field_68cdb0chordsrc01",
+            "label": "Chords source",
+            "name": "chords_source_url",
             "aria-label": "",
-            "type": "textarea",
-            "instructions": "",
+            "type": "url",
+            "instructions": "Link to the guitar chords source for credit (e.g. Ultimate Guitar). Optional.",
             "required": 0,
             "conditional_logic": 0,
-            "wrapper": {
-                "width": "",
-                "class": "",
-                "id": ""
-            },
-            "default_value": "",
-            "maxlength": "",
-            "allow_in_bindings": 0,
-            "rows": 40,
-            "placeholder": "",
-            "new_lines": "wpautop"
-        },
-        {
-            "key": "field_68cace44ebd30",
-            "label": "Lyric Annotations",
-            "name": "lyric_annotations",
-            "aria-label": "",
-            "type": "wysiwyg",
-            "instructions": "",
-            "required": 0,
-            "conditional_logic": 0,
-            "wrapper": {
-                "width": "",
-                "class": "",
-                "id": ""
-            },
+            "wrapper": { "width": "", "class": "", "id": "" },
             "default_value": "",
             "allow_in_bindings": 0,
-            "tabs": "all",
-            "toolbar": "full",
-            "media_upload": 1,
-            "delay": 0
+            "placeholder": ""
         },
         {
             "key": "field_691de796e037d",

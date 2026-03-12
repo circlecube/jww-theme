@@ -217,6 +217,41 @@ function jww_auto_generate_show_title( $post_id ) {
 add_action( 'save_post', 'jww_auto_generate_show_title', 10, 1 );
 
 /**
+ * When a song is saved with chord sheet or tabs data, remove the "needs-guitar" tag (for credit/tracking).
+ * Runs after ACF has saved so get_field sees the new values.
+ *
+ * @param int $post_id Post ID (may be revision; we resolve to parent when needed).
+ */
+function jww_song_remove_needs_guitar_tag_on_chords_save( $post_id ) {
+	$post = get_post( $post_id );
+	if ( ! $post || $post->post_type !== 'song' ) {
+		return;
+	}
+	// If we're saving a revision, use the parent post for get_field and term removal.
+	$song_id = wp_is_post_revision( $post_id ) ? (int) $post->post_parent : (int) $post_id;
+	if ( $song_id <= 0 ) {
+		return;
+	}
+
+	$chord_sheet = get_field( 'chord_sheet', $song_id );
+	$tabs        = get_field( 'tabs', $song_id );
+	$chord_sheet = is_string( $chord_sheet ) ? trim( $chord_sheet ) : '';
+	$tabs        = is_string( $tabs ) ? trim( $tabs ) : '';
+
+	if ( $chord_sheet === '' && $tabs === '' ) {
+		return;
+	}
+
+	$term = get_term_by( 'slug', 'needs-guitar', 'post_tag' );
+	if ( ! $term || is_wp_error( $term ) ) {
+		return;
+	}
+
+	wp_remove_object_terms( $song_id, (int) $term->term_id, 'post_tag' );
+}
+add_action( 'acf/save_post', 'jww_song_remove_needs_guitar_tag_on_chords_save', 20, 1 );
+
+/**
  * Clear location/tour term caches when terms are updated
  */
 function jww_clear_location_tour_caches( $term_id, $tt_id, $taxonomy ) {
