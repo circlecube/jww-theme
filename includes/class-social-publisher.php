@@ -407,10 +407,10 @@ function jww_social_on_publish_song( $post ) {
 }
 
 /**
- * Build payload for a published show (or setlist-first-added) and dispatch. Bluesky link-only (no image in blueprint for New Show).
+ * Build payload for a published show (or setlist-first-added) and dispatch.
  *
  * @param int  $show_id   Show post ID.
- * @param bool $with_image Optional. If true, include featured image for Bluesky/Pinterest. Default false for "New Show" (link-only Bluesky).
+ * @param bool $with_image Optional. If true, include featured or venue image for all channels (Bluesky, Mastodon, Pinterest, etc.). Default false.
  */
 function jww_social_on_publish_show( $show_id, $with_image = false ) {
 	$show = get_post( $show_id );
@@ -434,7 +434,6 @@ function jww_social_on_publish_show( $show_id, $with_image = false ) {
 		$payload['image_url'] = jww_social_show_featured_image_url( $show_id );
 	}
 
-	// Blueprint: New Show to Bluesky is link-only (no thumb). So we pass image_url only for Pinterest/Mastodon if desired.
 	$channels = array( 'mastodon', 'bluesky', 'threads', 'facebook' );
 	if ( ! empty( $payload['image_url'] ) ) {
 		$channels[] = 'pinterest';

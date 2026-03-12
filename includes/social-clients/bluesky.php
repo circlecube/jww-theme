@@ -42,12 +42,11 @@ function jww_social_bluesky_post( $payload ) {
 
 	$thumb_ref = null;
 	$image_url = isset( $payload['image_url'] ) ? trim( (string) $payload['image_url'] ) : '';
-	// Blueprint: New Show posts are link-only on Bluesky (no thumb).
 	if ( function_exists( 'jww_social_debug_log' ) ) {
 		$payload_type = isset( $payload['type'] ) ? $payload['type'] : '(none)';
 		jww_social_debug_log( 'bluesky', 'payload type=' . $payload_type . ', image_url=' . ( $image_url !== '' ? substr( $image_url, 0, 60 ) . '...' : '(empty)' ) );
 	}
-	if ( $image_url !== '' && ( ! isset( $payload['type'] ) || $payload['type'] !== 'show' ) ) {
+	if ( $image_url !== '' ) {
 		$thumb_ref = jww_social_bluesky_upload_blob( $access_jwt, $image_url );
 		if ( is_wp_error( $thumb_ref ) ) {
 			if ( function_exists( 'jww_social_debug_log' ) ) {
@@ -58,8 +57,6 @@ function jww_social_bluesky_post( $payload ) {
 			$ref_cid = isset( $thumb_ref['ref']['$link'] ) ? $thumb_ref['ref']['$link'] : ( is_string( $thumb_ref['ref'] ?? null ) ? $thumb_ref['ref'] : '(no ref)' );
 			jww_social_debug_log( 'bluesky', 'thumb upload OK, ref=' . substr( $ref_cid, 0, 20 ) . '..., adding to embed' );
 		}
-	} elseif ( function_exists( 'jww_social_debug_log' ) && isset( $payload['type'] ) && $payload['type'] === 'show' ) {
-		jww_social_debug_log( 'bluesky', 'show post: link-only, no thumb' );
 	}
 
 	$record = array(

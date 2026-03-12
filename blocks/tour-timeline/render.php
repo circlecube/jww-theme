@@ -72,8 +72,11 @@ if ( $show_past_only ) {
 	$past_shows = array();
 }
 
-// Combine shows (upcoming first, then past)
+// Combine and sort all shows chronologically descending (newest first)
 $all_shows = array_merge( $upcoming_shows, $past_shows );
+usort( $all_shows, function( $a, $b ) {
+	return strtotime( $b->post_date ) - strtotime( $a->post_date );
+} );
 
 $wrapper_class = 'tour-timeline-block';
 
@@ -95,6 +98,9 @@ foreach ( $all_shows as $index => $show ) {
 	$show_title = get_the_title( $show_id );
 	$location_id = get_field( 'show_location', $show_id );
 	$is_upcoming = strtotime( $show->post_date ) > $current_time;
+	$show_date_ymd = get_the_date( 'Y-m-d', $show_id );
+	$today_ymd = current_time( 'Y-m-d' );
+	$is_today = ( $show_date_ymd === $today_ymd );
 
 	// Build location path (venue → city → state → country), each term clickable; country abbreviated if available
 	$location_html = '';
@@ -157,7 +163,7 @@ foreach ( $all_shows as $index => $show ) {
 
 	$is_last = ( $index === count( $all_shows ) - 1 );
 
-	echo '<div class="timeline-item' . ( $is_upcoming ? ' upcoming' : '' ) . '">';
+	echo '<div class="timeline-item' . ( $is_upcoming ? ' upcoming' : '' ) . ( $is_today ? ' today' : '' ) . '">';
 	echo '<div class="timeline-marker"></div>';
 	echo '<div class="timeline-content">';
 

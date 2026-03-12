@@ -1,0 +1,225 @@
+/**
+ * Comment form: placeholders as labels, flex layout, YouTube field, cookies consent.
+ */
+
+.comments-area .jww-comment-form {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	gap: 1rem;
+	max-width: 100%;
+	margin-bottom: 1rem;
+
+	p {
+		margin: 0;
+		display: flex;
+		flex-direction: row;
+		align-items: stretch;
+	}
+
+	/* First row: Name, Email, Website side by side when space allows */
+	.comment-form-author,
+	.comment-form-email,
+	.comment-form-url {
+		flex: 1 1 12rem;
+		min-width: 0;
+	}
+
+	/* YouTube, comment, submit full width */
+	.comment-form-youtube-url,
+	.comment-form-comment,
+	.form-submit {
+		flex: 1 1 100%;
+		min-width: 0;
+	}
+
+	label.screen-reader-text {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+
+	input[type="text"],
+	input[type="email"],
+	input[type="url"] {
+		width: 100%;
+		max-width: 100%;
+		padding: 0.6rem 0.75rem;
+		font-size: 1rem;
+		line-height: 1.5;
+		border: 1px solid #ccc;
+		border-radius: 4px;
+		box-sizing: border-box;
+	}
+
+	textarea {
+		width: 100%;
+		max-width: 100%;
+		min-height: 120px;
+		padding: 0.6rem 0.75rem;
+		font-size: 1rem;
+		line-height: 1.5;
+		border: 1px solid #ccc;
+		border-radius: 4px;
+		box-sizing: border-box;
+		resize: vertical;
+	}
+
+	.form-submit {
+		margin: 0.5rem 0 0;
+	}
+
+	.submit {
+		padding: 0.5rem 1.25rem;
+		font-size: 1rem;
+		cursor: pointer;
+		border-radius: 4px;
+	}
+
+	/* Cookies consent at end of form: full width, checkbox left of text, smaller type */
+	.jww-comment-form-cookies-consent {
+		flex: 1 1 100%;
+		min-width: 0;
+		margin-top: 0.25rem;
+		font-size: 0.875rem;
+		color: #555;
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		gap: 0.5rem;
+
+		input[type="checkbox"] {
+			flex-shrink: 0;
+			margin: 0;
+		}
+
+		label {
+			font-weight: normal;
+			cursor: pointer;
+			margin: 0;
+		}
+	}
+
+	.comment-notes {
+		flex-direction: row;
+		justify-content: space-between;
+		width: 100%;
+	}
+
+	.required-field-message {
+		font-size: 0.875rem;
+		color: #555;
+	}
+
+	#email-notes {
+		font-size: 0.875rem;
+		color: #555;
+	}
+}
+
+/* YouTube link shown under a comment (fallback when oEmbed fails) */
+.comment-youtube-link {
+	margin: 0.5rem 0 0;
+	font-size: 0.95rem;
+}
+
+.comment-youtube-link__a {
+	font-weight: 500;
+}
+
+/* YouTube oEmbed: responsive 16:9 container under comment */
+.comment-youtube-embed {
+	margin-top: 1rem;
+	max-width: 100%;
+}
+
+.comment-youtube-embed__wrapper {
+	position: relative;
+	width: 100%;
+	padding-bottom: 56.25%;
+	/* 16:9 */
+	height: 0;
+	overflow: hidden;
+
+	iframe {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		border: 0;
+	}
+}
+
+
+.comment-list {
+	list-style-position: none;
+	counter-reset: comment-list-counter;
+	counter-set: comment-list-counter 0;
+
+	.comment {
+		margin-bottom: 1rem;
+		padding-bottom: 1rem;
+		border-bottom: 1px solid #ccc;
+		background-color: #f9f9f9;
+		padding: 1rem;
+		border-radius: 4px;
+		position: relative;
+		counter-increment: comment-list-counter;
+
+		&::before {
+			position: absolute;
+			left: -1.9rem;
+			top: 1rem;
+			width: 2rem;
+			height: 2rem;
+			background-color: #f9f9f9;
+			border-radius: 4px;
+			z-index: 1;
+			display: block;
+			text-align: center;
+			line-height: 2rem;
+			font-weight: 700;
+			content: counter(comment-list-counter) ".";
+		}
+
+		.comment-meta {
+			display: flex;
+			flex-direction: row;
+			justify-content: space-between;
+			align-items: center;
+			font-size: 0.875rem;
+
+			.comment-author {
+				display: flex;
+				flex-direction: row;
+				align-items: center;
+				gap: 0.5rem;
+
+				.comment-author-link {
+					font-weight: 500;
+					color: #000;
+					text-decoration: none;
+				}
+			}
+		}
+
+		.reply {
+			text-align: right;
+			margin-top: 0.5rem;
+
+			a {
+				color: #000;
+				text-decoration: none;
+				font-size: 0.875rem;
+				font-weight: 500;
+			}
+		}
+	}
+}

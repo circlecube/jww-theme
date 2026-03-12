@@ -1,6 +1,6 @@
 {
   "name": "jww-theme",
-  "version": "5.2.2",
+  "version": "5.3.0",
   "description": "Jesse Welles World WordPress Theme",
   "main": "index.js",
   "scripts": {
@@ -16,16 +16,16 @@
   "author": "Jesse Welles World",
   "license": "GPL-2.0-or-later",
   "devDependencies": {
-    "@wordpress/scripts": "31.5.0",
+    "@wordpress/scripts": "31.6.0",
     "ajv": "8.18.0"
   },
   "dependencies": {
-    "@wordpress/block-editor": "15.13.1",
-    "@wordpress/blocks": "15.13.0",
-    "@wordpress/components": "32.2.0",
-    "@wordpress/data": "10.40.0",
-    "@wordpress/element": "6.40.0",
-    "@wordpress/i18n": "6.13.0",
+    "@wordpress/block-editor": "15.14.0",
+    "@wordpress/blocks": "15.14.0",
+    "@wordpress/components": "32.3.0",
+    "@wordpress/data": "10.41.0",
+    "@wordpress/element": "6.41.0",
+    "@wordpress/i18n": "6.14.0",
     "tonal": "^6.4.3",
     "tone": "^15.1.22",
     "vexchords": "1.2.0"
