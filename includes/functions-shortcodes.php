@@ -82,73 +82,133 @@ function jww_header_site_title_shortcode() {
 add_shortcode('header_site_title', 'jww_header_site_title_shortcode');
 
 /**
- * Shortcode for header navigation (adapts based on page type)
+ * Get a wp_navigation post ID by slug (post_name) or title.
+ * Block themes use wp_navigation posts; template parts reference them by ref (post ID).
+ * This resolves the correct ref by convention so header and footer each get the right menu.
+ *
+ * @param string $slug  Preferred: post_name/slug (e.g. 'navigation', 'footer-navigation').
+ * @param string $title Fallback: post_title (e.g. 'Navigation', 'Footer Navigation').
+ * @return int|null wp_navigation post ID or null if not found.
+ */
+function jww_get_navigation_post_id_by_slug_or_title( $slug, $title = '' ) {
+	if ( ! post_type_exists( 'wp_navigation' ) ) {
+		return null;
+	}
+	// Prefer match by post_name (slug).
+	if ( $slug ) {
+		$by_slug = get_posts( array(
+			'post_type'      => 'wp_navigation',
+			'post_status'    => 'publish',
+			'name'           => $slug,
+			'posts_per_page' => 1,
+			'no_found_rows'  => true,
+		) );
+		if ( ! empty( $by_slug ) ) {
+			return (int) $by_slug[0]->ID;
+		}
+	}
+	// Fallback: match by post_title (e.g. "Navigation", "Footer Navigation").
+	if ( $title ) {
+		$all = get_posts( array(
+			'post_type'      => 'wp_navigation',
+			'post_status'    => 'publish',
+			'posts_per_page' => 20,
+			'no_found_rows'  => true,
+		) );
+		foreach ( $all as $post ) {
+			if ( isset( $post->post_title ) && $post->post_title === $title ) {
+				return (int) $post->ID;
+			}
+		}
+	}
+	return null;
+}
+
+/**
+ * Shortcode for header navigation (block theme: uses wp_navigation post by convention).
  * Usage: [header_navigation]
- * 
+ *
+ * Renders a core/navigation block with ref set to the wp_navigation post named "Navigation"
+ * (post_name "navigation" or post_title "Navigation"). So the header always shows that menu;
+ * the footer menu is a different wp_navigation post and never appears here.
+ *
  * @return string HTML output
  */
 function jww_header_navigation_shortcode() {
-	// Get the primary menu location or first available menu
-	$menu_locations = get_nav_menu_locations();
-	$menu_location_name = null;
-	$menu_id = null;
-	
-	// Try to get primary menu location first
-	if ( ! empty( $menu_locations['primary'] ) ) {
-		$menu_location_name = 'primary';
-		$menu_id = $menu_locations['primary'];
-	} elseif ( ! empty( $menu_locations ) ) {
-		// Fallback to first available menu location
-		$menu_location_name = array_key_first( $menu_locations );
-		$menu_id = $menu_locations[ $menu_location_name ];
-	} else {
-		// Fallback: get first menu from menus
-		$menus = wp_get_nav_menus();
-		if ( ! empty( $menus ) ) {
-			$menu_id = $menus[0]->term_id;
-		}
+	$ref = jww_get_navigation_post_id_by_slug_or_title( 'navigation', 'Navigation' );
+	if ( ! $ref ) {
+		return '';
 	}
-	
-	// Build navigation block attributes (same on all pages for consistent mobile nav)
+
 	$base_attrs = array(
-		'icon' => 'menu',
-		'overlayBackgroundColor' => 'base',
-		'overlayTextColor' => 'contrast',
-		'className' => 'header-nav-site',
-		'style' => array(
+		'ref'                      => $ref,
+		'icon'                     => 'menu',
+		'overlayBackgroundColor'   => 'base',
+		'overlayTextColor'         => 'contrast',
+		'className'                => 'header-nav-site',
+		'style'                    => array(
 			'spacing' => array(
-				'blockGap' => 'var:preset|spacing|40'
-			)
+				'blockGap' => 'var:preset|spacing|40',
+			),
 		),
-		'fontSize' => 'medium',
-		'layout' => array(
-			'type' => 'flex',
+		'fontSize'                 => 'medium',
+		'layout'                   => array(
+			'type'           => 'flex',
 			'justifyContent' => 'right',
-			'orientation' => 'horizontal',
-			'flexWrap' => 'nowrap'
-		)
+			'orientation'    => 'horizontal',
+			'flexWrap'        => 'nowrap',
+		),
 	);
-	
-	// Add menu reference - use menuId for menu term ID, or menuLocation for location name
-	if ( $menu_id ) {
-		$base_attrs['menuId'] = $menu_id;
-	}
-	if ( $menu_location_name ) {
-		$base_attrs['menuLocation'] = $menu_location_name;
-	}
-	
-	// Convert to JSON for block markup (unescaped slashes for proper JSON)
+
 	$attrs_json = wp_json_encode( $base_attrs, JSON_UNESCAPED_SLASHES );
 	$navigation = '<!-- wp:navigation ' . $attrs_json . ' /-->';
-	
 	$output = do_blocks( $navigation );
-	
-	// Ensure navigation block scripts are loaded
-	// This is critical for mobile menu functionality
+
 	if ( ! wp_script_is( 'wp-block-navigation-view-script', 'enqueued' ) ) {
 		wp_enqueue_script( 'wp-block-navigation-view-script' );
 	}
-	
+
 	return $output;
 }
-add_shortcode('header_navigation', 'jww_header_navigation_shortcode');
+add_shortcode( 'header_navigation', 'jww_header_navigation_shortcode' );
+
+/**
+ * Shortcode for footer navigation (block theme: uses wp_navigation post by convention).
+ * Usage: [footer_navigation]
+ *
+ * Renders a core/navigation block with ref set to the wp_navigation post named
+ * "Footer Navigation" (post_name "footer-navigation" or post_title "Footer Navigation").
+ * Use this in parts/footer.html so the footer always shows that menu without a hardcoded ref.
+ *
+ * @return string HTML output
+ */
+function jww_footer_navigation_shortcode() {
+	$ref = jww_get_navigation_post_id_by_slug_or_title( 'footer-navigation', 'Footer Navigation' );
+	if ( ! $ref ) {
+		return '';
+	}
+
+	$base_attrs = array(
+		'ref'                    => $ref,
+		'overlayMenu'            => 'never',
+		'overlayBackgroundColor' => 'base',
+		'overlayTextColor'       => 'contrast',
+		'style'                  => array(
+			'spacing' => array(
+				'blockGap' => 'var:preset|spacing|30',
+			),
+		),
+		'fontSize'               => 'large',
+		'layout'                 => array(
+			'type'           => 'flex',
+			'orientation'    => 'horizontal',
+			'justifyContent' => 'center',
+			'flexWrap'       => 'wrap',
+		),
+	);
+
+	$attrs_json = wp_json_encode( $base_attrs, JSON_UNESCAPED_SLASHES );
+	$navigation = '<!-- wp:navigation ' . $attrs_json . ' /-->';
+	return do_blocks( $navigation );
+}
+add_shortcode( 'footer_navigation', 'jww_footer_navigation_shortcode' );

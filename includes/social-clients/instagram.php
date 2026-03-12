@@ -115,6 +115,29 @@ function jww_social_instagram_post( $payload ) {
 
 	$creation_id = $data['id'];
 
+	// Poll container status until FINISHED (Meta fetches image_url asynchronously; publish fails with "Media ID is not available" until ready).
+	$status_url = 'https://graph.facebook.com/v25.0/' . $creation_id . '?fields=status_code&access_token=' . rawurlencode( $token );
+	$max_wait = 30;
+	$interval = 3;
+	$elapsed = 0;
+	while ( $elapsed < $max_wait ) {
+		$status_response = wp_remote_get( $status_url, array( 'timeout' => 10 ) );
+		if ( is_wp_error( $status_response ) ) {
+			break;
+		}
+		$status_body = wp_remote_retrieve_body( $status_response );
+		$status_data = json_decode( $status_body, true );
+		$status_code = isset( $status_data['status_code'] ) ? (string) $status_data['status_code'] : '';
+		if ( $status_code === 'FINISHED' ) {
+			break;
+		}
+		if ( $status_code === 'ERROR' || $status_code === 'EXPIRED' ) {
+			return new WP_Error( 'jww_social_instagram_create', sprintf( __( 'Instagram container failed (status: %s).', 'jww-theme' ), $status_code ), array( 'body' => $status_body ) );
+		}
+		sleep( $interval );
+		$elapsed += $interval;
+	}
+
 	// Step 2: Publish the container.
 	$publish_url = 'https://graph.facebook.com/v25.0/' . $ig_user_id . '/media_publish';
 

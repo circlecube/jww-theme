@@ -1,7 +1,7 @@
 <?php
 /**
  * Render callback for the Tour Timeline block
- * 
+ *
  * Displays shows for a tour in chronological timeline format
  */
 
@@ -89,38 +89,124 @@ if ( empty( $all_shows ) ) {
 echo '<div class="timeline-container">';
 
 foreach ( $all_shows as $index => $show ) {
-	$show_date = get_the_date( 'M j, Y', $show->ID );
-	$show_date_raw = get_the_date( 'Y-m-d', $show->ID );
-	$show_link = get_permalink( $show->ID );
-	$show_title = get_the_title( $show->ID );
-	$location_id = get_field( 'show_location', $show->ID );
+	$show_id = $show->ID;
+	$show_date = get_the_date( 'M j, Y', $show_id );
+	$show_link = get_permalink( $show_id );
+	$show_title = get_the_title( $show_id );
+	$location_id = get_field( 'show_location', $show_id );
 	$is_upcoming = strtotime( $show->post_date ) > $current_time;
-	
-	// Get location name
-	$location_name = '';
+
+	// Build location path (venue → city → state → country), each term clickable; country abbreviated if available
+	$location_html = '';
 	if ( $location_id ) {
 		$location_term = get_term( $location_id, 'location' );
 		if ( $location_term && ! is_wp_error( $location_term ) ) {
-			$location_name = $location_term->name;
+			$path = array();
+			$current_term = $location_term;
+			while ( $current_term ) {
+				array_unshift( $path, $current_term );
+				$current_term = $current_term->parent ? get_term( $current_term->parent, 'location' ) : null;
+				if ( ! $current_term || is_wp_error( $current_term ) ) {
+					break;
+				}
+			}
+			$parts = array();
+			foreach ( array_reverse( $path ) as $term ) {
+				$link = get_term_link( $term->term_id, 'location' );
+				$label = $term->name;
+				if ( function_exists( 'jww_get_location_type' ) && jww_get_location_type( $term->term_id ) === 'country' && function_exists( 'jww_get_country_code' ) ) {
+					$code = jww_get_country_code( $term->term_id );
+					if ( $code !== '' ) {
+						$label = $code;
+					}
+				}
+				if ( $link && ! is_wp_error( $link ) ) {
+					$parts[] = '<a href="' . esc_url( $link ) . '">' . esc_html( $label ) . '</a>';
+				} else {
+					$parts[] = esc_html( $label );
+				}
+			}
+			$location_html = implode( ', ', $parts );
 		}
 	}
-	
+
+	// Past-show data: featured image, song count, rarities line
+	$thumbnail_id = $is_upcoming ? 0 : get_post_thumbnail_id( $show_id );
+	$song_count = $is_upcoming ? 0 : (int) get_post_meta( $show_id, '_show_song_count', true );
+	$rarities_parts = array();
+	if ( ! $is_upcoming && function_exists( 'jww_get_show_setlist_highlights_debuts' ) && function_exists( 'jww_get_show_setlist_highlights_standout' ) ) {
+		$debuts = jww_get_show_setlist_highlights_debuts( $show_id );
+		$standout = jww_get_show_setlist_highlights_standout( $show_id );
+		$unique = isset( $standout['unique_songs'] ) ? $standout['unique_songs'] : array();
+		if ( ! empty( $debuts ) ) {
+			$links = array();
+			foreach ( $debuts as $item ) {
+				$links[] = '<a href="' . esc_url( $item['song_link'] ) . '">' . esc_html( $item['song_title'] ) . '</a>';
+			}
+			$rarities_parts[] = _x( 'Live debuts:', 'Tour timeline rarities label', 'jww-theme' ) . ' ' . implode( ', ', $links );
+		}
+		if ( ! empty( $unique ) ) {
+			$links = array();
+			foreach ( $unique as $item ) {
+				$links[] = '<a href="' . esc_url( $item['song_link'] ) . '">' . esc_html( $item['song_title'] ) . '</a>';
+			}
+			$rarities_parts[] = _x( 'Rarities:', 'Tour timeline rarities label', 'jww-theme' ) . ' ' . implode( ', ', $links );
+		}
+	}
+	$rarities_html = empty( $rarities_parts ) ? '' : implode( '. ', $rarities_parts );
+
 	$is_last = ( $index === count( $all_shows ) - 1 );
-	
+
 	echo '<div class="timeline-item' . ( $is_upcoming ? ' upcoming' : '' ) . '">';
 	echo '<div class="timeline-marker"></div>';
 	echo '<div class="timeline-content">';
+
+	echo '<div class="timeline-content-body">';
+	// Date at top
 	echo '<div class="timeline-date">' . esc_html( $show_date ) . '</div>';
+
+	// Title (link to show)
 	echo '<h3 class="timeline-title"><a href="' . esc_url( $show_link ) . '">' . esc_html( $show_title ) . '</a></h3>';
-	if ( $location_name ) {
-		echo '<div class="timeline-location">' . esc_html( $location_name ) . '</div>';
+
+	// Full location: venue, city, state (if any), country (abbrev if available); each term clickable
+	if ( $location_html ) {
+		echo '<div class="timeline-location">' . $location_html . '</div>';
 	}
+
+	// Song count (past shows only)
+	if ( $song_count > 0 ) {
+		echo '<div class="timeline-song-count">';
+		printf(
+			esc_html( _n( '%s song', '%s songs', $song_count, 'jww-theme' ) ),
+			(int) $song_count
+		);
+		echo '</div>';
+	}
+
+	// Rarities / live debuts line (past shows only)
+	if ( $rarities_html !== '' ) {
+		echo '<div class="timeline-rarities">' . wp_kses_post( $rarities_html ) . '</div>';
+	}
+
+	// Tickets (upcoming only)
 	if ( $is_upcoming ) {
-		$ticket_link = get_field( 'ticket_link', $show->ID );
+		$ticket_link = get_field( 'ticket_link', $show_id );
 		if ( $ticket_link ) {
-			echo '<div class="timeline-tickets"><a href="' . esc_url( $ticket_link ) . '" target="_blank" rel="noopener" class="ticket-link">Get Tickets</a></div>';
+			echo '<div class="timeline-tickets"><a href="' . esc_url( $ticket_link ) . '" target="_blank" rel="noopener" class="ticket-link">' . esc_html__( 'Get Tickets', 'jww-theme' ) . '</a></div>';
 		}
 	}
+	echo '</div>'; // .timeline-content-body
+
+	// Featured image (past shows only, right side, vertical aspect ratio, clickable to show)
+	if ( $thumbnail_id ) {
+		$thumb_src = wp_get_attachment_image_url( $thumbnail_id, 'medium' );
+		if ( $thumb_src ) {
+			echo '<a href="' . esc_url( $show_link ) . '" class="timeline-featured-image-link">';
+			echo wp_get_attachment_image( $thumbnail_id, 'medium', false, array( 'class' => 'timeline-featured-image', 'loading' => 'lazy', 'decoding' => 'async' ) );
+			echo '</a>';
+		}
+	}
+
 	echo '</div>';
 	echo '</div>';
 }

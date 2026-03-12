@@ -527,10 +527,24 @@ function jww_social_build_payload_for_show( $show_id, $with_image = true ) {
 		'link'        => $link,
 		'description' => 'Jesse Welles World - Jesse Welles Show ' . $title . ' - setlist, tour stats and more.',
 		'image_url'   => null,
+		'image_attachment_id' => null,
 	);
 	$payload['status_text'] = jww_social_build_status_text( 'show', $payload );
 	if ( $with_image ) {
-		$payload['image_url'] = jww_social_show_featured_image_url( $show_id );
+		$thumb_id = get_post_thumbnail_id( $show_id );
+		if ( $thumb_id ) {
+			$payload['image_url'] = jww_social_show_featured_image_url( $show_id );
+			$payload['image_attachment_id'] = $thumb_id;
+		} else {
+			$location_id = get_field( 'show_location', $show_id );
+			if ( $location_id && function_exists( 'jww_get_venue_image_id' ) ) {
+				$venue_image_id = jww_get_venue_image_id( $location_id );
+				if ( $venue_image_id ) {
+					$payload['image_url'] = wp_get_attachment_image_url( $venue_image_id, 'large' );
+					$payload['image_attachment_id'] = $venue_image_id;
+				}
+			}
+		}
 	}
 	return $payload;
 }

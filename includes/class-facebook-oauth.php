@@ -70,10 +70,7 @@ class Facebook_OAuth {
 			return;
 		}
 
-		$redirect_uri = home_url( '/facebook-oauth/', 'https' );
-		if ( ! is_ssl() ) {
-			$redirect_uri = home_url( '/facebook-oauth/', 'http' );
-		}
+		$redirect_uri = self::get_redirect_uri();
 
 		// Step 1: Exchange code for short-lived user access token.
 		$exchange_url = add_query_arg(
@@ -233,10 +230,7 @@ class Facebook_OAuth {
 		if ( ! $credentials ) {
 			return false;
 		}
-		$redirect_uri = home_url( '/facebook-oauth/', 'https' );
-		if ( ! is_ssl() ) {
-			$redirect_uri = home_url( '/facebook-oauth/', 'http' );
-		}
+		$redirect_uri = self::get_redirect_uri();
 		return add_query_arg(
 			array(
 				'client_id'     => $credentials['app_id'],
@@ -246,6 +240,20 @@ class Facebook_OAuth {
 			),
 			'https://www.facebook.com/' . self::GRAPH_VERSION . '/dialog/oauth'
 		);
+	}
+
+	/**
+	 * Return the redirect URI used for Facebook OAuth (same as in get_authorize_url and callback).
+	 * Use this to show admins which URL Meta validates; App Domains must include this URL's host (e.g. www.yoursite.com or yoursite.com).
+	 *
+	 * @return string Redirect URI (https or http based on is_ssl()).
+	 */
+	public static function get_redirect_uri() {
+		$redirect_uri = home_url( '/facebook-oauth/', 'https' );
+		if ( ! is_ssl() ) {
+			$redirect_uri = home_url( '/facebook-oauth/', 'http' );
+		}
+		return $redirect_uri;
 	}
 }
 
