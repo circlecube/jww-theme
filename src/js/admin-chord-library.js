@@ -99,7 +99,20 @@ import { ChordBox } from 'vexchords';
 	function setCustomOverrideJson(obj) {
 		var textarea = document.getElementById('jww-custom-chord-library-input');
 		if (!textarea) return;
-		textarea.value = JSON.stringify(obj, null, 2);
+		var keys = Object.keys(obj);
+		if (keys.length === 0) {
+			textarea.value = '{\n}\n';
+			return;
+		}
+		var lines = ['{'];
+		keys.forEach(function (key, i) {
+			var valueStr = JSON.stringify(obj[key]);
+			var line = '  ' + JSON.stringify(key) + ': ' + valueStr;
+			if (i < keys.length - 1) line += ',';
+			lines.push(line);
+		});
+		lines.push('}');
+		textarea.value = lines.join('\n');
 	}
 
 	function initClickToOverride() {

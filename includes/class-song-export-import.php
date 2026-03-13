@@ -2,9 +2,10 @@
 /**
  * Class Song_Export_Import
  *
- * Admin interface for exporting all song data to JSON and re-importing to update existing songs.
- * Export includes: lyrics, lyric_annotations, embeds (videos), song_links, artist, album, categories, tags.
- * Re-import updates existing songs matched by post ID.
+ * Admin interface for exporting song data to JSON and re-importing to update existing songs.
+ * Export: optional fields (title, description/main content, lyrics, embeds, categories, tags, band/artist, album/release, etc.),
+ * with optional "only empty" filter and tag filter. Terms and relationships are exported as slugs for readability.
+ * Import: partial updates only (only present keys are updated); slugs are resolved to term/post IDs.
  *
  * @package JWW_Theme
  * @subpackage Includes
@@ -17,13 +18,57 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Song_Export_Import {
 
 	/**
+	 * Exportable field definitions: key => [ 'label' => string, 'type' => 'post'|'acf'|'taxonomy'|'meta', 'taxonomy'|'post_type' for resolution ].
+	 *
+	 * @var array
+	 */
+	private $exportable_fields = array();
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
+		$this->exportable_fields = $this->get_exportable_fields_config();
 		add_action( 'admin_menu', array( $this, 'add_admin_page' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
 		add_action( 'wp_ajax_jww_export_songs', array( $this, 'ajax_export_songs' ) );
 		add_action( 'wp_ajax_jww_import_songs_json', array( $this, 'ajax_import_songs_json' ) );
+	}
+
+	/**
+	 * Config for exportable fields (key, label, type, and taxonomy/post_type for slug resolution).
+	 *
+	 * @return array
+	 */
+	private function get_exportable_fields_config() {
+		return array(
+			'id'                => array( 'label' => 'ID (required for import matching)', 'type' => 'post', 'always_include' => true ),
+			'post_title'        => array( 'label' => 'Title', 'type' => 'post', 'always_include' => true ),
+			'post_name'         => array( 'label' => 'Slug', 'type' => 'post' ),
+			'description'       => array( 'label' => 'Description (main content)', 'type' => 'post', 'post_field' => 'post_content' ),
+			'post_date'         => array( 'label' => 'Date published', 'type' => 'post' ),
+			'lyrics'            => array( 'label' => 'Lyrics', 'type' => 'acf' ),
+			'lyric_annotations' => array( 'label' => 'Lyric annotations', 'type' => 'acf' ),
+			'chord_sheet'       => array( 'label' => 'Chord sheet', 'type' => 'acf' ),
+			'tabs'              => array( 'label' => 'Tabs', 'type' => 'acf' ),
+			'capo'              => array( 'label' => 'Capo', 'type' => 'acf' ),
+			'chords_source_url' => array( 'label' => 'Chords source URL', 'type' => 'acf' ),
+			'embeds'            => array( 'label' => 'Embeds (videos)', 'type' => 'acf' ),
+			'song_links'        => array( 'label' => 'Song links', 'type' => 'acf' ),
+			'artist'            => array( 'label' => 'Artist / Band', 'type' => 'relationship', 'post_type' => 'band' ),
+			'album'             => array( 'label' => 'Album / Release', 'type' => 'relationship', 'post_type' => 'album' ),
+			'categories'        => array( 'label' => 'Categories', 'type' => 'taxonomy', 'taxonomy' => 'category' ),
+			'tags'              => array( 'label' => 'Tags', 'type' => 'taxonomy', 'taxonomy' => 'post_tag' ),
+		);
+	}
+
+	/**
+	 * Get exportable fields config for use in templates/JS.
+	 *
+	 * @return array
+	 */
+	public function get_exportable_fields() {
+		return $this->exportable_fields;
 	}
 
 	/**
@@ -80,14 +125,37 @@ class Song_Export_Import {
 		?>
 		<div class="wrap">
 			<h1>Song Export / Import</h1>
-			<p>Export all song data (lyrics, annotations, videos, taxonomy) to a JSON file. Edit the file (e.g. add annotations with AI), then re-import to update existing songs. Songs are matched by post ID.</p>
+			<p>Export song data to JSON (choose which fields to include). Edit the file, then re-import to update existing songs. Songs are matched by post ID. Only fields present in the import file are updated.</p>
 
 			<div class="jww-song-export-import-container">
 				<!-- Export -->
 				<div class="jww-importer-section">
 					<h2>Export Songs to JSON</h2>
-					<p class="description">Download a JSON file containing all songs with ACF fields (lyrics, lyric annotations, embeds, song links, artist, album) and taxonomy (categories, tags).</p>
+					<p class="description">Choose which fields to include. Taxonomy terms and relationships (artist/band, album) are exported as slugs so the JSON is human-readable. Filter by tag and/or band, or export only songs where the selected fields are empty (e.g. songs missing descriptions).</p>
 					<form id="export-songs-form" class="jww-export-form">
+						<fieldset class="jww-export-fields">
+							<legend>Fields to include</legend>
+							<p class="description">Select the fields to include in the export. ID and Title are always included so the file is human-readable and import can match songs.</p>
+							<ul class="jww-export-field-list">
+								<?php
+								foreach ( $this->get_exportable_fields() as $key => $config ) {
+									$always = ! empty( $config['always_include'] );
+									$id_attr = 'export-field-' . sanitize_key( $key );
+									?>
+									<li>
+										<label for="<?php echo esc_attr( $id_attr ); ?>">
+											<input type="checkbox" name="export_fields[]" id="<?php echo esc_attr( $id_attr ); ?>"
+												value="<?php echo esc_attr( $key ); ?>"
+												<?php echo $always ? ' checked disabled' : ''; ?>>
+											<?php echo esc_html( $config['label'] ); ?>
+											<?php if ( $always ) : ?>
+												<em>(always included)</em>
+											<?php endif; ?>
+										</label>
+									</li>
+								<?php } ?>
+							</ul>
+						</fieldset>
 						<p>
 							<label for="export-tag">Filter by tag (optional):</label><br>
 							<select id="export-tag" name="tag_id">
@@ -108,6 +176,38 @@ class Song_Export_Import {
 							</select>
 						</p>
 						<p>
+							<label for="export-band">Filter by band/artist (optional):</label><br>
+							<select id="export-band" name="band_id">
+								<option value="">All bands</option>
+								<?php
+								$bands = get_posts( array(
+									'post_type'      => 'band',
+									'posts_per_page' => -1,
+									'post_status'    => 'publish',
+									'orderby'        => 'title',
+									'order'          => 'ASC',
+								) );
+								if ( ! empty( $bands ) ) {
+									foreach ( $bands as $band ) {
+										echo '<option value="' . esc_attr( $band->ID ) . '">' . esc_html( $band->post_title ) . '</option>';
+									}
+								}
+								?>
+							</select>
+						</p>
+						<p>
+							<label for="export-only-empty">
+								<input type="checkbox" id="export-only-empty" name="only_empty" value="1">
+								Only include songs where <strong>all</strong> selected fields are empty
+							</label>
+						</p>
+						<p>
+							<label for="export-only-any-empty">
+								<input type="checkbox" id="export-only-any-empty" name="only_any_empty" value="1">
+								Only include songs where <strong>any</strong> of selected fields are empty
+							</label>
+						</p>
+						<p>
 							<button type="submit" class="button button-primary">Export Songs to JSON</button>
 							<span class="spinner"></span>
 						</p>
@@ -118,7 +218,7 @@ class Song_Export_Import {
 				<!-- Import -->
 				<div class="jww-importer-section">
 					<h2>Import from JSON File</h2>
-					<p class="description">Upload a previously exported JSON file to update existing songs. Only songs with matching post IDs will be updated. Add or edit lyric annotations in the JSON, then re-import.</p>
+					<p class="description">Upload a JSON file to update existing songs (matched by ID). Only fields present in the file are updated; omitted fields are left unchanged. Use slugs for categories, tags, artist (band), and album in the JSON; they are resolved to terms/posts on import.</p>
 					<form id="import-songs-json-form" class="jww-import-form" enctype="multipart/form-data">
 						<p>
 							<label for="songs-json-file">JSON File:</label><br>
@@ -146,7 +246,22 @@ class Song_Export_Import {
 			wp_send_json_error( array( 'message' => 'Insufficient permissions' ) );
 		}
 
-		$tag_id = isset( $_POST['tag_id'] ) ? (int) $_POST['tag_id'] : 0;
+		$tag_id         = isset( $_POST['tag_id'] ) ? (int) $_POST['tag_id'] : 0;
+		$band_id        = isset( $_POST['band_id'] ) ? (int) $_POST['band_id'] : 0;
+		$only_empty     = ! empty( $_POST['only_empty'] );
+		$only_any_empty = ! empty( $_POST['only_any_empty'] );
+		$raw_fields     = isset( $_POST['fields'] ) && is_array( $_POST['fields'] ) ? array_map( 'sanitize_key', wp_unslash( $_POST['fields'] ) ) : array();
+		$all_keys       = array_keys( $this->exportable_fields );
+		$fields         = empty( $raw_fields ) ? $all_keys : array_intersect( $raw_fields, $all_keys );
+		if ( empty( $fields ) ) {
+			$fields = $all_keys;
+		}
+		$required = array( 'id', 'post_title' );
+		foreach ( $required as $req ) {
+			if ( ! in_array( $req, $fields, true ) ) {
+				$fields = array_merge( array( $req ), $fields );
+			}
+		}
 
 		$args = array(
 			'post_type'      => 'song',
@@ -168,9 +283,35 @@ class Song_Export_Import {
 
 		$posts = get_posts( $args );
 
+		// Filter by band/artist (ACF relationship): only songs linked to the selected band.
+		if ( $band_id > 0 ) {
+			$posts = array_filter( $posts, function ( $post ) use ( $band_id ) {
+				$artist = get_field( 'artist', $post->ID );
+				if ( empty( $artist ) ) {
+					return false;
+				}
+				$ids = array();
+				if ( is_array( $artist ) ) {
+					foreach ( $artist as $a ) {
+						$ids[] = is_object( $a ) ? (int) $a->ID : (int) $a;
+					}
+				} else {
+					$ids[] = is_object( $artist ) ? (int) $artist->ID : (int) $artist;
+				}
+				return in_array( $band_id, $ids, true );
+			} );
+			$posts = array_values( $posts );
+		}
+
 		$data = array();
 		foreach ( $posts as $post ) {
-			$data[] = $this->format_song_for_export( $post->ID );
+			if ( $only_empty && ! $this->song_has_all_selected_fields_empty( $post->ID, $fields ) ) {
+				continue;
+			}
+			if ( $only_any_empty && ! $this->song_has_any_selected_fields_empty( $post->ID, $fields ) ) {
+				continue;
+			}
+			$data[] = $this->format_song_for_export( $post->ID, $fields );
 		}
 
 		wp_send_json_success( array(
@@ -180,24 +321,71 @@ class Song_Export_Import {
 	}
 
 	/**
-	 * Format a single song for export (ACF fields + taxonomy).
+	 * Check if a song has all of the given fields empty (for "only empty" export filter).
 	 *
-	 * @param int $post_id Song post ID.
+	 * @param int   $post_id Song post ID.
+	 * @param array $fields  Field keys to check.
+	 * @return bool True if every selected field is empty.
+	 */
+	private function song_has_all_selected_fields_empty( $post_id, $fields ) {
+		$row = $this->format_song_for_export( $post_id, $fields );
+		foreach ( $fields as $key ) {
+			if ( ! array_key_exists( $key, $row ) ) {
+				continue;
+			}
+			$val = $row[ $key ];
+			if ( is_array( $val ) ) {
+				if ( ! empty( $val ) ) {
+					return false;
+				}
+			} elseif ( $val !== '' && $val !== null ) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Check if a song has any of the given fields empty (for "only any empty" export filter).
+	 *
+	 * @param int   $post_id Song post ID.
+	 * @param array $fields  Field keys to check.
+	 * @return bool True if at least one selected field is empty.
+	 */
+	private function song_has_any_selected_fields_empty( $post_id, $fields ) {
+		$row = $this->format_song_for_export( $post_id, $fields );
+		foreach ( $fields as $key ) {
+			if ( ! array_key_exists( $key, $row ) ) {
+				continue;
+			}
+			$val = $row[ $key ];
+			$is_empty = false;
+			if ( is_array( $val ) ) {
+				$is_empty = empty( $val );
+			} else {
+				$is_empty = ( $val === '' || $val === null );
+			}
+			if ( $is_empty ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Format a single song for export (only requested fields). Terms and relationships exported as slugs.
+	 *
+	 * @param int   $post_id Song post ID.
+	 * @param array $fields  Keys to include (default all).
 	 * @return array
 	 */
-	private function format_song_for_export( $post_id ) {
-		$post = get_post( $post_id );
-		$embeds = get_field( 'embeds', $post_id );
-		$lyrics = get_field( 'lyrics', $post_id );
-		$lyric_annotations = get_field( 'lyric_annotations', $post_id );
-		$chord_sheet = get_field( 'chord_sheet', $post_id );
-		$tabs = get_field( 'tabs', $post_id );
-		$capo = get_field( 'capo', $post_id );
-		$song_links = get_field( 'song_links', $post_id );
-		$artist = get_field( 'artist', $post_id );
-		$album = get_field( 'album', $post_id );
+	private function format_song_for_export( $post_id, $fields = array() ) {
+		$config = $this->exportable_fields;
+		$all    = array();
+		$post   = get_post( $post_id );
 
-		// Normalize embeds to plain arrays with URL strings (no ACF oembed objects)
+		// Build full row (we'll filter by $fields after)
+		$embeds = get_field( 'embeds', $post_id );
 		$embeds_export = array();
 		if ( is_array( $embeds ) ) {
 			foreach ( $embeds as $row ) {
@@ -214,23 +402,29 @@ class Song_Export_Import {
 			}
 		}
 
-		// Artist: store as array of post IDs (and titles for readability)
-		$artist_ids = array();
-		$artist_titles = array();
+		$artist = get_field( 'artist', $post_id );
+		$artist_slugs = array();
 		if ( $artist ) {
 			$artist = is_array( $artist ) ? $artist : array( $artist );
 			foreach ( $artist as $a ) {
 				$id = is_object( $a ) ? $a->ID : (int) $a;
 				if ( $id ) {
-					$artist_ids[] = $id;
-					$artist_titles[] = get_the_title( $id );
+					$slug = get_post( $id ) ? get_post( $id )->post_name : '';
+					if ( $slug ) {
+						$artist_slugs[] = $slug;
+					}
 				}
 			}
 		}
 
-		$album_id = null;
+		$album = get_field( 'album', $post_id );
+		$album_slug = '';
 		if ( $album ) {
 			$album_id = is_object( $album ) ? $album->ID : (int) $album;
+			if ( $album_id ) {
+				$album_post = get_post( $album_id );
+				$album_slug = $album_post ? $album_post->post_name : '';
+			}
 		}
 
 		$categories = wp_get_post_terms( $post_id, 'category' );
@@ -238,24 +432,36 @@ class Song_Export_Import {
 		$cat_slugs  = is_wp_error( $categories ) ? array() : wp_list_pluck( $categories, 'slug' );
 		$tag_slugs  = is_wp_error( $tags ) ? array() : wp_list_pluck( $tags, 'slug' );
 
-		return array(
-			'id'                 => (int) $post_id,
-			'post_title'         => $post->post_title,
-			'post_name'          => $post->post_name,
-			'lyrics'             => $lyrics !== null && $lyrics !== false ? (string) $lyrics : '',
-			'lyric_annotations'  => $lyric_annotations !== null && $lyric_annotations !== false ? (string) $lyric_annotations : '',
-			'chord_sheet'        => $chord_sheet !== null && $chord_sheet !== false ? (string) $chord_sheet : '',
-			'tabs'               => $tabs !== null && $tabs !== false ? (string) $tabs : '',
-			'capo'               => is_numeric( $capo ) ? (int) $capo : '',
-			'embeds'             => $embeds_export,
-			'song_links'         => is_array( $song_links ) ? $song_links : array(),
-			'artist'             => $artist_ids,
-			'artist_titles'       => $artist_titles,
-			'album'              => $album_id,
-			'categories'         => $cat_slugs,
-			'tags'               => $tag_slugs,
-			'video_id'           => get_post_meta( $post_id, 'video_id', true ) ?: '',
-		);
+		$lyrics = get_field( 'lyrics', $post_id );
+		$lyric_annotations = get_field( 'lyric_annotations', $post_id );
+		$chord_sheet = get_field( 'chord_sheet', $post_id );
+		$tabs = get_field( 'tabs', $post_id );
+		$capo = get_field( 'capo', $post_id );
+		$song_links = get_field( 'song_links', $post_id );
+		$chords_source_url = get_field( 'chords_source_url', $post_id );
+
+		$all['id']                 = (int) $post_id;
+		$all['post_title']         = trim( (string) $post->post_title ) !== '' ? $post->post_title : '(No title)';
+		$all['post_name']          = $post->post_name;
+		$all['description']        = $post->post_content;
+		$all['post_date']          = $post->post_date;
+		$all['lyrics']             = $lyrics !== null && $lyrics !== false ? (string) $lyrics : '';
+		$all['lyric_annotations']  = $lyric_annotations !== null && $lyric_annotations !== false ? (string) $lyric_annotations : '';
+		$all['chord_sheet']        = $chord_sheet !== null && $chord_sheet !== false ? (string) $chord_sheet : '';
+		$all['tabs']               = $tabs !== null && $tabs !== false ? (string) $tabs : '';
+		$all['capo']               = is_numeric( $capo ) ? (int) $capo : '';
+		$all['chords_source_url']  = $chords_source_url !== null && $chords_source_url !== false ? (string) $chords_source_url : '';
+		$all['embeds']             = $embeds_export;
+		$all['song_links']         = is_array( $song_links ) ? $song_links : array();
+		$all['artist']             = $artist_slugs;
+		$all['album']              = $album_slug;
+		$all['categories']         = $cat_slugs;
+		$all['tags']               = $tag_slugs;
+
+		if ( empty( $fields ) ) {
+			return $all;
+		}
+		return array_intersect_key( $all, array_flip( $fields ) );
 	}
 
 	/**
@@ -327,19 +533,30 @@ class Song_Export_Import {
 	}
 
 	/**
-	 * Update an existing song post from imported data (ACF + taxonomy).
+	 * Update an existing song post from imported data. Only keys present in $data are updated.
+	 * Taxonomy and relationship values can be slugs (resolved to term/post IDs) or IDs.
 	 *
 	 * @param int   $post_id Song post ID.
-	 * @param array $data    Import row (keys: post_title, lyrics, lyric_annotations, embeds, song_links, artist, album, categories, tags, video_id).
+	 * @param array $data    Import row (any subset of exportable fields).
 	 * @return true|WP_Error
 	 */
 	private function update_song_from_import_data( $post_id, $data ) {
-		// Optional: update post title
-		if ( ! empty( $data['post_title'] ) ) {
-			wp_update_post( array(
-				'ID'         => $post_id,
-				'post_title' => sanitize_text_field( $data['post_title'] ),
-			) );
+		$post_updates = array( 'ID' => $post_id );
+
+		if ( array_key_exists( 'post_title', $data ) ) {
+			$post_updates['post_title'] = sanitize_text_field( $data['post_title'] );
+		}
+		if ( array_key_exists( 'description', $data ) ) {
+			$post_updates['post_content'] = wp_kses_post( $data['description'] );
+		}
+		if ( array_key_exists( 'post_date', $data ) ) {
+			$post_updates['post_date'] = sanitize_text_field( $data['post_date'] );
+		}
+		if ( array_key_exists( 'post_name', $data ) ) {
+			$post_updates['post_name'] = sanitize_title( $data['post_name'] );
+		}
+		if ( count( $post_updates ) > 1 ) {
+			wp_update_post( $post_updates );
 		}
 
 		if ( function_exists( 'update_field' ) ) {
@@ -361,6 +578,9 @@ class Song_Export_Import {
 					update_field( 'capo', $capo === '' ? '' : (int) $capo, $post_id );
 				}
 			}
+			if ( array_key_exists( 'chords_source_url', $data ) ) {
+				update_field( 'chords_source_url', sanitize_url( $data['chords_source_url'] ), $post_id );
+			}
 			if ( array_key_exists( 'embeds', $data ) && is_array( $data['embeds'] ) ) {
 				update_field( 'embeds', $data['embeds'], $post_id );
 			}
@@ -368,29 +588,119 @@ class Song_Export_Import {
 				update_field( 'song_links', $data['song_links'], $post_id );
 			}
 			if ( array_key_exists( 'artist', $data ) ) {
-				$artist = is_array( $data['artist'] ) ? $data['artist'] : array( $data['artist'] );
-				$artist = array_filter( array_map( 'intval', $artist ) );
-				update_field( 'artist', $artist, $post_id );
+				$artist_ids = $this->resolve_relationship_slugs_to_ids( $data['artist'], 'band' );
+				update_field( 'artist', $artist_ids, $post_id );
 			}
 			if ( array_key_exists( 'album', $data ) ) {
-				$album = ! empty( $data['album'] ) ? (int) $data['album'] : null;
-				update_field( 'album', $album, $post_id );
+				$album_id = $this->resolve_relationship_slug_or_id_to_id( $data['album'], 'album' );
+				update_field( 'album', $album_id, $post_id );
 			}
 		}
 
 		if ( array_key_exists( 'categories', $data ) && is_array( $data['categories'] ) ) {
-			wp_set_post_terms( $post_id, $data['categories'], 'category', false );
+			$term_ids = $this->resolve_term_slugs_to_ids( $data['categories'], 'category' );
+			wp_set_post_terms( $post_id, $term_ids, 'category', false );
 		}
 		if ( array_key_exists( 'tags', $data ) && is_array( $data['tags'] ) ) {
-			wp_set_post_terms( $post_id, $data['tags'], 'post_tag', false );
-		}
-
-		if ( array_key_exists( 'video_id', $data ) ) {
-			$video_id = sanitize_text_field( $data['video_id'] );
-			update_post_meta( $post_id, 'video_id', $video_id );
+			$term_ids = $this->resolve_term_slugs_to_ids( $data['tags'], 'post_tag' );
+			wp_set_post_terms( $post_id, $term_ids, 'post_tag', false );
 		}
 
 		return true;
+	}
+
+	/**
+	 * Resolve taxonomy slugs (or numeric IDs) to term IDs.
+	 *
+	 * @param array  $slugs_or_ids Array of slugs or term IDs.
+	 * @param string $taxonomy     Taxonomy name.
+	 * @return array Term IDs.
+	 */
+	private function resolve_term_slugs_to_ids( $slugs_or_ids, $taxonomy ) {
+		$ids = array();
+		foreach ( $slugs_or_ids as $item ) {
+			if ( is_numeric( $item ) && (int) $item > 0 ) {
+				$term = get_term( (int) $item, $taxonomy );
+				if ( $term && ! is_wp_error( $term ) ) {
+					$ids[] = $term->term_id;
+				}
+				continue;
+			}
+			$slug = is_string( $item ) ? $item : '';
+			if ( $slug === '' ) {
+				continue;
+			}
+			$term = get_term_by( 'slug', $slug, $taxonomy );
+			if ( $term && ! is_wp_error( $term ) ) {
+				$ids[] = $term->term_id;
+			}
+		}
+		return $ids;
+	}
+
+	/**
+	 * Resolve relationship value: array of slugs or IDs to post IDs (e.g. artist -> band).
+	 *
+	 * @param array|int|string $value     Array of slugs/IDs, or single slug/ID.
+	 * @param string          $post_type Post type to resolve to.
+	 * @return array Post IDs.
+	 */
+	private function resolve_relationship_slugs_to_ids( $value, $post_type ) {
+		$list = is_array( $value ) ? $value : array( $value );
+		$ids  = array();
+		foreach ( $list as $item ) {
+			if ( is_numeric( $item ) && (int) $item > 0 ) {
+				$p = get_post( (int) $item );
+				if ( $p && $p->post_type === $post_type ) {
+					$ids[] = (int) $p->ID;
+				}
+				continue;
+			}
+			$slug = is_string( $item ) ? $item : '';
+			if ( $slug === '' ) {
+				continue;
+			}
+			$posts = get_posts( array(
+				'post_type'      => $post_type,
+				'name'           => $slug,
+				'posts_per_page' => 1,
+				'post_status'    => 'any',
+				'fields'         => 'ids',
+			) );
+			if ( ! empty( $posts ) ) {
+				$ids[] = (int) $posts[0];
+			}
+		}
+		return $ids;
+	}
+
+	/**
+	 * Resolve single relationship value (slug or ID) to post ID (e.g. album).
+	 *
+	 * @param int|string $value     Slug or post ID.
+	 * @param string     $post_type Post type to resolve to.
+	 * @return int|null Post ID or null if not found.
+	 */
+	private function resolve_relationship_slug_or_id_to_id( $value, $post_type ) {
+		if ( empty( $value ) ) {
+			return null;
+		}
+		if ( is_numeric( $value ) && (int) $value > 0 ) {
+			$p = get_post( (int) $value );
+			return ( $p && $p->post_type === $post_type ) ? (int) $p->ID : null;
+		}
+		$slug = is_string( $value ) ? $value : '';
+		if ( $slug === '' ) {
+			return null;
+		}
+		$posts = get_posts( array(
+			'post_type'      => $post_type,
+			'name'           => $slug,
+			'posts_per_page' => 1,
+			'post_status'    => 'any',
+			'fields'         => 'ids',
+		) );
+		return ! empty( $posts ) ? (int) $posts[0] : null;
 	}
 
 	/**

@@ -182,6 +182,66 @@ header .header-content-inner-container a[rel="home"],
   margin: var(--wp--preset--spacing--70) 0;
 }
 
+#footer .wp-block-site-logo img {
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+[data-theme="dark"] #footer .wp-block-site-logo img {
+  mix-blend-mode: luminosity;
+  opacity: 0.8;
+}
+
+/* Theme mode toggle (footer). Always visible: light mode = dark text on light footer; dark mode = light text on dark button. */
+.jww-theme-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.9rem;
+  border-radius: 4px;
+  border: 1px solid var(--jww-border);
+  background: var(--jww-surface-subtle);
+  color: var(--jww-text-primary);
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.jww-theme-mode-toggle:hover {
+  background: var(--jww-surface-subtle-hover);
+}
+
+.jww-theme-mode-toggle-icon {
+  display: inline-block;
+  width: 1.1em;
+  height: 1.1em;
+  background: currentColor;
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  /* Light mode: moon icon (click to switch to dark) */
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Cpath d='M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Cpath d='M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z'/%3E%3C/svg%3E");
+}
+
+/* Dark mode: sun icon (click to switch to light) */
+[data-theme="dark"] .jww-theme-mode-toggle-icon {
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41'/%3E%3C/svg%3E");
+}
+
+[data-theme="dark"] .jww-theme-mode-toggle {
+  background: #334155;
+  border-color: #475569;
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .jww-theme-mode-toggle:hover {
+  background: #475569;
+}
 
 /* Mobile tweaks */
 @media (max-width: 600px) {

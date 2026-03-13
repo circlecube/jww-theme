@@ -1,0 +1,102 @@
+/**
+ * Theme color mode: light (default) and dark.
+ * Semantic vars used by theme components; WP preset overrides for dark mode
+ * so blocks, header, and footer all switch. Preference stored in localStorage.
+ */
+
+:root {
+	/* Semantic theme colors (light mode). Use these in components instead of hardcoded hex. */
+	--jww-button-bg: var(--wp--preset--color--accent-5, #333);
+	--jww-button-bg-muted: #555;
+	--jww-on-accent: #fff;
+	--jww-text-primary: #1a1a1a;
+	--jww-text-muted: #555;
+	--jww-surface-subtle: rgba(0, 0, 0, 0.04);
+	--jww-surface-subtle-hover: rgba(0, 0, 0, 0.08);
+	--jww-surface-input: rgba(255, 255, 255, 0.5);
+	--jww-border: #ccc;
+	--jww-border-light: rgba(0, 0, 0, 0.08);
+	--jww-border-input: rgba(0, 0, 0, 0.2);
+	--jww-input-bg: #f5f5f5;
+	--jww-focus-ring: var(--wp--preset--color--accent-5, #333);
+	--jww-chord-bg: rgba(0, 0, 0, 0.08);
+	--jww-shadow-subtle: 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+/* Dark mode: dark backgrounds, light text. Override WP presets and semantic vars. */
+[data-theme="dark"] {
+	/* Page/surface: dark. Text: light. */
+	--wp--preset--color--base: #1a1b1e;
+	--wp--preset--color--contrast: #e2e8f0;
+	--wp--preset--color--accent-1: #9a8b28;
+	--wp--preset--color--accent-2: #6b9dc4;
+	--wp--preset--color--accent-3: #5b7ab8;
+	--wp--preset--color--accent-4: #94a3b8;
+	--wp--preset--color--accent-5: #475569;
+	--wp--preset--color--accent-6: rgba(255, 255, 255, 0.12);
+
+	--jww-button-bg: #475569;
+	--jww-button-bg-muted: #64748b;
+	--jww-on-accent: #f1f5f9;
+	--jww-text-primary: #e2e8f0;
+	--jww-text-muted: #94a3b8;
+	--jww-surface-subtle: rgba(255, 255, 255, 0.05);
+	--jww-surface-subtle-hover: rgba(255, 255, 255, 0.1);
+	--jww-surface-input: rgba(255, 255, 255, 0.08);
+	--jww-border: #475569;
+	--jww-border-light: rgba(255, 255, 255, 0.12);
+	--jww-border-input: rgba(255, 255, 255, 0.2);
+	--jww-input-bg: #334155;
+	--jww-focus-ring: #94a3b8;
+	--jww-chord-bg: rgba(255, 255, 255, 0.1);
+	--jww-shadow-subtle: 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+/* Keep header and nav/footer bars dark (they use contrast for bg; we override so they stay dark with light text) */
+[data-theme="dark"] .header-container,
+[data-theme="dark"] .nav-link-container {
+	background-color: #1e293b !important;
+}
+
+[data-theme="dark"] .header-container a,
+[data-theme="dark"] .header-container .wp-block-navigation-item__label,
+[data-theme="dark"] .header-container .header-large-text,
+[data-theme="dark"] .nav-links a {
+	color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .header-container a:hover,
+[data-theme="dark"] .nav-links a:hover {
+	color: #94a3b8 !important;
+}
+
+/* Footer area: ensure dark bg and light text (footer uses has-base-background-color = dark; text may need forcing) */
+[data-theme="dark"] #footer {
+	background-color: #1a1b1e !important;
+	color: #e2e8f0;
+}
+
+[data-theme="dark"] #footer a,
+[data-theme="dark"] #footer p,
+[data-theme="dark"] #footer .has-contrast-color {
+	color: #e2e8f0;
+}
+
+[data-theme="dark"] #footer .has-base-background-color {
+	background-color: #1a1b1e !important;
+}
+
+/* Body/main content: light text on dark page bg */
+[data-theme="dark"] body,
+[data-theme="dark"] main,
+[data-theme="dark"] .wp-block-post-content,
+[data-theme="dark"] .wp-block-group {
+	color: #e2e8f0;
+}
+
+[data-theme="dark"] .wp-block-post-title,
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3 {
+	color: #f1f5f9;
+}

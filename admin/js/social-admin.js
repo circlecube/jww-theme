@@ -171,6 +171,37 @@
 		});
 	});
 
+	// Cron hour dropdown: save and reschedule.
+	$('.jww-social-cron-hour').on('change', function () {
+		var $sel = $(this);
+		var type = $sel.data('type');
+		var hour = $sel.val();
+		if (!type || hour === undefined || hour === '' || !window.jwwSocialAdmin || !window.jwwSocialAdmin.settingsNonce) {
+			return;
+		}
+		$sel.prop('disabled', true);
+		$.post(window.jwwSocialAdmin.ajaxUrl, {
+			action: 'jww_social_save_cron_hour',
+			nonce: window.jwwSocialAdmin.settingsNonce,
+			type: type,
+			hour: hour
+		}).done(function (res) {
+			if (res.success) {
+				var $feedback = $sel.closest('td').find('.jww-social-cron-saved');
+				if (!$feedback.length) {
+					$feedback = $('<span class="jww-social-cron-saved"/>');
+					$sel.closest('td').append($feedback);
+				}
+				$feedback.text(window.jwwSocialAdmin.i18n.cronSaved || 'Schedule saved.').addClass('is-visible');
+				setTimeout(function () {
+					$feedback.removeClass('is-visible');
+				}, 2000);
+			}
+		}).always(function () {
+			$sel.prop('disabled', false);
+		});
+	});
+
 	// On-publish toggles: save when changed.
 	$('.jww-social-on-publish-toggle').on('change', function () {
 		var $input = $(this);

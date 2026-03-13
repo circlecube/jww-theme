@@ -1,0 +1,432 @@
+/**
+ * Dark mode component overrides.
+ * Imported last so these rules win over base styles (e.g. .stat-card, .wp-block-button__link).
+ */
+
+/* Header: inner container with has-contrast-background-color stays dark */
+[data-theme="dark"] .header-container .has-contrast-background-color {
+	background-color: #1e293b !important;
+}
+
+/* Buttons with light accent backgrounds: use dark text for legibility. Wrapper may have the accent class. */
+[data-theme="dark"] .wp-block-button__link.has-accent-1-background-color,
+[data-theme="dark"] .wp-block-button__link.has-accent-2-background-color,
+[data-theme="dark"] .wp-block-button__link.has-accent-3-background-color,
+[data-theme="dark"] .wp-block-button__link.has-accent-4-background-color,
+[data-theme="dark"] .wp-element-button.has-accent-1-background-color,
+[data-theme="dark"] .wp-element-button.has-accent-2-background-color,
+[data-theme="dark"] .wp-element-button.has-accent-3-background-color,
+[data-theme="dark"] .wp-element-button.has-accent-4-background-color,
+[data-theme="dark"] .wp-block-button.has-accent-1-background-color .wp-block-button__link,
+[data-theme="dark"] .wp-block-button.has-accent-2-background-color .wp-block-button__link,
+[data-theme="dark"] .wp-block-button.has-accent-3-background-color .wp-block-button__link,
+[data-theme="dark"] .wp-block-button.has-accent-4-background-color .wp-block-button__link {
+	color: #1e293b !important;
+}
+
+/* Stat cards: dark backgrounds, light text */
+[data-theme="dark"] .stat-card,
+[data-theme="dark"] .tour-stat-card {
+	background: #1e293b !important;
+	border-color: #334155 !important;
+}
+
+[data-theme="dark"] .stat-card:hover,
+[data-theme="dark"] .tour-stat-card:hover {
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .stat-value,
+[data-theme="dark"] .stat-label {
+	color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .tour-stat-card h3 {
+	border-bottom-color: #334155 !important;
+	color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .tour-stat-card h3 a {
+	color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .tour-stat-card h3 a:hover {
+	color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .tour-stat-item {
+	border-bottom-color: #334155 !important;
+}
+
+[data-theme="dark"] .tour-stat-item .stat-label {
+	color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .tour-stat-item .stat-value {
+	color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .tour-most-played {
+	border-top-color: #334155 !important;
+}
+
+[data-theme="dark"] .tour-most-played h4 {
+	color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .tour-most-played a {
+	color: #7dd3fc !important;
+}
+
+/* Stats lists and never-played list */
+[data-theme="dark"] .stats-list {
+	background: #1e293b !important;
+	border-color: #334155 !important;
+}
+
+[data-theme="dark"] .song-play-list li,
+[data-theme="dark"] .gap-analysis-list li,
+[data-theme="dark"] .venue-stats-list li {
+	border-bottom-color: #334155 !important;
+	color: #e2e8f0;
+}
+
+[data-theme="dark"] .song-play-list .rank,
+[data-theme="dark"] .play-count,
+[data-theme="dark"] .show-count,
+[data-theme="dark"] .song-count,
+[data-theme="dark"] .gap-time {
+	color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .song-play-list a,
+[data-theme="dark"] .gap-analysis-list a,
+[data-theme="dark"] .venue-stats-list a {
+	color: #7dd3fc !important;
+}
+
+[data-theme="dark"] .never-played-list li {
+	background: #1e293b !important;
+	border-color: #334155 !important;
+}
+
+[data-theme="dark"] .never-played-list a {
+	color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .last-played {
+	color: #94a3b8 !important;
+}
+
+/* Setlist note: dark-ish background, light text */
+[data-theme="dark"] .setlist-list .setlist-note {
+	background-color: #334155 !important;
+	color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .setlist-list .setlist-original-artist,
+[data-theme="dark"] .setlist-list .setlist-notes {
+	color: #94a3b8 !important;
+}
+
+/* Comment form and footer search: mid-dark-gray background, light text */
+[data-theme="dark"] .jww-comment-form input[type="text"],
+[data-theme="dark"] .jww-comment-form input[type="email"],
+[data-theme="dark"] .jww-comment-form input[type="url"],
+[data-theme="dark"] .jww-comment-form textarea {
+	background-color: #334155 !important;
+	color: #e2e8f0 !important;
+	border-color: #475569 !important;
+}
+
+[data-theme="dark"] .jww-comment-form input::placeholder,
+[data-theme="dark"] .jww-comment-form textarea::placeholder {
+	color: #94a3b8;
+}
+
+[data-theme="dark"] .footer-search .wp-block-search__input {
+	background-color: #334155 !important;
+	color: #e2e8f0 !important;
+	border-color: #475569 !important;
+}
+
+[data-theme="dark"] .footer-search .wp-block-search__input::placeholder {
+	color: #94a3b8;
+}
+
+/* Lighter contrast: tour insight stat value strong, song live stats links */
+[data-theme="dark"] .tour-insight-stat-value strong,
+[data-theme="dark"] .tour-overview-value.tour-insight-stat-value strong {
+	color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .song-live-stats-cards .tour-insight-stat-value--with-venue .tour-overview-value-inner a {
+	color: #93c5fd !important;
+}
+
+[data-theme="dark"] .song-live-stats-cards .tour-insight-stat-value--with-venue .tour-overview-value-inner a:hover {
+	color: #bae6fd !important;
+}
+
+/* Show meta buttons (single show): light text on dark */
+[data-theme="dark"] .show-meta-buttons .wp-block-button__link {
+	color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .show-meta-buttons .wp-block-button__link:hover {
+	color: #f1f5f9 !important;
+}
+
+/* Comment form submit button: light text */
+[data-theme="dark"] .comments-area .jww-comment-form .submit {
+	color: #e2e8f0 !important;
+}
+
+/* Album covers block: keep dark bg + light text in dark mode (vars would invert otherwise) */
+[data-theme="dark"] .album-covers .album {
+	background-color: #1e293b !important;
+	color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .album-covers .album-title,
+[data-theme="dark"] .album-covers .album-date {
+	color: #e2e8f0 !important;
+}
+
+/* Random lyrics block: dark background, light text */
+[data-theme="dark"] .wp-block-jww-theme-random-lyrics,
+[data-theme="dark"] .wp-block-jww-theme-random-lyrics .random-lyrics-quote-container {
+	background: #1e293b !important;
+	border-color: #334155 !important;
+}
+
+[data-theme="dark"] .wp-block-jww-theme-random-lyrics .random-lyrics-text,
+[data-theme="dark"] .wp-block-jww-theme-random-lyrics .random-lyrics-text::before,
+[data-theme="dark"] .wp-block-jww-theme-random-lyrics .random-lyrics-text::after {
+	color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .wp-block-jww-theme-random-lyrics .random-lyrics-attribution,
+[data-theme="dark"] .wp-block-jww-theme-random-lyrics .random-lyrics-artist,
+[data-theme="dark"] .wp-block-jww-theme-random-lyrics .random-lyrics-song,
+[data-theme="dark"] .wp-block-jww-theme-random-lyrics .random-lyrics-song a {
+	color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .wp-block-jww-theme-random-lyrics .random-lyrics-song a:hover {
+	color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .wp-block-jww-theme-random-lyrics .random-lyrics-loading,
+[data-theme="dark"] .wp-block-jww-theme-random-lyrics .random-lyrics-placeholder {
+	color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .wp-block-jww-theme-random-lyrics .random-lyrics-share-toggle,
+[data-theme="dark"] .wp-block-jww-theme-random-lyrics .random-lyrics-refresh-btn {
+	color: #e2e8f0 !important;
+}
+
+/* Guitar chord diagrams and tabs: make SVG content white in dark mode */
+[data-theme="dark"] .jww-chord-diagrams-container svg path,
+[data-theme="dark"] .jww-chord-diagrams-container svg line,
+[data-theme="dark"] .jww-chord-diagrams-container svg circle,
+[data-theme="dark"] .jww-chord-diagrams-container svg rect,
+[data-theme="dark"] .jww-chord-diagrams-container svg text {
+	fill: #e2e8f0 !important;
+	stroke: #e2e8f0 !important;
+	color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .jww-tabs-container svg path,
+[data-theme="dark"] .jww-tabs-container svg line,
+[data-theme="dark"] .jww-tabs-container svg circle,
+[data-theme="dark"] .jww-tabs-container svg rect,
+[data-theme="dark"] .jww-tabs-container svg text {
+	fill: #e2e8f0 !important;
+	stroke: #e2e8f0 !important;
+	color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .jww-tabs-container svg .vf-tabnote rect {
+	fill: transparent !important;
+}
+
+[data-theme="dark"] .jww-chord-diagram-name {
+	color: #e2e8f0 !important;
+}
+
+/* Song grid: keep dark background and light text on content/title/attribution */
+[data-theme="dark"] .song-grid-item-content {
+	background-color: #1e293b !important;
+}
+
+[data-theme="dark"] .song-grid-item-title,
+[data-theme="dark"] .song-grid-item-attribution,
+[data-theme="dark"] .song-grid-item-date {
+	color: #e2e8f0 !important;
+}
+
+/* ========== Shows tables & cards (stats-tables + setlist) ========== */
+
+/* Card wrappers for shows tables and song stats table */
+[data-theme="dark"] .shows-table-card,
+[data-theme="dark"] .song-stats-table-card {
+	background: #1e293b !important;
+	border-color: #334155 !important;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .shows-table-wrapper {
+	background: #1e293b !important;
+	border-color: #334155 !important;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Shows table: header, rows, cells, links */
+[data-theme="dark"] .shows-table thead {
+	background-color: rgba(255, 255, 255, 0.06) !important;
+	border-bottom-color: #334155 !important;
+}
+
+[data-theme="dark"] .shows-table th {
+	background-color: rgba(255, 255, 255, 0.06) !important;
+	border-bottom-color: #334155 !important;
+	color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .shows-table th.sortable:hover {
+	background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .shows-table th.sortable .sort-indicator {
+	color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .shows-table tbody tr {
+	border-bottom-color: #334155 !important;
+}
+
+[data-theme="dark"] .shows-table tbody tr:hover {
+	background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+[data-theme="dark"] .shows-table tbody td {
+	color: #e2e8f0;
+}
+
+[data-theme="dark"] .shows-table tbody td a {
+	color: #7dd3fc !important;
+}
+
+[data-theme="dark"] .shows-table tbody td a:hover {
+	color: #93c5fd !important;
+}
+
+[data-theme="dark"] .shows-table .empty-cell {
+	color: #94a3b8 !important;
+}
+
+/* Song stats table (same pattern) */
+[data-theme="dark"] .song-stats-table thead {
+	background-color: rgba(255, 255, 255, 0.06) !important;
+	border-bottom-color: #334155 !important;
+}
+
+[data-theme="dark"] .song-stats-table th {
+	border-bottom-color: #334155 !important;
+	color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .song-live-stats-block .stat-item-with-venue-card {
+	background-color: #1e293b !important;
+}
+
+/* Show filters card and filter form */
+[data-theme="dark"] .show-filters-card {
+	background: #1e293b !important;
+	border-color: #334155 !important;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .show-filters-card .filter-group label,
+[data-theme="dark"] .show-filters-card .filter-group select {
+	color: #e2e8f0;
+}
+
+[data-theme="dark"] .show-filters-card .filter-group select {
+	background-color: #334155 !important;
+	border-color: #475569 !important;
+}
+
+[data-theme="dark"] .show-stats .stat-item {
+	background-color: #1e293b !important;
+}
+
+[data-theme="dark"] .show-stats .stat-item strong {
+	color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .show-stats .stat-item div {
+	color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .show-filters .filter-form {
+	background-color: #1e293b !important;
+}
+
+[data-theme="dark"] .show-filters .filter-group label {
+	color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .show-filters .filter-group select {
+	background-color: #334155 !important;
+	border-color: #475569 !important;
+	color: #e2e8f0;
+}
+
+/* Show insight / setlist data cards (single show, tour/location archives) */
+[data-theme="dark"] .show-setlist-data-card,
+[data-theme="dark"] .show-tour-stats-card,
+[data-theme="dark"] .show-tour-stats.show-tour-stats-card,
+[data-theme="dark"] .show-setlist-album-stats-card {
+	background: #1e293b !important;
+	border-color: #334155 !important;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .show-setlist-data-card-heading,
+[data-theme="dark"] .show-tour-stats-heading {
+	color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .show-setlist-data-card-heading a,
+[data-theme="dark"] .show-tour-stats-heading a {
+	color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .show-setlist-data-card-content,
+[data-theme="dark"] .show-setlist-data-card-content-subtitle,
+[data-theme="dark"] .show-setlist-data-card .shows-since,
+[data-theme="dark"] .show-setlist-data-card .show-highlight-standout-intro,
+[data-theme="dark"] .show-tour-stats-meta {
+	color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .show-setlist-album-stats-heading {
+	color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .show-setlist-album-stats-details {
+	background: rgba(255, 255, 255, 0.05) !important;
+	border-color: #334155 !important;
+}
+
+[data-theme="dark"] .show-setlist-album-stats-chart-row-label {
+	color: #e2e8f0 !important;
+}
+
+/* Accordion summary inside shows-table-card */
+[data-theme="dark"] .shows-accordion-summary {
+	color: #e2e8f0 !important;
+}

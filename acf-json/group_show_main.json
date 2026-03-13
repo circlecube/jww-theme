@@ -51,61 +51,12 @@
             "bidirectional_target": []
         },
         {
-            "key": "field_show_festival",
-            "label": "Part of a festival",
-            "name": "show_festival",
-            "aria-label": "",
-            "type": "true_false",
-            "instructions": "Check if this show was part of a festival (e.g. multi-day or multi-artist event). Use the Festival name field below when checked.",
-            "required": 0,
-            "conditional_logic": 0,
-            "wrapper": {
-                "width": "",
-                "class": "",
-                "id": ""
-            },
-            "message": "This show is part of a festival",
-            "default_value": 0,
-            "ui": 1,
-            "ui_on_text": "Yes",
-            "ui_off_text": "No"
-        },
-        {
-            "key": "field_show_festival_name",
-            "label": "Festival name",
-            "name": "show_festival_name",
-            "aria-label": "",
-            "type": "text",
-            "instructions": "Name of the festival (e.g. Newport Folk Festival). Shown in tables when the show has no tour and used to prefix the show title.",
-            "required": 0,
-            "conditional_logic": [
-                [
-                    {
-                        "field": "field_show_festival",
-                        "operator": "==",
-                        "value": "1"
-                    }
-                ]
-            ],
-            "wrapper": {
-                "width": "",
-                "class": "",
-                "id": ""
-            },
-            "default_value": "",
-            "maxlength": "",
-            "allow_in_bindings": 0,
-            "placeholder": "e.g. Newport Folk Festival",
-            "prepend": "",
-            "append": ""
-        },
-        {
             "key": "field_show_setlist",
             "label": "Setlist",
             "name": "setlist",
             "aria-label": "",
             "type": "repeater",
-            "instructions": "Add songs and notes in performance order. Use entry_type to add songs or notes (like encore breaks).",
+            "instructions": "Add songs and notes in performance order. Use type to add songs or notes (like encore breaks).",
             "required": 0,
             "conditional_logic": 0,
             "wrapper": {
@@ -117,13 +68,13 @@
             "pagination": 0,
             "min": 0,
             "max": 0,
-            "collapsed": "",
+            "collapsed": "field_setlist_entry_type",
             "button_label": "Add Setlist Item",
             "rows_per_page": 20,
             "sub_fields": [
                 {
                     "key": "field_setlist_entry_type",
-                    "label": "Entry Type",
+                    "label": "Type",
                     "name": "entry_type",
                     "aria-label": "",
                     "type": "select",
@@ -132,7 +83,7 @@
                     "conditional_logic": 0,
                     "wrapper": {
                         "width": "15",
-                        "class": "",
+                        "class": "setlist-song-type",
                         "id": ""
                     },
                     "choices": {
@@ -158,7 +109,7 @@
                     "name": "song",
                     "aria-label": "",
                     "type": "relationship",
-                    "instructions": "Select from existing songs",
+                    "instructions": "Select from songs",
                     "required": 0,
                     "conditional_logic": [
                         [
@@ -170,8 +121,8 @@
                         ]
                     ],
                     "wrapper": {
-                        "width": "30",
-                        "class": "",
+                        "width": "40",
+                        "class": "setlist-song-select",
                         "id": ""
                     },
                     "post_type": [
@@ -187,7 +138,7 @@
                     "return_format": "object",
                     "min": "",
                     "max": 1,
-                    "allow_in_bindings": 0,
+                    "allow_in_bindings": 1,
                     "elements": [
                         "featured_image"
                     ],
@@ -213,8 +164,8 @@
                         ]
                     ],
                     "wrapper": {
-                        "width": "30",
-                        "class": "",
+                        "width": "40",
+                        "class": "setlist-song-name",
                         "id": ""
                     },
                     "default_value": "",
@@ -235,8 +186,8 @@
                     "required": 0,
                     "conditional_logic": 0,
                     "wrapper": {
-                        "width": "50",
-                        "class": "",
+                        "width": "35",
+                        "class": "setlist-song-note",
                         "id": ""
                     },
                     "default_value": "",
@@ -245,6 +196,36 @@
                     "rows": 2,
                     "placeholder": "",
                     "new_lines": "br",
+                    "parent_repeater": "field_show_setlist"
+                },
+                {
+                    "key": "field_69b431868da18",
+                    "label": "Duration",
+                    "name": "duration",
+                    "aria-label": "",
+                    "type": "text",
+                    "instructions": "",
+                    "required": 0,
+                    "conditional_logic": [
+                        [
+                            {
+                                "field": "field_setlist_entry_type",
+                                "operator": "!=",
+                                "value": "note"
+                            }
+                        ]
+                    ],
+                    "wrapper": {
+                        "width": "10",
+                        "class": "setlist-song-time",
+                        "id": ""
+                    },
+                    "default_value": "",
+                    "maxlength": "",
+                    "allow_in_bindings": 0,
+                    "placeholder": "0:00",
+                    "prepend": "",
+                    "append": "",
                     "parent_repeater": "field_show_setlist"
                 }
             ]
@@ -361,7 +342,7 @@
             "name": "show_artist",
             "aria-label": "",
             "type": "relationship",
-            "instructions": "Select the artist\/band performing this show",
+            "instructions": "Select the artist\/band performing this show - assumed as Jesse Welles for now.",
             "required": 0,
             "conditional_logic": 0,
             "wrapper": {
@@ -383,7 +364,9 @@
             "min": "",
             "max": 1,
             "allow_in_bindings": 0,
-            "elements": "",
+            "elements": [
+                "featured_image"
+            ],
             "bidirectional": 0,
             "bidirectional_target": []
         },
@@ -421,8 +404,8 @@
     "instruction_placement": "label",
     "hide_on_screen": "",
     "active": true,
-    "description": "",
+    "description": "Show setlist, etc",
     "show_in_rest": 0,
-    "display_title": "",
-    "modified": 1769620000
+    "display_title": "Show Data",
+    "modified": 1773425972
 }

@@ -40,3 +40,37 @@
     color: #646970;
     margin-bottom: 10px;
 }
+
+.jww-export-fields {
+    margin: 15px 0;
+}
+
+.jww-export-fields legend {
+    font-weight: 600;
+}
+
+.jww-export-field-list {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 6px 20px;
+}
+
+.jww-export-field-list li {
+    margin: 0;
+}
+
+.jww-export-field-list label {
+    font-weight: normal;
+}
+
+.jww-export-field-list input[type="checkbox"] {
+    margin-right: 6px;
+}
+
+.jww-export-field-list em {
+    color: #646970;
+    font-size: 12px;
+}

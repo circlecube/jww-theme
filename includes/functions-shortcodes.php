@@ -212,3 +212,26 @@ function jww_footer_navigation_shortcode() {
 	return do_blocks( $navigation );
 }
 add_shortcode( 'footer_navigation', 'jww_footer_navigation_shortcode' );
+
+/**
+ * Shortcode for theme mode toggle (light/dark). Preference stored in localStorage (jww_theme).
+ * Usage: [theme_mode_toggle]
+ *
+ * @return string HTML output for the toggle button.
+ */
+function jww_theme_mode_toggle_shortcode() {
+	if ( is_admin() ) {
+		return '';
+	}
+	$label_dark = esc_attr__( 'Switch to light mode', 'jww-theme' );
+	$label_light = esc_attr__( 'Switch to dark mode', 'jww-theme' );
+	$html = sprintf(
+		'<button type="button" id="jww-theme-mode-toggle" class="jww-theme-mode-toggle" aria-label="%1$s" title="%1$s">' .
+		'<span class="jww-theme-mode-toggle-icon" aria-hidden="true"></span>' .
+		'<span class="jww-theme-mode-toggle-label">%2$s</span></button>',
+		$label_dark,
+		esc_html__( 'Dark mode', 'jww-theme' )
+	);
+	return $html;
+}
+add_shortcode( 'theme_mode_toggle', 'jww_theme_mode_toggle_shortcode' );

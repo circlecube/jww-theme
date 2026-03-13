@@ -123,7 +123,7 @@ set_query_var( 'tour_festivals_count', function_exists( 'jww_get_tour_festivals_
 				'title'            => $past_title,
 				'table_type'       => 'past',
 				'show_tour_column' => false,
-				'default_open'     => ! $has_upcoming,
+				'default_open'     => true,
 			) );
 		endif;
 		?>

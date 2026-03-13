@@ -77,11 +77,48 @@
     text-align: center;
 }
 
-.random-lyrics-share-wrap .jww-song-section-label {
+/* Share accordion: small toggle button, panel with platform buttons */
+.random-lyrics-share-details {
+    display: inline-block;
+}
+
+.random-lyrics-share-toggle {
+    list-style: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.65rem;
     font-size: 0.875rem;
-    font-weight: 600;
     color: var(--wp--preset--color--base, #333);
-    margin-bottom: 0.5rem;
+    background: rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.random-lyrics-share-toggle::-webkit-details-marker {
+    display: none;
+}
+
+.random-lyrics-share-toggle::marker {
+    display: none;
+}
+
+.random-lyrics-share-toggle:hover {
+    background: rgba(0, 0, 0, 0.09);
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
+.random-lyrics-share-toggle-icon {
+    font-size: 0.9rem;
+    opacity: 0.85;
+}
+
+.random-lyrics-share-panel {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .random-lyrics-share-wrap .jww-share-buttons {

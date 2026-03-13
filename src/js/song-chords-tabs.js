@@ -667,7 +667,7 @@ import { Chord, Note } from 'tonal';
 			if (v === '0' || v === 'false') return false;
 			if (v === '1' || v === 'true') return true;
 		} catch (e) { }
-		return true;
+		return false; // Hidden by default; user choice persisted in localStorage
 	}
 
 	function setStoredShowChords(show) {
@@ -677,20 +677,14 @@ import { Chord, Note } from 'tonal';
 	}
 
 	function setChordsVisible(visible) {
-		var plainWrapper = document.getElementById('jww-lyrics-plain-wrapper');
-		var transposeCapo = document.querySelector('#jww-chords-controls .jww-transpose-capo');
-		var chordViewSections = document.querySelectorAll('.jww-chord-sheet-wrapper, .jww-chord-diagrams-section, .jww-tabs-section');
-		if (plainWrapper) plainWrapper.style.display = visible ? 'none' : '';
-		if (transposeCapo) transposeCapo.style.display = visible ? '' : 'none';
-		chordViewSections.forEach(function (el) {
-			el.style.display = visible ? '' : 'none';
-		});
+		var guitarSection = document.getElementById('jww-guitar-section');
+		if (guitarSection) guitarSection.style.display = visible ? '' : 'none';
 		var toggle = document.getElementById('jww-show-chords-toggle');
 		if (toggle) {
 			toggle.classList.toggle('jww-chords-hidden', !visible);
 			toggle.setAttribute('aria-pressed', visible ? 'true' : 'false');
 			var label = toggle.querySelector('.jww-show-chords-label');
-			if (label) label.textContent = visible ? 'Hide Guitar' : 'Show Guitar';
+			if (label) label.textContent = visible ? 'Hide guitar chords' : 'Show guitar chords';
 		}
 	}
 

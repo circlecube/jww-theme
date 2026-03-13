@@ -460,7 +460,7 @@ set_query_var( 'show_stats_past', $past_count );
 				'title'            => $past_title,
 				'table_type'       => 'past',
 				'show_tour_column' => true,
-				'default_open'     => ! $has_upcoming,
+				'default_open'     => true,
 				'accordion_id'     => 'archive-past-shows-accordion',
 			) );
 		endif;

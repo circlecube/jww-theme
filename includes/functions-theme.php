@@ -156,6 +156,42 @@ function jww_enqueue() {
 add_action( 'wp_enqueue_scripts', 'jww_enqueue' );
 
 /**
+ * Inline script in head: apply saved theme (dark/light) from localStorage before paint to avoid flash.
+ */
+function jww_theme_mode_head_script() {
+	if ( is_admin() ) {
+		return;
+	}
+	?>
+<script>
+(function(){var t=localStorage.getItem('jww_theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');})();
+</script>
+	<?php
+}
+add_action( 'wp_head', 'jww_theme_mode_head_script', 1 );
+
+/**
+ * Enqueue theme mode toggle script (footer) when shortcode is present or always for footer.
+ */
+function jww_enqueue_theme_mode_toggle() {
+	if ( is_admin() ) {
+		return;
+	}
+	$script_path = get_stylesheet_directory() . '/assets/js/theme-mode-toggle.js';
+	if ( ! file_exists( $script_path ) ) {
+		return;
+	}
+	wp_enqueue_script(
+		'jww-theme-mode-toggle',
+		get_stylesheet_directory_uri() . '/assets/js/theme-mode-toggle.js',
+		array(),
+		wp_get_theme()->get( 'Version' ),
+		true
+	);
+}
+add_action( 'wp_enqueue_scripts', 'jww_enqueue_theme_mode_toggle', 20 );
+
+/**
  * Add theme support for block styles
  */
 function jww_theme_support() {

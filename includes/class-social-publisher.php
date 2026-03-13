@@ -101,7 +101,7 @@ function jww_social_get_default_status_templates() {
 		'song_publish'     => 'New Song Alert! {title} - {link} #jessewelles',
 		'show'             => 'New Show Setlist Alert! {title} - {link} #jessewelles',
 		'post'             => '{title} {link} #jessewelles',
-		'lyric'            => 'Random Jesse Welles lyric of the day "{lyrics_line}" from "{title}" #jessewelles {link}',
+		'lyric'            => 'Lyric of the day: "{lyrics_line}" from "{title}" #jessewelles {link}',
 		'anniversary_song' => 'Check out Jesse Welles\' song, "{title}" — {years_ago} anniversary! {link} #jessewelles',
 		'anniversary_show' => 'New Show Setlist Alert! {title} — {years_ago} anniversary! {link} #jessewelles',
 	);
@@ -915,6 +915,12 @@ function jww_social_register_cron() {
 		'jww_social_random_post'  => 24,
 	);
 
+	$type_from_hook = array(
+		'jww_social_random_song'  => 'song',
+		'jww_social_random_lyric' => 'lyric',
+		'jww_social_random_show'  => 'show',
+		'jww_social_random_post'  => 'post',
+	);
 	foreach ( $hook_callbacks as $hook => $callback ) {
 		add_action( $hook, $callback );
 		$hours = (int) get_option( $option_keys[ $hook ], $default_hours[ $hook ] );
@@ -924,13 +930,15 @@ function jww_social_register_cron() {
 		}
 		$recurrence = jww_social_cron_recurrence_for_hours( $hours );
 		if ( ! wp_next_scheduled( $hook ) ) {
-			wp_schedule_event( time(), $recurrence, $hook );
+			$type = isset( $type_from_hook[ $hook ] ) ? $type_from_hook[ $hook ] : 'song';
+			$first_run = jww_social_cron_first_run_timestamp( $type );
+			wp_schedule_event( $first_run, $recurrence, $hook );
 		}
 	}
 
 	add_action( 'jww_social_anniversary', 'jww_social_cron_anniversary' );
 	if ( ! wp_next_scheduled( 'jww_social_anniversary' ) ) {
-		wp_schedule_event( time(), 'daily', 'jww_social_anniversary' );
+		wp_schedule_event( jww_social_anniversary_first_run_timestamp(), 'daily', 'jww_social_anniversary' );
 	}
 }
 
@@ -949,7 +957,49 @@ function jww_social_cron_recurrence_for_hours( $hours ) {
 }
 
 /**
- * Clear and reschedule a single cron hook with current option. Call after saving cron schedule from admin.
+ * Get the next run timestamp for a scheduled cron type, at the configured hour (so daily crons can be staggered).
+ *
+ * @param string $type One of: song, lyric, show, post.
+ * @return int Unix timestamp for the next run at the configured hour (today or tomorrow).
+ */
+function jww_social_cron_first_run_timestamp( $type ) {
+	$hour_option_keys = array(
+		'song'  => 'jww_social_cron_hour_song',
+		'lyric' => 'jww_social_cron_hour_lyric',
+		'show'  => 'jww_social_cron_hour_show',
+		'post'  => 'jww_social_cron_hour_post',
+	);
+	$default_hours = array( 'song' => 9, 'lyric' => 10, 'show' => 11, 'post' => 12 );
+	$hour = isset( $hour_option_keys[ $type ] ) ? (int) get_option( $hour_option_keys[ $type ], $default_hours[ $type ] ) : 9;
+	$hour = max( 0, min( 23, $hour ) );
+	$tz = wp_timezone();
+	$now = new DateTimeImmutable( 'now', $tz );
+	$today_at_hour = $now->setTime( $hour, 0, 0 );
+	if ( $today_at_hour->getTimestamp() <= time() ) {
+		$today_at_hour = $today_at_hour->modify( '+1 day' );
+	}
+	return $today_at_hour->getTimestamp();
+}
+
+/**
+ * Get the next run timestamp for the daily anniversary cron at the configured hour.
+ *
+ * @return int Unix timestamp.
+ */
+function jww_social_anniversary_first_run_timestamp() {
+	$hour = (int) get_option( 'jww_social_cron_hour_anniversary', 8 );
+	$hour = max( 0, min( 23, $hour ) );
+	$tz = wp_timezone();
+	$now = new DateTimeImmutable( 'now', $tz );
+	$today_at_hour = $now->setTime( $hour, 0, 0 );
+	if ( $today_at_hour->getTimestamp() <= time() ) {
+		$today_at_hour = $today_at_hour->modify( '+1 day' );
+	}
+	return $today_at_hour->getTimestamp();
+}
+
+/**
+ * Clear and reschedule a single cron hook with current option. Call after saving cron schedule or hour from admin.
  *
  * @param string $type One of: song, lyric, show, post.
  */
@@ -976,7 +1026,17 @@ function jww_social_reschedule_cron( $type ) {
 		return;
 	}
 	$recurrence = jww_social_cron_recurrence_for_hours( $hours );
-	wp_schedule_event( time(), $recurrence, $hook );
+	$first_run = jww_social_cron_first_run_timestamp( $type );
+	wp_schedule_event( $first_run, $recurrence, $hook );
+}
+
+/**
+ * Clear and reschedule the daily anniversary cron. Call after saving anniversary hour from admin.
+ */
+function jww_social_reschedule_anniversary_cron() {
+	wp_clear_scheduled_hook( 'jww_social_anniversary' );
+	$first_run = jww_social_anniversary_first_run_timestamp();
+	wp_schedule_event( $first_run, 'daily', 'jww_social_anniversary' );
 }
 
 /**

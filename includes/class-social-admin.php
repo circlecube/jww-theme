@@ -39,6 +39,7 @@ class Social_Admin {
 		add_action( 'wp_ajax_jww_social_share_specific_show', array( $this, 'ajax_share_specific_show' ) );
 		add_action( 'wp_ajax_jww_social_share_specific_post', array( $this, 'ajax_share_specific_post' ) );
 		add_action( 'wp_ajax_jww_social_save_cron_schedule', array( $this, 'ajax_save_cron_schedule' ) );
+		add_action( 'wp_ajax_jww_social_save_cron_hour', array( $this, 'ajax_save_cron_hour' ) );
 		add_action( 'wp_ajax_jww_social_save_on_publish', array( $this, 'ajax_save_on_publish' ) );
 		add_action( 'wp_ajax_jww_social_save_status_text', array( $this, 'ajax_save_status_text' ) );
 	}
@@ -375,6 +376,35 @@ class Social_Admin {
 	}
 
 	/**
+	 * Output a single message template block for the Message templates section (label + textarea). Used for scheduled (cron) templates.
+	 *
+	 * @param string $template_key Option key (song, lyric, show, post).
+	 * @param string $label       Display label (e.g. "Random Song", "Lyric of the day").
+	 * @param array  $placeholders Placeholder names for description.
+	 */
+	protected function render_message_template_block( $template_key, $label, $placeholders ) {
+		$placeholders_list = implode( ', ', array_map( function ( $p ) {
+			return '{' . $p . '}';
+		}, $placeholders ) );
+		$value = function_exists( 'jww_social_get_status_template' ) ? jww_social_get_status_template( $template_key ) : '';
+		?>
+		<div class="jww-social-message-template-block" data-template-key="<?php echo esc_attr( $template_key ); ?>">
+			<label for="jww-social-status-text-msg-<?php echo esc_attr( $template_key ); ?>" class="jww-social-message-template-label"><?php echo esc_html( $label ); ?></label>
+			<textarea id="jww-social-status-text-msg-<?php echo esc_attr( $template_key ); ?>" class="jww-social-status-textarea large-text" name="jww_social_status_text_<?php echo esc_attr( $template_key ); ?>" data-template-key="<?php echo esc_attr( $template_key ); ?>" rows="3" placeholder="<?php echo esc_attr( $placeholders_list ); ?>"><?php echo esc_textarea( $value ); ?></textarea>
+			<p class="description jww-social-message-template-help">
+				<?php
+				printf(
+					/* translators: %s: placeholders list */
+					esc_html__( 'Placeholders: %s. Replaced when the scheduled share runs.', 'jww-theme' ),
+					'<code>' . esc_html( $placeholders_list ) . '</code>'
+				);
+				?>
+			</p>
+		</div>
+		<?php
+	}
+
+	/**
 	 * Render the admin page.
 	 */
 	public function render_page() {
@@ -590,9 +620,27 @@ class Social_Admin {
 				<?php endif; ?>
 			</section>
 
+			<section class="jww-social-section jww-social-message-templates">
+				<h2><?php esc_html_e( 'Message templates', 'jww-theme' ); ?></h2>
+				<p class="description"><?php esc_html_e( 'Customize the text used for scheduled (cron) posts. Placeholders are replaced when each share runs.', 'jww-theme' ); ?></p>
+				<?php if ( $user_can ) : ?>
+					<?php
+					$cron_templates = array(
+						'song'  => array( 'label' => __( 'Scheduled: Random Song', 'jww-theme' ), 'placeholders' => array( 'title', 'link' ) ),
+						'lyric' => array( 'label' => __( 'Scheduled: Lyric of the day', 'jww-theme' ), 'placeholders' => array( 'title', 'link', 'lyrics_line' ) ),
+						'show'  => array( 'label' => __( 'Scheduled: Random Show', 'jww-theme' ), 'placeholders' => array( 'title', 'link' ) ),
+						'post'  => array( 'label' => __( 'Scheduled: Random Post', 'jww-theme' ), 'placeholders' => array( 'title', 'link' ) ),
+					);
+					foreach ( $cron_templates as $template_key => $config ) :
+						$this->render_message_template_block( $template_key, $config['label'], $config['placeholders'] );
+					endforeach;
+					?>
+				<?php endif; ?>
+			</section>
+
 			<section class="jww-social-section jww-social-cron">
 				<h2><?php esc_html_e( 'Cron scheduling', 'jww-theme' ); ?></h2>
-				<p class="description"><?php esc_html_e( 'Set how often each random share type runs. Only random shares use this schedule.', 'jww-theme' ); ?></p>
+				<p class="description"><?php esc_html_e( 'Set how often and at what hour each scheduled share runs. Use different hours to stagger posts.', 'jww-theme' ); ?></p>
 				<?php if ( $user_can ) : ?>
 					<table class="form-table jww-social-cron-table">
 						<tr>
@@ -605,22 +653,44 @@ class Social_Admin {
 									<option value="24" <?php selected( (int) get_option( 'jww_social_cron_schedule_song', 24 ), 24 ); ?>><?php esc_html_e( 'Every 24 hours', 'jww-theme' ); ?></option>
 									<option value="48" <?php selected( (int) get_option( 'jww_social_cron_schedule_song', 24 ), 48 ); ?>><?php esc_html_e( 'Every 48 hours', 'jww-theme' ); ?></option>
 								</select>
+								<span class="jww-social-cron-hour-wrap">
+									<label for="jww-social-cron-hour-song" class="screen-reader-text"><?php esc_html_e( 'Run at hour (0–23)', 'jww-theme' ); ?></label>
+									<?php esc_html_e( 'at hour', 'jww-theme' ); ?>
+									<select id="jww-social-cron-hour-song" class="jww-social-cron-hour" data-type="song" aria-label="<?php esc_attr_e( 'Hour for Random Song', 'jww-theme' ); ?>">
+										<?php
+										$hour_song = (int) get_option( 'jww_social_cron_hour_song', 9 );
+										for ( $h = 0; $h < 24; $h++ ) {
+											echo '<option value="' . (int) $h . '" ' . selected( $hour_song, $h, false ) . '>' . esc_html( sprintf( '%02d:00', $h ) ) . '</option>';
+										}
+										?>
+									</select>
+								</span>
 							</td>
 						</tr>
-						<?php $this->render_cron_message_template_row( 'song', array( 'title', 'link' ), (int) get_option( 'jww_social_cron_schedule_song', 24 ) ); ?>
 						<tr>
-							<th scope="row"><?php esc_html_e( 'Random Lyric', 'jww-theme' ); ?></th>
+							<th scope="row"><?php esc_html_e( 'Lyric of the day', 'jww-theme' ); ?></th>
 							<td>
-								<select class="jww-social-cron-schedule" data-type="lyric" aria-label="<?php esc_attr_e( 'Schedule for Random Lyric', 'jww-theme' ); ?>">
+								<select class="jww-social-cron-schedule" data-type="lyric" aria-label="<?php esc_attr_e( 'Schedule for Lyric of the day', 'jww-theme' ); ?>">
 									<option value="0" <?php selected( (int) get_option( 'jww_social_cron_schedule_lyric', 24 ), 0 ); ?>><?php esc_html_e( 'Disabled', 'jww-theme' ); ?></option>
 									<option value="8" <?php selected( (int) get_option( 'jww_social_cron_schedule_lyric', 24 ), 8 ); ?>><?php esc_html_e( 'Every 8 hours', 'jww-theme' ); ?></option>
 									<option value="12" <?php selected( (int) get_option( 'jww_social_cron_schedule_lyric', 24 ), 12 ); ?>><?php esc_html_e( 'Every 12 hours', 'jww-theme' ); ?></option>
 									<option value="24" <?php selected( (int) get_option( 'jww_social_cron_schedule_lyric', 24 ), 24 ); ?>><?php esc_html_e( 'Every 24 hours', 'jww-theme' ); ?></option>
 									<option value="48" <?php selected( (int) get_option( 'jww_social_cron_schedule_lyric', 24 ), 48 ); ?>><?php esc_html_e( 'Every 48 hours', 'jww-theme' ); ?></option>
 								</select>
+								<span class="jww-social-cron-hour-wrap">
+									<label for="jww-social-cron-hour-lyric" class="screen-reader-text"><?php esc_html_e( 'Run at hour (0–23)', 'jww-theme' ); ?></label>
+									<?php esc_html_e( 'at hour', 'jww-theme' ); ?>
+									<select id="jww-social-cron-hour-lyric" class="jww-social-cron-hour" data-type="lyric" aria-label="<?php esc_attr_e( 'Hour for Lyric of the day', 'jww-theme' ); ?>">
+										<?php
+										$hour_lyric = (int) get_option( 'jww_social_cron_hour_lyric', 10 );
+										for ( $h = 0; $h < 24; $h++ ) {
+											echo '<option value="' . (int) $h . '" ' . selected( $hour_lyric, $h, false ) . '>' . esc_html( sprintf( '%02d:00', $h ) ) . '</option>';
+										}
+										?>
+									</select>
+								</span>
 							</td>
 						</tr>
-						<?php $this->render_cron_message_template_row( 'lyric', array( 'title', 'link', 'lyrics_line' ), (int) get_option( 'jww_social_cron_schedule_lyric', 24 ) ); ?>
 						<tr>
 							<th scope="row"><?php esc_html_e( 'Random Show', 'jww-theme' ); ?></th>
 							<td>
@@ -631,9 +701,20 @@ class Social_Admin {
 									<option value="24" <?php selected( (int) get_option( 'jww_social_cron_schedule_show', 24 ), 24 ); ?>><?php esc_html_e( 'Every 24 hours', 'jww-theme' ); ?></option>
 									<option value="48" <?php selected( (int) get_option( 'jww_social_cron_schedule_show', 24 ), 48 ); ?>><?php esc_html_e( 'Every 48 hours', 'jww-theme' ); ?></option>
 								</select>
+								<span class="jww-social-cron-hour-wrap">
+									<label for="jww-social-cron-hour-show" class="screen-reader-text"><?php esc_html_e( 'Run at hour (0–23)', 'jww-theme' ); ?></label>
+									<?php esc_html_e( 'at hour', 'jww-theme' ); ?>
+									<select id="jww-social-cron-hour-show" class="jww-social-cron-hour" data-type="show" aria-label="<?php esc_attr_e( 'Hour for Random Show', 'jww-theme' ); ?>">
+										<?php
+										$hour_show = (int) get_option( 'jww_social_cron_hour_show', 11 );
+										for ( $h = 0; $h < 24; $h++ ) {
+											echo '<option value="' . (int) $h . '" ' . selected( $hour_show, $h, false ) . '>' . esc_html( sprintf( '%02d:00', $h ) ) . '</option>';
+										}
+										?>
+									</select>
+								</span>
 							</td>
 						</tr>
-						<?php $this->render_cron_message_template_row( 'show', array( 'title', 'link' ), (int) get_option( 'jww_social_cron_schedule_show', 24 ) ); ?>
 						<tr>
 							<th scope="row"><?php esc_html_e( 'Random Blog Post', 'jww-theme' ); ?></th>
 							<td>
@@ -644,9 +725,37 @@ class Social_Admin {
 									<option value="24" <?php selected( (int) get_option( 'jww_social_cron_schedule_post', 24 ), 24 ); ?>><?php esc_html_e( 'Every 24 hours', 'jww-theme' ); ?></option>
 									<option value="48" <?php selected( (int) get_option( 'jww_social_cron_schedule_post', 24 ), 48 ); ?>><?php esc_html_e( 'Every 48 hours', 'jww-theme' ); ?></option>
 								</select>
+								<span class="jww-social-cron-hour-wrap">
+									<label for="jww-social-cron-hour-post" class="screen-reader-text"><?php esc_html_e( 'Run at hour (0–23)', 'jww-theme' ); ?></label>
+									<?php esc_html_e( 'at hour', 'jww-theme' ); ?>
+									<select id="jww-social-cron-hour-post" class="jww-social-cron-hour" data-type="post" aria-label="<?php esc_attr_e( 'Hour for Random Blog Post', 'jww-theme' ); ?>">
+										<?php
+										$hour_post = (int) get_option( 'jww_social_cron_hour_post', 12 );
+										for ( $h = 0; $h < 24; $h++ ) {
+											echo '<option value="' . (int) $h . '" ' . selected( $hour_post, $h, false ) . '>' . esc_html( sprintf( '%02d:00', $h ) ) . '</option>';
+										}
+										?>
+									</select>
+								</span>
 							</td>
 						</tr>
-						<?php $this->render_cron_message_template_row( 'post', array( 'title', 'link' ), (int) get_option( 'jww_social_cron_schedule_post', 24 ) ); ?>
+						<tr>
+							<th scope="row"><?php esc_html_e( 'Song & show anniversary', 'jww-theme' ); ?></th>
+							<td>
+								<span class="jww-social-cron-hour-wrap">
+									<label for="jww-social-cron-hour-anniversary" class="screen-reader-text"><?php esc_html_e( 'Run at hour (0–23)', 'jww-theme' ); ?></label>
+									<?php esc_html_e( 'Daily at hour', 'jww-theme' ); ?>
+									<select id="jww-social-cron-hour-anniversary" class="jww-social-cron-hour" data-type="anniversary" aria-label="<?php esc_attr_e( 'Hour for anniversary posts', 'jww-theme' ); ?>">
+										<?php
+										$hour_anniversary = (int) get_option( 'jww_social_cron_hour_anniversary', 8 );
+										for ( $h = 0; $h < 24; $h++ ) {
+											echo '<option value="' . (int) $h . '" ' . selected( $hour_anniversary, $h, false ) . '>' . esc_html( sprintf( '%02d:00', $h ) ) . '</option>';
+										}
+										?>
+									</select>
+								</span>
+							</td>
+						</tr>
 					</table>
 				<?php endif; ?>
 			</section>
@@ -679,7 +788,7 @@ class Social_Admin {
 						</div>
 						<div class="jww-social-trigger-row">
 							<div class="jww-social-trigger-random">
-								<button type="button" class="button button-primary jww-social-trigger" data-action="jww_social_trigger_random_lyric"><?php esc_html_e( 'Random Lyric', 'jww-theme' ); ?></button>
+								<button type="button" class="button button-primary jww-social-trigger" data-action="jww_social_trigger_random_lyric"><?php esc_html_e( 'Lyric of the day', 'jww-theme' ); ?></button>
 							</div>
 							<div class="jww-social-trigger-specific">
 								<select id="jww-social-select-lyric-song" class="jww-social-select-post" data-post-type="song" aria-label="<?php esc_attr_e( 'Select a song for lyric', 'jww-theme' ); ?>">
@@ -753,7 +862,7 @@ class Social_Admin {
 	 * AJAX: trigger Random Lyric job.
 	 */
 	public function ajax_trigger_random_lyric() {
-		$this->ajax_trigger( 'jww_social_run_random_lyric', __( 'Random Lyric', 'jww-theme' ) );
+		$this->ajax_trigger( 'jww_social_run_random_lyric', __( 'Lyric of the day', 'jww-theme' ) );
 	}
 
 	/**
@@ -894,6 +1003,30 @@ class Social_Admin {
 		$option_key = 'jww_social_cron_schedule_' . $type;
 		update_option( $option_key, (string) $hours );
 		if ( function_exists( 'jww_social_reschedule_cron' ) ) {
+			jww_social_reschedule_cron( $type );
+		}
+		wp_send_json_success( array( 'saved' => true ) );
+	}
+
+	/**
+	 * AJAX: save cron run-at hour for a type and reschedule.
+	 */
+	public function ajax_save_cron_hour() {
+		check_ajax_referer( self::NONCE_ACTION_SETTINGS, 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'jww-theme' ) ) );
+		}
+		$type = isset( $_POST['type'] ) ? sanitize_key( $_POST['type'] ) : '';
+		$hour = isset( $_POST['hour'] ) ? (int) $_POST['hour'] : -1;
+		$allowed_types = array( 'song', 'lyric', 'show', 'post', 'anniversary' );
+		if ( ! in_array( $type, $allowed_types, true ) || $hour < 0 || $hour > 23 ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid parameters.', 'jww-theme' ) ) );
+		}
+		$option_key = $type === 'anniversary' ? 'jww_social_cron_hour_anniversary' : 'jww_social_cron_hour_' . $type;
+		update_option( $option_key, $hour );
+		if ( $type === 'anniversary' && function_exists( 'jww_social_reschedule_anniversary_cron' ) ) {
+			jww_social_reschedule_anniversary_cron();
+		} elseif ( function_exists( 'jww_social_reschedule_cron' ) ) {
 			jww_social_reschedule_cron( $type );
 		}
 		wp_send_json_success( array( 'saved' => true ) );

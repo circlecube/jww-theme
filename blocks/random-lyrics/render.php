@@ -41,9 +41,19 @@ $share_text = function_exists( 'jww_share_song_default_text' ) ? jww_share_song_
 	echo '</div>';
 	?>
 	<?php if ( function_exists( 'jww_render_share_buttons' ) ) : ?>
+	<?php
+	$share_platforms = array( 'facebook', 'mastodon', 'bluesky', 'reddit', 'threads', 'pinterest', 'x' );
+	?>
 	<div class="random-lyrics-share-wrap jww-share-buttons-wrap" data-share-url="<?php echo esc_url( $share_url ); ?>" data-share-text="<?php echo esc_attr( $share_text ); ?>">
-		<p class="jww-song-section-label"><?php esc_html_e( 'Share', 'jww-theme' ); ?></p>
-		<?php echo jww_render_share_buttons( $share_url, $share_text, array( 'x', 'facebook', 'mastodon', 'bluesky', 'threads', 'linkedin', 'reddit', 'pinterest' ), 'song' ); ?>
+		<details class="random-lyrics-share-details">
+			<summary class="random-lyrics-share-toggle" aria-label="<?php esc_attr_e( 'Share', 'jww-theme' ); ?>">
+				<span class="random-lyrics-share-toggle-icon fas fa-share-alt" aria-hidden="true"></span>
+				<span class="random-lyrics-share-toggle-text"><?php esc_html_e( 'Share', 'jww-theme' ); ?></span>
+			</summary>
+			<div class="random-lyrics-share-panel">
+				<?php echo jww_render_share_buttons( $share_url, $share_text, $share_platforms, 'song', '' ); ?>
+			</div>
+		</details>
 	</div>
 	<?php endif; ?>
 	<?php if ( $refresh_on_load ) : ?>
@@ -127,7 +137,8 @@ $share_text = function_exists( 'jww_share_song_default_text' ) ? jww_share_song_
 			btn.disabled = true;
 			var icon = block.querySelector('.refresh-icon');
 			if (icon) icon.classList.add('fa-spin');
-			fetch(restUrl)
+			var url = restUrl + (restUrl.indexOf('?') >= 0 ? '&' : '?') + '_=' + Date.now();
+			fetch(url, { cache: 'no-store' })
 				.then(function(r) { return r.json(); })
 				.then(function(item) {
 					container.innerHTML = buildQuoteHtml(item, showTitle, showArtist);

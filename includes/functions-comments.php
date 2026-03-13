@@ -110,22 +110,10 @@ function jww_comment_form_fields_order( $comment_fields ) {
 add_filter( 'comment_form_fields', 'jww_comment_form_fields_order', 10, 1 );
 
 /**
- * Add video URL field(s) for logged-in users (song/show only); they don't see author/email/url fields.
- * Same multi-field wrapper as guest form; JS adds more inputs when user fills the last one.
+ * Logged-in users get the video URL field from the same 'fields' array as guests (after the comment
+ * textarea). We do not add it again on comment_form_logged_in_after, which would duplicate it above
+ * the textarea because that hook runs before the fields loop.
  */
-function jww_comment_form_logged_in_after_youtube_field() {
-	if ( ! jww_comment_form_shows_youtube_field() ) {
-		return;
-	}
-	$youtube_strings = jww_comment_form_youtube_field_strings();
-	if ( $youtube_strings === null ) {
-		return;
-	}
-	echo '<div class="comment-form-youtube-urls" data-next-index="1">'
-		. '<p class="comment-form-youtube-url"><label for="jww_youtube_url_0" class="screen-reader-text">' . esc_html( $youtube_strings['label'] ) . '</label><input id="jww_youtube_url_0" name="jww_youtube_url[]" type="url" value="" size="30" placeholder="' . esc_attr( $youtube_strings['placeholder'] ) . '" /></p>'
-		. '</div>';
-}
-add_action( 'comment_form_logged_in_after', 'jww_comment_form_logged_in_after_youtube_field', 10, 0 );
 
 /**
  * Print script so that when the user fills the last video URL input, another one is added. Runs in footer; no jQuery.

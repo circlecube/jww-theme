@@ -1,0 +1,38 @@
+/* Setlist repeater: compact collapsed row summary (lives in .acf-fields cell like normal content) */
+
+/* Hide the default collapsed target since we use our own summary */
+.acf-field-repeater.acf-field-show-setlist .acf-row.-collapsed>.acf-fields>.acf-field.-collapsed-target {
+	display:none !important;
+}
+
+/* Summary hidden when row is expanded */
+[data-key="field_show_setlist"] .acf-row .jww-setlist-row-summary {
+	display: none;
+	max-width: 100%;
+	padding: .5rem 1rem;
+	font-size: 13px;
+	line-height: 1.4;
+	color: #1d2327;
+	cursor: pointer;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* When collapsed: show only our summary in the content cell, hide the form fields */
+[data-key="field_show_setlist"] .acf-row.-collapsed td.acf-fields .jww-setlist-row-summary {
+	display: block !important;
+}
+
+[data-key="field_show_setlist"] .acf-row.-collapsed td.acf-fields .acf-field {
+	display: none !important;
+}
+
+[data-key="field_show_setlist"] .acf-row.-collapsed .jww-setlist-row-summary:hover {
+	color: #2271b1;
+}
+
+[data-key="field_show_setlist"] .acf-row.-collapsed .jww-setlist-row-summary:focus {
+	outline: 1px solid #2271b1;
+	outline-offset: 1px;
+}

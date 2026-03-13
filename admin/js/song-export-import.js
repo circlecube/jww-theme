@@ -12,6 +12,12 @@ jQuery(document).ready(function($) {
         $result.html('').removeClass('error success');
 
         var tagId = $('#export-tag').val() || '';
+        var bandId = $('#export-band').val() || '';
+        var onlyEmpty = $form.find('#export-only-empty').is(':checked') ? 1 : 0;
+        var onlyAnyEmpty = $form.find('#export-only-any-empty').is(':checked') ? 1 : 0;
+        var fields = $form.find('input[name="export_fields[]"]:checked').map(function() {
+            return $(this).val();
+        }).get();
 
         $.ajax({
             url: jwwSongExportImport.ajaxUrl,
@@ -19,7 +25,11 @@ jQuery(document).ready(function($) {
             data: {
                 action: 'jww_export_songs',
                 nonce: jwwSongExportImport.nonce,
-                tag_id: tagId
+                tag_id: tagId,
+                band_id: bandId,
+                only_empty: onlyEmpty,
+                only_any_empty: onlyAnyEmpty,
+                fields: fields
             },
             success: function(response) {
                 $spinner.removeClass('is-active');

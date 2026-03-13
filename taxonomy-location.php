@@ -132,7 +132,7 @@ $location_display_string = implode( ' > ', $location_display );
 				'title'            => $past_title,
 				'table_type'       => 'past',
 				'show_tour_column' => true,
-				'default_open'     => ! $has_upcoming,
+				'default_open'     => true,
 			) );
 		endif;
 		?>
